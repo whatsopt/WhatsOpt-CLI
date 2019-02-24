@@ -34,9 +34,13 @@ metadata = dict(
         'whatsopt'
     ],
     install_requires=[
-        'openmdao', 'openmdao_extensions'
+        'openmdao>=2.5', 'openmdao_extensions', 'Click>=6.7', 'tabulate>=0.8.2'
     ],
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*',
+    entry_points="""
+        [console_scripts]
+        wop=whatsopt.wop:cli
+    """,
     zip_safe=True,
     url = 'https://github.com/OneraHub/wop',
     download_url = 'https://github.com/OneraHub/wop/releases',
