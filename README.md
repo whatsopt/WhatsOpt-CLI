@@ -1,10 +1,19 @@
-# wop
+# WhatsOpt command line interface
 
-WhatsOpt command line tool
+Command line interface to interact with WhatsOpt web application.
 
 ## Installation
 ```
-pip install git+https://github.com/OneraHub/wop.git
+pip install wop
+```
+
+## Usage
+```
+wop --help
+```
+
+```
+wop <COMMAND> --help
 ```
 
 ## License
