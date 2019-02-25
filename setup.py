@@ -42,8 +42,8 @@ metadata = dict(
         wop=whatsopt.wop:cli
     """,
     zip_safe=True,
-    url = 'https://github.com/OneraHub/wop',
-    download_url = 'https://github.com/OneraHub/wop/releases',
+    url = 'https://github.com/OneraHub/WhatsOpt-CLI',
+    download_url = 'https://github.com/OneraHub/WhatsOpt-CLI/releases',
 )
 
 setup(**metadata)
