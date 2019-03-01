@@ -296,6 +296,11 @@ class WhatsOpt(object):
         
     def serve(self):
         from subprocess import call
+        try:
+            import thrift
+        except ImportError:
+            print("Apache Thrift is not installed. You can install it with : 'pip install thrift'")
+            exit(-1)
         call(['python', 'run_server.py'])
         
     def get_analysis_id(self):
