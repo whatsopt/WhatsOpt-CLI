@@ -379,7 +379,7 @@ class WhatsOpt(object):
                 if re.match('int', type(meta['value']).__name__):
                     vtype = 'Integer' 
                 shape = str(meta['shape']) 
-                shape = WhatsOpt._format_shape(shape)
+                shape = self._format_shape(shape)
                 name = system._var_abs2prom[typ][abs_name]
                 self.vars[abs_name] = {'fullname': abs_name,
                                         'name': name,
@@ -407,8 +407,7 @@ class WhatsOpt(object):
                 elif desc!=meta['desc'] and meta['desc']!='':
                     print('Find another description for {}: "{}", keep "{}"'.format(name, meta['desc'], self.vardescs[name]))
 
-    @staticmethod
-    def _format_shape(shape):
+    def _format_shape(self, shape):
         shape = shape.replace("L", "")  # with py27 we can get (1L,)
         if self.scalar_format and shape=='(1,)':
             shape='1'
