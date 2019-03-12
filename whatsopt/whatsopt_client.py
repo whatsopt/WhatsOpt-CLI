@@ -121,6 +121,7 @@ class WhatsOpt(object):
                 # TODO: remove 'updated_at' once 0.10.0 deployed
                 date = mda.get('created_at', None) or mda['updated_at']
                 data.append([mda['id'], mda['name'], date])
+            print("Server : {}".format(self._url))
             print(tabulate(data, headers))
         else:
             resp.raise_for_status()

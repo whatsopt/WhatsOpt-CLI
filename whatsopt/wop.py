@@ -26,7 +26,7 @@ def login(ctx, url):
 
 @cli.command()
 def logout():
-	""" Deconnect from WHatsOpt server """
+	""" Deconnect from WhatsOpt server """
 	WhatsOpt(login=False).logout() 
 	
 @cli.command()
@@ -42,7 +42,7 @@ def list(ctx):
 @click.argument('py_filename')
 @click.pass_context
 def push(ctx, dry_run, scalar_format, name, py_filename):
-	""" Push analysis from within given PY_FILENAME """
+	""" Push analysis from given PY_FILENAME """
 	wop = WhatsOpt(**ctx.obj)
 	options = {'--dry-run': dry_run, '--scalar-format': scalar_format, '--name': name}
 	wop.execute(py_filename, wop.push_mda_cmd, options)
