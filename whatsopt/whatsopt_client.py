@@ -11,6 +11,13 @@ import re
 import zipfile
 import tempfile
 
+try:
+    # Python 3
+    from urllib.parse import urlparse
+except ImportError:
+    # Python 2
+    from urlparse import urlparse
+
 from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data, view_model
 from openmdao.api import IndepVarComp, Problem, Group, CaseReader
 from tabulate import tabulate
@@ -41,7 +48,7 @@ class WhatsOpt(object):
         
         # config session object
         self.session = requests.Session()  
-        self.session.trust_env = False 
+        self.set_trust_env() 
         
         # login by default
         if login:
@@ -59,6 +66,10 @@ class WhatsOpt(object):
 
     def _endpoint(self, path):
         return self._url + path
+
+    def set_trust_env(self):
+        urlinfos = urlparse(self._url)
+        self.session.trust_env = re.match(r"\w+.onera\.fr", urlinfos.netloc)
 
     @property
     def default_url(self):
