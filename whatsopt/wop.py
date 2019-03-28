@@ -82,10 +82,11 @@ def update(ctx, analysis_id, server, run_ops, test_units):
 @click.option('--analysis-id', help='specify the analysis to create a new operation otherwise use default analysis')
 @click.option('--operation-id', help='specify the operation to be updated with new cases')
 @click.option('--cleanup', is_flag=True, default=False, help='[DANGER] delete given sqlite file after uploading it')
+@click.option('--dry-run', is_flag=True, default=False, help='parse data file and display content without uploading')
 @click.pass_context
-def upload(ctx, sqlite_filename, analysis_id, operation_id, cleanup):
+def upload(ctx, sqlite_filename, analysis_id, operation_id, cleanup, dry_run):
 	""" Upload data stored in given SQLITE_FILENAME """
-	WhatsOpt(**ctx.obj).upload(sqlite_filename, analysis_id, operation_id, cleanup)
+	WhatsOpt(**ctx.obj).upload(sqlite_filename, analysis_id, operation_id, cleanup, dry_run)
 
 @cli.command()
 @click.pass_context

@@ -129,8 +129,7 @@ class WhatsOpt(object):
             headers = ["id", "name", "created at"]
             data = []
             for mda in mdas:
-                # TODO: remove 'updated_at' once 0.10.0 deployed
-                date = mda.get('created_at', None) or mda['updated_at']
+                date = mda.get('created_at', None)
                 data.append([mda['id'], mda['name'], date])
             print("Server : {}".format(self._url))
             print(tabulate(data, headers))
@@ -252,7 +251,7 @@ class WhatsOpt(object):
         opts.update({'--base': True, '--force': True})
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
-    def upload(self, sqlite_filename, analysis_id=None, operation_id=None, cleanup=False):
+    def upload(self, sqlite_filename, analysis_id=None, operation_id=None, cleanup=False, dry_run=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
         reader = CaseReader(sqlite_filename)
@@ -265,9 +264,10 @@ class WhatsOpt(object):
         m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
         if m:
             name = m.group(1)
-        driver_regexp = re.compile(r"\w+:"+name)
-        cases = self._format_upload_cases(driver_regexp, reader)
-        
+        cases, statuses = self._format_upload_cases(reader)
+        if dry_run:
+            WhatsOpt._print_cases(cases, statuses)
+            exit()
         resp = None
         if operation_id:
             url =  self._endpoint(('/api/v1/operations/%s') % operation_id)
@@ -283,17 +283,18 @@ class WhatsOpt(object):
             elif name=='SLSQP':
                 driver='scipy_optimizer_slsqp'
             else:
-                # FIXME: only LHS, Morris or SLSQP is recognized
-                print("Data uploaded as doe cases with unknown driver {}".format(name))
-                driver='unknown'
+                # suppose name well-formed <lib>-<doe|optimizer|screening>-<algoname>
+                # otherwise it will default to doe
+                driver=name.lower()  
             operation_params = {'name': name,
                                 'driver': driver,
                                 'host': gethostname(),
-                                'cases': cases}
+                                'cases': cases,
+                                'success': statuses}
             resp = self.session.post(url, headers=self.headers, 
                                      json={'operation': operation_params})
         resp.raise_for_status()
-        print("Results data from %s uploaded" % sqlite_filename)
+        print("Results data from {} uploaded with driver {}".format(sqlite_filename, driver))
         if cleanup:
             os.remove(sqlite_filename)
             print("%s removed" % sqlite_filename)
@@ -576,17 +577,16 @@ class WhatsOpt(object):
                             ' at least one dot, but got %s' % fullname)
         return mda, disc, var
 
-    def _format_upload_cases(self, driver_regexp, reader):
-        cases = reader.list_cases('root')
+    def _format_upload_cases(self, reader):
+        cases = reader.list_cases('root', recurse=False)
         inputs = {}
         outputs = {}
-        for i, case_id in enumerate(cases):
-            if driver_regexp.match(case_id):
-                case = reader.get_case(case_id)
-                if case.inputs is not None:
-                    self._insert_data(case.inputs, inputs)
-                if case.outputs is not None:
-                    self._insert_data(case.outputs, outputs)
+        for case_id in cases:
+            case = reader.get_case(case_id)
+            if case.inputs is not None:
+                self._insert_data(case.inputs, inputs)
+            if case.outputs is not None:
+                self._insert_data(case.outputs, outputs)
         cases = inputs.copy()
         cases.update(outputs)
         inputs_count = self._check_count(inputs)
@@ -598,7 +598,16 @@ class WhatsOpt(object):
             if key[2] == 1:
                 idx = -1 # consider it is a scalar not an array of 1 elt
             data.append({'varname': key[0], 'coord_index': idx, 'values': values})
-        return data
+        
+        statuses = []
+        cases = reader.list_cases('driver', recurse=False)
+        for case_id in cases:
+            #if driver_regexp.match(case_id):
+            case = reader.get_case(case_id)
+            statuses.append(case.success)
+        assert inputs_count==len(statuses)
+
+        return data, statuses
         
     def _check_count(self, ios):
         count = None
@@ -624,3 +633,17 @@ class WhatsOpt(object):
                 else:
                     result[(name, i, values.size)] = [float(values[i])]
             done[name]=True
+
+    @staticmethod
+    def _print_cases(cases, statuses):
+        headers = ["success"]
+        n = len(cases[0]['values']) if cases else 0
+        for case in cases:
+            h = case['varname']
+            if case['coord_index'] > -1:
+                h += "[{}]".format(case['coord_index'])
+            headers.append(h)
+        data = []
+        for i in range(n):
+            data.append([statuses[i]]+[case['values'][i] for case in cases])
+        print(tabulate(data, headers))
