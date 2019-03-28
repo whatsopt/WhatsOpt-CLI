@@ -34,7 +34,7 @@ metadata = dict(
         'whatsopt'
     ],
     install_requires=[
-        'openmdao>=2.5', 'openmdao_extensions>=0.2.2', 'Click>=6.7', 'tabulate>=0.8.2'
+        'openmdao>=2.6', 'openmdao_extensions>=0.3.0', 'Click>=6.7', 'tabulate>=0.8.2'
     ],
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*',
     entry_points="""
