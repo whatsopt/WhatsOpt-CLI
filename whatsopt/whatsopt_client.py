@@ -255,6 +255,7 @@ class WhatsOpt(object):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
         reader = CaseReader(sqlite_filename)
+        print(reader.list_sources())
         cases = reader.list_cases('driver')
         if len(cases)==0:
             raise Exception("No case found in {}".format(sqlite_filename))
@@ -582,11 +583,12 @@ class WhatsOpt(object):
         inputs = {}
         outputs = {}
         for case_id in cases:
-            case = reader.get_case(case_id)
-            if case.inputs is not None:
-                self._insert_data(case.inputs, inputs)
-            if case.outputs is not None:
-                self._insert_data(case.outputs, outputs)
+            if "compute_totals_approx" not in case_id:
+                case = reader.get_case(case_id)
+                if case.inputs is not None:
+                    self._insert_data(case.inputs, inputs)
+                if case.outputs is not None:
+                    self._insert_data(case.outputs, outputs)
         cases = inputs.copy()
         cases.update(outputs)
         inputs_count = self._check_count(inputs)
