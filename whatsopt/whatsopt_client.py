@@ -255,7 +255,6 @@ class WhatsOpt(object):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
         reader = CaseReader(sqlite_filename)
-        print(reader.list_sources())
         cases = reader.list_cases('driver')
         if len(cases)==0:
             raise Exception("No case found in {}".format(sqlite_filename))
