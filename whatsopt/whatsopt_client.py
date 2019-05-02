@@ -10,6 +10,7 @@ import copy
 import re
 import zipfile
 import tempfile
+import csv
 
 try:
     # Python 3
@@ -251,23 +252,20 @@ class WhatsOpt(object):
         opts.update({'--base': True, '--force': True})
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
-    def upload(self, sqlite_filename, analysis_id=None, operation_id=None, cleanup=False, dry_run=False):
+    def upload(self, filename, analysis_id=None, operation_id=None, cleanup=False, dry_run=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
-        reader = CaseReader(sqlite_filename)
-        cases = reader.list_cases('driver')
-        if len(cases)==0:
-            raise Exception("No case found in {}".format(sqlite_filename))
 
-        driver_first_coord = cases[0]
-        name = os.path.splitext(sqlite_filename)[0]
-        m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
-        if m:
-            name = m.group(1)
-        cases, statuses = self._format_upload_cases(reader)
+        name = cases = statuses = None
+        if filename.endswith(".csv"):
+            name, cases, statuses = self._load_from_csv(filename)
+        else:
+            name, cases, statuses = self._load_from_sqlite(filename)
+
         if dry_run:
             WhatsOpt._print_cases(cases, statuses)
             exit()
+
         resp = None
         if operation_id:
             url =  self._endpoint(('/api/v1/operations/%s') % operation_id)
@@ -294,10 +292,63 @@ class WhatsOpt(object):
             resp = self.session.post(url, headers=self.headers, 
                                      json={'operation': operation_params})
         resp.raise_for_status()
-        print("Results data from {} uploaded with driver {}".format(sqlite_filename, driver))
+        print("Results data from {} uploaded with driver {}".format(filename, driver))
         if cleanup:
-            os.remove(sqlite_filename)
-            print("%s removed" % sqlite_filename)
+            os.remove(filename)
+            print("%s removed" % filename)
+
+    def _load_from_sqlite(self, filename):
+        reader = CaseReader(filename)
+        cases = reader.list_cases('driver')
+        if len(cases)==0:
+            raise Exception("No case found in {}".format(filename))
+
+        # find driver name
+        driver_first_coord = cases[0]
+        m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
+        name = os.path.splitext(filename)[0]
+        if m:
+            name = m.group(1)
+
+        # format cases and statuses
+        cases, statuses = self._format_upload_cases(reader)
+        return name, cases, statuses
+
+    def _load_from_csv(self, filename):
+        name = os.path.splitext(filename)[0]
+        m = re.match(r"\w+__(\w+)", name)
+        if m:
+            name = m.group(1)
+
+        with open(filename) as csvfile:
+            reader = csv.reader(csvfile, delimiter=';')
+            cases = []
+            statuses = []
+            success_idx = -1
+            for line, row in enumerate(reader):
+                if line==0:
+                    for col, elt in enumerate(row):
+                        if elt == 'success':
+                            success_idx = col
+                        else:
+                            varname = elt
+                            idx = -1
+                            m = re.match(r"(\w+)\[(\d+)\]", elt)
+                            if m:
+                                varname = m.group(1)
+                                idx = int(m.group(2))
+                            cases.append({'varname': varname, 'coord_index': idx, 'values': []})
+                else:
+                    for col, elt in enumerate(row):
+                        if col == success_idx:
+                            statuses.append(int(elt))
+                        elif col < success_idx:
+                            cases[col]['values'].append(float(elt))
+                        else:
+                            cases[col-1]['values'].append(float(elt))
+            if len(cases) > 0 and success_idx == -1:
+                statuses = len(cases[0]['values'])*[1]
+        return name, cases, statuses    
 
     def check_versions(self):
         url =  self._endpoint('/api/v1/versioning')
