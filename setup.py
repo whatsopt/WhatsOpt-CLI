@@ -8,7 +8,7 @@ from setuptools import setup, Extension
 from whatsopt import __version__
 
 CLASSIFIERS = """
-Development Status :: 4 - Beta
+Development Status :: 5 - Stable
 Intended Audience :: Science/Research
 Intended Audience :: Developers
 License :: OSI Approved :: Apache Software License
