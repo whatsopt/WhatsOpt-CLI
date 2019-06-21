@@ -1,0 +1,6 @@
+* 1.1.0
+  - add csv data upload as DOE execution of an existing analysis
+  - remove upload --cleanup option
+
+* 1.0.0 (20/06/2019)
+  - version for AIAA Aviation 2019 (17-21th Dallas TX)
