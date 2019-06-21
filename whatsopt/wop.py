@@ -79,14 +79,14 @@ def update(ctx, analysis_id, server, run_ops, test_units):
 	
 @cli.command()
 @click.argument('filename')
+@click.option('--driver-kind', type=click.Choice(['doe', 'optimizer', 'screening']), help='used with csv data upload to specify driver kind')
 @click.option('--analysis-id', help='specify the analysis to create a new operation otherwise use default analysis')
 @click.option('--operation-id', help='specify the operation to be updated with new cases')
-@click.option('--cleanup', is_flag=True, default=False, help='[DANGER] delete given sqlite file after uploading it')
 @click.option('--dry-run', is_flag=True, default=False, help='parse data file and display content without uploading')
 @click.pass_context
-def upload(ctx, filename, analysis_id, operation_id, cleanup, dry_run):
-	""" Upload data stored in given FILENAME """
-	WhatsOpt(**ctx.obj).upload(filename, analysis_id, operation_id, cleanup, dry_run)
+def upload(ctx, filename, driver_kind, analysis_id, operation_id, dry_run):
+	""" Upload data stored in given FILENAME in sqlite or csv format """
+	WhatsOpt(**ctx.obj).upload(filename, driver_kind, analysis_id, operation_id, dry_run)
 
 @cli.command()
 @click.pass_context

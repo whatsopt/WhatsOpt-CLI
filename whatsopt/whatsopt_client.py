@@ -252,7 +252,7 @@ class WhatsOpt(object):
         opts.update({'--base': True, '--force': True})
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
-    def upload(self, filename, analysis_id=None, operation_id=None, cleanup=False, dry_run=False):
+    def upload(self, filename, kind=None, analysis_id=None, operation_id=None, dry_run=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
 
@@ -274,16 +274,23 @@ class WhatsOpt(object):
                                       json={'operation': operation_params})
         else:
             url =  self._endpoint(('/api/v1/analyses/%s/operations') % mda_id)
-            if name=='LHS':
-                driver='smt_doe_lhs'
-            elif name=='Morris':
-                driver='salib_doe_morris'
-            elif name=='SLSQP':
-                driver='scipy_optimizer_slsqp'
-            else:
-                # suppose name well-formed <lib>-<doe|optimizer|screening>-<algoname>
-                # otherwise it will default to doe
-                driver=name.lower()  
+            if kind:
+                driver='user_{}_algo'.format(kind)
+            else: 
+                if name=='LHS':
+                    driver='smt_doe_lhs'
+                elif name=='Morris':
+                    driver='salib_doe_morris'
+                elif name=='SLSQP':
+                    driver='scipy_optimizer_slsqp'
+                else:
+                    # suppose name well-formed <lib>-<doe|optimizer|screening>-<algoname>
+                    # otherwise it will default to doe
+                    m = re.match(r"(\w+)_(doe|optimizer|screening)_(\w+)", name.lower())
+                    if m:
+                        driver=name.lower()  
+                    else:
+                        driver='user_defined_algo'  
             operation_params = {'name': name,
                                 'driver': driver,
                                 'host': gethostname(),
@@ -293,9 +300,6 @@ class WhatsOpt(object):
                                      json={'operation': operation_params})
         resp.raise_for_status()
         print("Results data from {} uploaded with driver {}".format(filename, driver))
-        if cleanup:
-            os.remove(filename)
-            print("%s removed" % filename)
 
     def _load_from_sqlite(self, filename):
         reader = CaseReader(filename)
