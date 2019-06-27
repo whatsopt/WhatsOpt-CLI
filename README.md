@@ -2,6 +2,11 @@
 
 Command line interface to interact with WhatsOpt web application.
 
+## Citation
+>Rémi  Lafage,  Sébastien  Defoort,  and  Thierry  Lefèbvre. Whatsopt: a web application for multidisciplinary design analysis and optimization. In 20th AIAA/ISSMO Multidisciplinary Analysis and Optimization Conference, Dallas, United States, 2019
+
+DOI: [10.2514/6.2019-2990](https://doi.org/10.2514/6.2019-2990)
+
 ## Installation
 ```
 pip install wop
