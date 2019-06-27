@@ -1,5 +1,8 @@
-* 1.1.0
+* 1.1.0rc1 ()
   - add csv data upload as DOE execution of an existing analysis
+  - add csv data upload without any existing analysis (an ad hoc one is created)
+  - add --outvar-count upload option used to pass output variable number when uploading
+  data in csv format (default is 1).
   - remove upload --cleanup option
 
 * 1.0.0 (20/06/2019)
