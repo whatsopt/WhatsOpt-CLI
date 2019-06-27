@@ -83,10 +83,11 @@ def update(ctx, analysis_id, server, run_ops, test_units):
 @click.option('--analysis-id', help='specify the analysis to create a new operation otherwise use default analysis')
 @click.option('--operation-id', help='specify the operation to be updated with new cases')
 @click.option('--dry-run', is_flag=True, default=False, help='parse data file and display content without uploading')
+@click.option('--outvar-count', type=int, default=1, help='number of output variable (>0) only used when uploading csv file')
 @click.pass_context
-def upload(ctx, filename, driver_kind, analysis_id, operation_id, dry_run):
+def upload(ctx, filename, driver_kind, analysis_id, operation_id, dry_run, outvar_count):
 	""" Upload data stored in given FILENAME in sqlite or csv format """
-	WhatsOpt(**ctx.obj).upload(filename, driver_kind, analysis_id, operation_id, dry_run)
+	WhatsOpt(**ctx.obj).upload(filename, driver_kind, analysis_id, operation_id, dry_run, outvar_count)
 
 @cli.command()
 @click.pass_context

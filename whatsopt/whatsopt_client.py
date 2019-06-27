@@ -252,7 +252,8 @@ class WhatsOpt(object):
         opts.update({'--base': True, '--force': True})
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
-    def upload(self, filename, kind=None, analysis_id=None, operation_id=None, dry_run=False):
+    def upload(self, filename, driver_kind=None, analysis_id=None, 
+               operation_id=None, dry_run=False, outvar_count=1):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
 
@@ -273,9 +274,12 @@ class WhatsOpt(object):
             resp = self.session.patch(url, headers=self.headers, 
                                       json={'operation': operation_params})
         else:
-            url =  self._endpoint(('/api/v1/analyses/%s/operations') % mda_id)
-            if kind:
-                driver='user_{}_algo'.format(kind)
+            if mda_id:
+                url = self._endpoint(('/api/v1/analyses/%s/operations') % mda_id)
+            else:
+                url = self._endpoint('/api/v1/operations')
+            if driver_kind:
+                driver='user_{}_algo'.format(driver_kind)
             else: 
                 if name=='LHS':
                     driver='smt_doe_lhs'
@@ -296,8 +300,10 @@ class WhatsOpt(object):
                                 'host': gethostname(),
                                 'cases': cases,
                                 'success': statuses}
-            resp = self.session.post(url, headers=self.headers, 
-                                     json={'operation': operation_params})
+            params = {'operation': operation_params}
+            if outvar_count > 0 and outvar_count < len(cases):
+                params['outvar_count_hint'] = outvar_count
+            resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
         print("Results data from {} uploaded with driver {}".format(filename, driver))
 
@@ -310,7 +316,7 @@ class WhatsOpt(object):
         # find driver name
         driver_first_coord = cases[0]
         m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
-        name = os.path.splitext(filename)[0]
+        name = os.path.splitext(os.path.basename(filename))[0]
         if m:
             name = m.group(1)
 
@@ -319,7 +325,7 @@ class WhatsOpt(object):
         return name, cases, statuses
 
     def _load_from_csv(self, filename):
-        name = os.path.splitext(filename)[0]
+        name = os.path.splitext(os.path.basename(filename))[0]
         m = re.match(r"\w+__(\w+)", name)
         if m:
             name = m.group(1)
