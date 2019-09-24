@@ -11,6 +11,7 @@ import re
 import zipfile
 import tempfile
 import csv
+import numpy as np
 
 try:
     # Python 3
@@ -253,7 +254,7 @@ class WhatsOpt(object):
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
     def upload(self, filename, driver_kind=None, analysis_id=None, 
-               operation_id=None, dry_run=False, outvar_count=1):
+               operation_id=None, dry_run=False, outvar_count=1, only_success=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
 
@@ -262,6 +263,14 @@ class WhatsOpt(object):
             name, cases, statuses = self._load_from_csv(filename)
         else:
             name, cases, statuses = self._load_from_sqlite(filename)
+
+        if only_success:
+            for c in cases:
+                c['values'] = [val for i, val in enumerate(c['values']) if statuses[i]>0]
+            statuses = [1 for s in statuses if s>0]
+
+        for c in cases:
+            c['values'] = np.nan_to_num(np.array(c['values'])).tolist()
 
         if dry_run:
             WhatsOpt._print_cases(cases, statuses)

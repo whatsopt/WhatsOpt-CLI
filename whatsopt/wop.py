@@ -153,13 +153,32 @@ def update(ctx, analysis_id, server, run_ops, test_units):
     default=1,
     help="number of output variable (>0) only used when uploading csv file",
 )
+@click.option(
+    "--only-success",
+    is_flag=True,
+    default=False,
+    help="keep only data from successful executions",
+)
 @click.pass_context
 def upload(
-    ctx, filename, driver_kind, analysis_id, operation_id, dry_run, outvar_count
+    ctx,
+    filename,
+    driver_kind,
+    analysis_id,
+    operation_id,
+    dry_run,
+    outvar_count,
+    only_success,
 ):
     """ Upload data stored in given FILENAME in sqlite or csv format """
     WhatsOpt(**ctx.obj).upload(
-        filename, driver_kind, analysis_id, operation_id, dry_run, outvar_count
+        filename,
+        driver_kind,
+        analysis_id,
+        operation_id,
+        dry_run,
+        outvar_count,
+        only_success,
     )
 
 
@@ -174,6 +193,7 @@ def version(ctx):
 def serve():
     """ Launch analysis server """
     WhatsOpt(login=False).serve()
+
 
 cli(prog_name="wop", obj={})
 
