@@ -36,7 +36,7 @@ PROD_URL = "https://selene.onecert.fr/whatsopt"
 DEBUG = False
 
 def log(*args, **kwargs):
-    print(click.style(*args, **kwargs))
+    click.echo(click.style(*args, **kwargs))
 def info(*args, **kwargs):
     kwargs.update(fg='green')
     log(*args, **kwargs)
