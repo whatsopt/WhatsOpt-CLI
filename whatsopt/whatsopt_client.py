@@ -243,12 +243,12 @@ class WhatsOpt(object):
                     else:
                         os.remove(file_to)
                 elif options.get('--update'):
-                    if re.match(r"run_.*\.py$", f) and not options.get('--run-ops'):
+                    if re.match(r"^run_.*\.py$", f) and not options.get('--run-ops'):
                         # keep current run scripts if any
                         info("Keep existing %s (remove it or use --run-ops to override)" % file_to)
                         file_to_move[file_to] = False
                         continue
-                    if not re.match(r".*_base\.py$", f) and not re.match(r"run_.*\.py$", f) and not re.match(r"^server/", f):
+                    if self._is_user_file(f):
                         file_to_move[file_to] = False
                         continue
                     log("Update %s" % file_to)
@@ -272,6 +272,12 @@ class WhatsOpt(object):
                     move(file_from, dir_to)
             log(msg)
     
+    @staticmethod
+    def _is_user_file(f):
+        return (not re.match(r".*_base\.py$", f) and \
+                not re.match(r"^run_.*\.py$", f) and \
+                not re.match(r"^server/", f))
+
     def update_mda(self, analysis_id=None, options={}):
         id = analysis_id or self.get_analysis_id()
         if id is None:
