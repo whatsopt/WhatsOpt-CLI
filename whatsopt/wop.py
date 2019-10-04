@@ -111,6 +111,7 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
     "--analysis-id",
     help="specify the analysis to update from (otherwise guessed from current files)",
 )
+@click.option("--force", is_flag=True, default=False, help="overwrite existing files")
 @click.option(
     "--server", is_flag=True, default=False, help="update Thrift server as well"
 )
@@ -121,9 +122,14 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
     "--test-units", is_flag=True, default=False, help="update discipline test scripts"
 )
 @click.pass_context
-def update(ctx, analysis_id, server, run_ops, test_units):
+def update(ctx, analysis_id, force, server, run_ops, test_units):
     """ Update analysis connections """
-    options = {"--server": server, "--run-ops": run_ops, "--test-units": test_units}
+    options = {
+        "--force": force,
+        "--server": server,
+        "--run-ops": run_ops,
+        "--test-units": test_units,
+    }
     WhatsOpt(**ctx.obj).update_mda(analysis_id, options)
 
 

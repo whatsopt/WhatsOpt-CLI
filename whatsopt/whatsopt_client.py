@@ -12,6 +12,7 @@ import zipfile
 import tempfile
 import csv
 import numpy as np
+import click
 
 try:
     # Python 3
@@ -33,6 +34,22 @@ NULL_DRIVER_NAME = '__DRIVER__'  # check WhatsOpt Discipline model
 PROD_URL = "https://selene.onecert.fr/whatsopt"
 
 DEBUG = False
+
+def log(*args, **kwargs):
+    print(click.style(*args, **kwargs))
+def info(*args, **kwargs):
+    kwargs.update(fg='green')
+    log(*args, **kwargs)
+def warn(*args, **kwargs):
+    kwargs.update(fg='yellow')
+    log(*args, **kwargs)
+def error(*args, **kwargs):
+    kwargs.update(fg='red')
+    log(*args, **kwargs)
+def debug(*args, **kwargs):
+    if DEBUG:
+        print("DEBUG ********************************")
+        print(*args, **kwargs)
 
 class WhatsOptImportMdaError(Exception):
     pass
@@ -79,9 +96,9 @@ class WhatsOpt(object):
         return self._default_url    
             
     def _ask_and_write_api_key(self):
-        print("You have to set your API key.")
-        print("You can get it in your profile page on WhatsOpt (%s)." % self.url)
-        print("Please, copy/paste your API key below then hit return (characters are hidden).")
+        log("You have to set your API key.")
+        log("You can get it in your profile page on WhatsOpt (%s)." % self.url)
+        info("Please, copy/paste your API key below then hit return (characters are hidden).")
         api_key = getpass.getpass(prompt='Your API key: ')
         if not os.path.exists(WHATSOPT_DIRNAME):
             os.makedirs(WHATSOPT_DIRNAME)
@@ -92,7 +109,7 @@ class WhatsOpt(object):
     def _read_api_key(self):
         with open(API_KEY_FILENAME, 'r') as f:
             api_key = f.read()
-            return api_key
+            return api_key 
 
     def login(self, api_key=None, echo=None):
         already_logged=False
@@ -112,7 +129,7 @@ class WhatsOpt(object):
             resp = self.login(api_key, echo)
         resp.raise_for_status() 
         if echo:
-            print("Successfully logged into WhatsOpt (%s)" % self.url)
+            log("Successfully logged into WhatsOpt (%s)" % self.url)
         return resp
 
     def logout(self, echo=True):
@@ -121,7 +138,7 @@ class WhatsOpt(object):
         if os.path.exists(URL_FILENAME):
             os.remove(URL_FILENAME)
         if echo:
-            print("Sucessfully logged out from WhatsOpt (%s)" % self.url)
+            log("Sucessfully logged out from WhatsOpt (%s)" % self.url)
 
     def list_analyses(self):
         url =  self._endpoint('/api/v1/analyses')
@@ -133,8 +150,8 @@ class WhatsOpt(object):
             for mda in mdas:
                 date = mda.get('created_at', None)
                 data.append([mda['id'], mda['name'], date])
-            print("Server : {}".format(self._url))
-            print(tabulate(data, headers))
+            info("Server: {}".format(self._url))
+            log(tabulate(data, headers))
         else:
             resp.raise_for_status()
 
@@ -158,7 +175,7 @@ class WhatsOpt(object):
             name = options['--name']
             pbname = prob.model.__class__.__name__
             if name and pbname != name:
-                print("Analysis %s skipped" % pbname)
+                info("Analysis %s skipped" % pbname)
                 pass # do not exit
             else:
                 self.push_mda(prob, options)
@@ -169,12 +186,9 @@ class WhatsOpt(object):
     def push_mda(self, problem, options):
         name = problem.model.__class__.__name__
         data = _get_viewer_data(problem)
-        #print(name, data)
         self.scalar_format = options['--scalar-format']
         self.tree = data['tree']
-        #print("TREE("+name+")=", self.tree)
         self.connections = data['connections_list']
-        #print("CONNECTIONS("+name+")=", self.connections)
 
         # MDA informations
         self.vars = {}
@@ -185,17 +199,16 @@ class WhatsOpt(object):
         mda_attrs = self._get_mda_attributes(problem.model, self.tree)
 
         if options['--dry-run']:
-            print(json.dumps(mda_attrs, indent=2))
-            # print(self.discmap)
+            log(json.dumps(mda_attrs, indent=2))
         else:
             url =  self._endpoint('/api/v1/analyses')
             resp = self.session.post(url, headers=self.headers, json={'analysis': mda_attrs})
             resp.raise_for_status()
-            print("Analysis %s pushed" % name)
+            log("Analysis %s pushed" % name)
 
     def pull_mda(self, mda_id, options={}, msg=None):
         if not msg: msg = 'Analysis %s pulled' % mda_id
-        base = '_base' if options.get('--base') else '' 
+        base = ''
         param = ''
         if options.get('--server'):
             param += '&with_server=true'
@@ -217,40 +230,55 @@ class WhatsOpt(object):
         zip.extractall(tempdir)
         filenames = zip.namelist()
         zip.close()
+        file_to_move={}
         for f in filenames:
             file_from = os.path.join(tempdir, f)
             file_to = f
+            file_to_move[file_to] = True
             if os.path.exists(file_to):
-                # if re.match(r"run_analysis.py", f):
-                #     continue
-                # elif options.get('--force'):
                 if options.get('--force'):
-                    print("Update %s" % file_to)
+                    log("Update %s" % file_to)
+                    if options.get('--dry-run'):
+                        file_to_move[file_to] = False
+                    else:
+                        os.remove(file_to)
+                elif options.get('--update'):
+                    if re.match(r"run_.*\.py$", f) and not options.get('--run-ops'):
+                        # keep current run scripts if any
+                        info("Keep existing %s (remove it or use --run-ops to override)" % file_to)
+                        file_to_move[file_to] = False
+                        continue
+                    if not re.match(r".*_base\.py$", f) and not re.match(r"run_.*\.py$", f) and not re.match(r"^server/", f):
+                        file_to_move[file_to] = False
+                        continue
+                    log("Update %s" % file_to)
                     if not options.get('--dry-run'):
                         os.remove(file_to)
                 else:
-                    print("File %s in the way" % file_to)
-                    exit(-1)
+                    warn("File %s in the way: remove it or use --force to override" % file_to)
+                    file_to_move[file_to] = False
             else:
-                print("Pull %s" % file_to) 
+                log("Pull %s" % file_to) 
         if not options.get('--dry-run'):
-            for f in filenames:
+            for f in file_to_move.keys():
                 file_from = os.path.join(tempdir, f)
+                file_to = f
                 dir_to = os.path.dirname(f)
                 if dir_to == "":
                     dir_to = '.'
                 elif not os.path.exists(dir_to):
                     os.makedirs(dir_to)
-                # print("Move {} to {}".format(file_from, dir_to))
-                # if os.path.exists(dir_to) and re.match(r"run_analysis.py", f):
-                #     continue
-                move(file_from, dir_to)
-            print(msg)
+                if file_to_move[file_to]:
+                    move(file_from, dir_to)
+            log(msg)
     
     def update_mda(self, analysis_id=None, options={}):
         id = analysis_id or self.get_analysis_id()
+        if id is None:
+            error("Unknown analysis (use wop pull <analysis-id>)")
+            exit(-1)
         opts = copy.copy(options)
-        opts.update({'--base': True, '--force': True})
+        opts.update({'--base': True, '--update': True})
         self.pull_mda(id, opts, 'Analysis %s updated' % id)
         
     def upload(self, filename, driver_kind=None, analysis_id=None, 
@@ -314,7 +342,7 @@ class WhatsOpt(object):
                 params['outvar_count_hint'] = outvar_count
             resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
-        print("Results data from {} uploaded with driver {}".format(filename, driver))
+        log("Results data from {} uploaded with driver {}".format(filename, driver))
 
     def _load_from_sqlite(self, filename):
         reader = CaseReader(filename)
@@ -374,15 +402,15 @@ class WhatsOpt(object):
         resp = self.session.get(url, headers=self.headers)
         resp.raise_for_status()
         version = resp.json()
-        print("WhatsOpt:{} recommended wop:{}".format(version['whatsopt'], version['wop']))
-        print("current wop:{}".format(__version__))
+        log("WhatsOpt:{} recommended wop:{}".format(version['whatsopt'], version['wop']))
+        log("current wop:{}".format(__version__))
         
     def serve(self):
         from subprocess import call
         try:
             import thrift
         except ImportError:
-            print("Apache Thrift is not installed. You can install it with : 'pip install thrift'")
+            log("Apache Thrift is not installed. You can install it with : 'pip install thrift'")
             exit(-1)
         call(['python', 'run_server.py'])
         
@@ -488,7 +516,7 @@ class WhatsOpt(object):
                 if desc=='':
                     self.vardescs[name] = meta['desc'] 
                 elif desc!=meta['desc'] and meta['desc']!='':
-                    print('Find another description for {}: "{}", keep "{}"'.format(name, meta['desc'], self.vardescs[name]))
+                    log('Find another description for {}: "{}", keep "{}"'.format(name, meta['desc'], self.vardescs[name]))
 
     def _format_shape(self, shape):
         shape = shape.replace("L", "")  # with py27 we can get (1L,)
@@ -572,9 +600,8 @@ class WhatsOpt(object):
         mdasrc, discsrc, varsrc = WhatsOpt._extract_disc_var(fnamesrc)
         fnametgt = connection['tgt']
         mdatgt, disctgt, vartgt = WhatsOpt._extract_disc_var(fnametgt)
-        if DEBUG:
-            print('++++ MDA=%s DISC=%s' % (mda, dname))
-            print('######### SRC=%s DISCSRC=%s TGT=%s DISCTGT=%s' % (mdasrc, discsrc, mdatgt, disctgt))
+        debug('++++ MDA=%s DISC=%s' % (mda, dname))
+        debug('######### SRC=%s DISCSRC=%s TGT=%s DISCTGT=%s' % (mdasrc, discsrc, mdatgt, disctgt))
             
         varstoadd = []
         if mda == mdasrc and discsrc == dname:
@@ -602,17 +629,14 @@ class WhatsOpt(object):
                 varstoadd.append((disctgt, varattrtgt, "target"))
 
         for disc, varattr, orig in varstoadd:
-            if DEBUG:
-                print("**************", connection)
+            debug("**************", connection)
             if disc==dname:
                 if (varattr not in varattrs):
-                    if DEBUG:
-                        print(">>>>>>>>>>>>> from", orig ," ADD to ", mda, dname, ": ", varattr['name'], varattr['io_mode']) 
+                    debug(">>>>>>>>>>>>> from", orig ," ADD to ", mda, dname, ": ", varattr['name'], varattr['io_mode']) 
                     varattrs.append(varattr)
             else:
                 if varattr['name'] not in [vattr['name'] for vattr in driver_varattrs]:
-                    if DEBUG:
-                        print(">>>>>>>>>>>>> from", orig ," ADD to ", mda, "__DRIVER__ :", varattr['name'], varattr['io_mode']) 
+                    debug(">>>>>>>>>>>>> from", orig ," ADD to ", mda, "__DRIVER__ :", varattr['name'], varattr['io_mode']) 
                     driver_varattrs.append(varattr)
 
     def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs):
@@ -717,4 +741,4 @@ class WhatsOpt(object):
         data = []
         for i in range(n):
             data.append([statuses[i]]+[case['values'][i] for case in cases])
-        print(tabulate(data, headers))
+        log(tabulate(data, headers))
