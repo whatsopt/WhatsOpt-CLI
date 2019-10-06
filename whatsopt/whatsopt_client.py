@@ -23,6 +23,7 @@ except ImportError:
 
 from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data, view_model
 from openmdao.api import IndepVarComp, Problem, Group, CaseReader
+from openmdao.core.component import Component
 from tabulate import tabulate
 from whatsopt import __version__
 
@@ -155,7 +156,7 @@ class WhatsOpt(object):
         else:
             resp.raise_for_status()
 
-    def execute(self, progname, func, options):
+    def execute(self, progname, func, options={}):
         dir = os.path.dirname(progname)
         sys.path.insert(0, dir)
         with open(progname, 'rb') as fp:
@@ -279,21 +280,27 @@ class WhatsOpt(object):
                 not re.match(r"^server/", f))
 
     def update_mda(self, analysis_id=None, options={}):
-        id = analysis_id or self.get_analysis_id()
-        if id is None:
-            error("Unknown analysis (use wop pull <analysis-id>)")
+        mda_id = analysis_id or self.get_analysis_id()
+        if mda_id is None:
+            error("Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(mda_id))
             exit(-1)
         opts = copy.copy(options)
         opts.update({'--base': True, '--update': True})
-        self.pull_mda(id, opts, 'Analysis %s updated' % id)
+        self.pull_mda(mda_id, opts, 'Analysis %s updated' % mda_id)
         
     def upload(self, filename, driver_kind=None, analysis_id=None, 
                operation_id=None, dry_run=False, outvar_count=1, only_success=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
+        if mda_id is None:
+            error("Unknown analysis with id={}".format(mda_id))
+            exit(-1)
 
         name = cases = statuses = None
-        if filename.endswith(".csv"):
+        if filename == "run_parameters_init.py":
+            self.execute("run_analysis.py", self.upload_parameters_cmd, {'--dry-run': dry_run})
+            exit()
+        elif filename.endswith(".csv"):
             name, cases, statuses = self._load_from_csv(filename)
         else:
             name, cases, statuses = self._load_from_sqlite(filename)
@@ -349,6 +356,37 @@ class WhatsOpt(object):
             resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
+
+    def upload_parameters_cmd(self, options):
+        def upload_parameters(prob):
+            self.upload_parameters(prob, options)
+            exit()
+        return upload_parameters
+
+    def upload_parameters(self, problem, options):
+        mda_id = self.get_analysis_id()
+        if mda_id is None:
+            error("Unknown analysis with id={}".format(mda_id))
+            exit(-1)
+        parameters = []
+        headers = ['parameter', 'value']
+        data = []
+        for s in problem.model._subsystems_myproc:
+            if isinstance(s, IndepVarComp): 
+                for absname in s._var_allprocs_abs_names['output']:
+                    name = s._var_allprocs_abs2prom['output'][absname]
+                    value = s._outputs._views[absname][:]
+                    if isinstance(value, np.ndarray):
+                        value = str(value.tolist())
+                    parameters.append({"varname": name, "value": value})
+        data = [ [p["varname"], p["value"]] for p in parameters]
+        params = {"parameterization": {"parameters": parameters}}
+        log(tabulate(data, headers))
+        if not options['--dry-run']:
+            url = self._endpoint(('/api/v1/analyses/%s/parameterization') % mda_id)
+            resp = self.session.put(url, headers=self.headers, json=params)
+            resp.raise_for_status()
+            log("Parameters uploaded")
 
     def _load_from_sqlite(self, filename):
         reader = CaseReader(filename)

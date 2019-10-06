@@ -176,7 +176,7 @@ def upload(
     outvar_count,
     only_success,
 ):
-    """ Upload data stored in given FILENAME in sqlite or csv format """
+    """ Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file"""
     WhatsOpt(**ctx.obj).upload(
         filename,
         driver_kind,
