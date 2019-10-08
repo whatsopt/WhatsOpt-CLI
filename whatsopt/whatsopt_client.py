@@ -21,7 +21,11 @@ except ImportError:
     # Python 2
     from urlparse import urlparse
 
-from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data, view_model
+try: # openmdao < 2.9
+    from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
+except: # openmdao >= 2.9
+    from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
+
 from openmdao.api import IndepVarComp, Problem, Group, CaseReader
 from openmdao.core.component import Component
 from tabulate import tabulate
@@ -292,12 +296,12 @@ class WhatsOpt(object):
                operation_id=None, dry_run=False, outvar_count=1, only_success=False):
         from socket import gethostname
         mda_id = self.get_analysis_id() if not analysis_id else analysis_id
-        if mda_id is None:
-            error("Unknown analysis with id={}".format(mda_id))
-            exit(-1)
 
         name = cases = statuses = None
         if filename == "run_parameters_init.py":
+            if mda_id is None:
+                error("Unknown analysis with id={}".format(mda_id))
+                exit(-1)
             self.execute("run_analysis.py", self.upload_parameters_cmd, {'--dry-run': dry_run})
             exit()
         elif filename.endswith(".csv"):
