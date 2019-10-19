@@ -237,7 +237,6 @@ class WhatsOpt(object):
         zip.close()
         file_to_move={}
         for f in filenames:
-            file_from = os.path.join(tempdir, f)
             file_to = f
             file_to_move[file_to] = True
             if os.path.exists(file_to):
@@ -288,7 +287,7 @@ class WhatsOpt(object):
         if mda_id is None:
             error("Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(mda_id))
             exit(-1)
-        opts = copy.copy(options)
+        opts = copy.deepcopy(options)
         opts.update({'--base': True, '--update': True})
         self.pull_mda(mda_id, opts, 'Analysis %s updated' % mda_id)
         
@@ -525,11 +524,10 @@ class WhatsOpt(object):
     def _collect_var_infos(self, system):
         for typ in ['input', 'output']:
             for abs_name in system._var_abs_names[typ]:
-                io_mode = 'out'
                 if typ == 'input': 
                     io_mode = 'in' 
                 elif typ == 'output': 
-                    io_mode = 'out'
+                    io_mode = 'out' 
                 else:   
                     raise Exception('Unhandled variable type ' + typ)
                 meta = system._var_abs2meta[abs_name]
