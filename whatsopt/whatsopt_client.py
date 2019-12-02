@@ -436,10 +436,16 @@ class WhatsOpt(object):
                     for col, elt in enumerate(row):
                         if col == success_idx:
                             statuses.append(int(elt))
-                        elif col < success_idx:
+                        elif success_idx > -1:
+                            if col < success_idx:
+                                cases[col]['values'].append(float(elt))
+                            elif col == success_idx:
+                                statuses.append(int(elt))
+                            else: # col > success_idx
+                                cases[col-1]['values'].append(float(elt))
+                        else: # no success column
                             cases[col]['values'].append(float(elt))
-                        else:
-                            cases[col-1]['values'].append(float(elt))
+                    
             if len(cases) > 0 and success_idx == -1:
                 statuses = len(cases[0]['values'])*[1]
         return name, cases, statuses    
