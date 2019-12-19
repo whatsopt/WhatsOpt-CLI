@@ -13,6 +13,7 @@ import tempfile
 import csv
 import numpy as np
 import click
+from .utils import load_from_csv
 
 try:
     # Python 3
@@ -191,7 +192,7 @@ class WhatsOpt(object):
     def push_mda(self, problem, options):
         name = problem.model.__class__.__name__
         data = _get_viewer_data(problem)
-        self.scalar_format = options['--scalar-format']
+        scalar_format = options['--scalar-format']
         self.tree = data['tree']
         self.connections = data['connections_list']
 
@@ -200,7 +201,7 @@ class WhatsOpt(object):
         self.vardescs = {}
         self.discmap = {}
         self._collect_disc_infos(problem.model, self.tree)
-        self._collect_var_infos(problem.model)
+        self._collect_var_infos(problem.model, scalar_format)
         mda_attrs = self._get_mda_attributes(problem.model, self.tree)
 
         if options['--dry-run']:
@@ -304,7 +305,7 @@ class WhatsOpt(object):
             self.execute("run_analysis.py", self.upload_parameters_cmd, {'--dry-run': dry_run})
             exit()
         elif filename.endswith(".csv"):
-            name, cases, statuses = self._load_from_csv(filename)
+            name, cases, statuses = load_from_csv(filename)
         else:
             name, cases, statuses = self._load_from_sqlite(filename)
 
@@ -408,48 +409,6 @@ class WhatsOpt(object):
         cases, statuses = self._format_upload_cases(reader)
         return name, cases, statuses
 
-    def _load_from_csv(self, filename):
-        name = os.path.splitext(os.path.basename(filename))[0]
-        m = re.match(r"\w+__(\w+)", name)
-        if m:
-            name = m.group(1)
-
-        with open(filename) as csvfile:
-            reader = csv.reader(csvfile, delimiter=';')
-            cases = []
-            statuses = []
-            success_idx = -1
-            for line, row in enumerate(reader):
-                if line==0:
-                    for col, elt in enumerate(row):
-                        if elt == 'success':
-                            success_idx = col
-                        else:
-                            varname = elt
-                            idx = -1
-                            m = re.match(r"(\w+)\[(\d+)\]", elt)
-                            if m:
-                                varname = m.group(1)
-                                idx = int(m.group(2))
-                            cases.append({'varname': varname, 'coord_index': idx, 'values': []})
-                else:
-                    for col, elt in enumerate(row):
-                        if col == success_idx:
-                            statuses.append(int(elt))
-                        elif success_idx > -1:
-                            if col < success_idx:
-                                cases[col]['values'].append(float(elt))
-                            elif col == success_idx:
-                                statuses.append(int(elt))
-                            else: # col > success_idx
-                                cases[col-1]['values'].append(float(elt))
-                        else: # no success column
-                            cases[col]['values'].append(float(elt))
-                    
-            if len(cases) > 0 and success_idx == -1:
-                statuses = len(cases[0]['values'])*[1]
-        return name, cases, statuses    
-
     def check_versions(self):
         url =  self._endpoint('/api/v1/versioning')
         resp = self.session.get(url, headers=self.headers)
@@ -527,7 +486,7 @@ class WhatsOpt(object):
 
     # see _get_tree_dict at
     # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py
-    def _collect_var_infos(self, system):
+    def _collect_var_infos(self, system, scalar_format):
         for typ in ['input', 'output']:
             for abs_name in system._var_abs_names[typ]:
                 if typ == 'input': 
@@ -542,7 +501,7 @@ class WhatsOpt(object):
                 if re.match('int', type(meta['value']).__name__):
                     vtype = 'Integer' 
                 shape = str(meta['shape']) 
-                shape = self._format_shape(shape)
+                shape = self._format_shape(scalar_format, shape)
                 name = system._var_abs2prom[typ][abs_name]
                 self.vars[abs_name] = {'fullname': abs_name,
                                         'name': name,
@@ -570,9 +529,10 @@ class WhatsOpt(object):
                 elif desc!=meta['desc'] and meta['desc']!='':
                     log('Find another description for {}: "{}", keep "{}"'.format(name, meta['desc'], self.vardescs[name]))
 
-    def _format_shape(self, shape):
+    @staticmethod
+    def _format_shape(scalar_format, shape):
         shape = shape.replace("L", "")  # with py27 we can get (1L,)
-        if self.scalar_format and shape=='(1,)':
+        if scalar_format and shape=='(1,)':
             shape='1'
         return shape
 
