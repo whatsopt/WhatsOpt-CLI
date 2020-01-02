@@ -1,7 +1,6 @@
 import os, re, csv
 
 # wop upload
-
 def load_from_csv(filename):
     name = os.path.splitext(os.path.basename(filename))[0]
     m = re.match(r"\w+__(\w+)", name)
@@ -45,3 +44,17 @@ def load_from_csv(filename):
         if len(cases) > 0 and success_idx == -1:
             statuses = len(cases[0]["values"]) * [1]
     return name, cases, statuses
+
+# pull_mda
+def is_user_file(f):
+    return (not re.match(r".*_base\.py$", f) and \
+            not re.match(r"^run_.*\.py$", f) and \
+            not re.match(r"^server/", f))
+
+# get_analysis_id
+def find_analysis_base_files():
+    files = []
+    for f in os.listdir("."):
+        if f.endswith("_base.py"):
+            files.append(f)
+    return files 

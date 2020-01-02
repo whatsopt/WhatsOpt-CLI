@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from whatsopt.utils import load_from_csv
+from whatsopt.utils import load_from_csv, is_user_file, find_analysis_base_files
 
 
 class TestUtils(unittest.TestCase):
@@ -14,6 +14,10 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(7.5, cases[0]["values"][4])
         self.assertEqual(1, statuses[0])
 
+    def test_is_user_file(self):
+        self.assertEqual(True, is_user_file("test.py"))
+        self.assertEqual(False, is_user_file("test_base.py"))
+        self.assertEqual(False, is_user_file("run_test.py"))
 
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,7 @@ import tempfile
 import csv
 import numpy as np
 import click
-from .utils import load_from_csv
+from .utils import load_from_csv, is_user_file, find_analysis_base_files
 
 try:
     # Python 3
@@ -253,7 +253,7 @@ class WhatsOpt(object):
                         info("Keep existing %s (remove it or use --run-ops to override)" % file_to)
                         file_to_move[file_to] = False
                         continue
-                    if self._is_user_file(f):
+                    if is_user_file(f):
                         file_to_move[file_to] = False
                         continue
                     log("Update %s" % file_to)
@@ -276,12 +276,6 @@ class WhatsOpt(object):
                 if file_to_move[file_to]:
                     move(file_from, dir_to)
             log(msg)
-    
-    @staticmethod
-    def _is_user_file(f):
-        return (not re.match(r".*_base\.py$", f) and \
-                not re.match(r"^run_.*\.py$", f) and \
-                not re.match(r"^server/", f))
 
     def update_mda(self, analysis_id=None, options={}):
         mda_id = analysis_id or self.get_analysis_id()
@@ -427,7 +421,7 @@ class WhatsOpt(object):
         call(['python', 'run_server.py'])
         
     def get_analysis_id(self):
-        files = self._find_analysis_base_files()
+        files = find_analysis_base_files()
         id = None
         for f in files:
             ident = self._extract_mda_id(f) 
@@ -436,15 +430,7 @@ class WhatsOpt(object):
                                 'Find %s got %s. Check header comments in %s files .' % (id, ident, str(files)))  
             id = ident    
         return id 
-        
-    @staticmethod
-    def _find_analysis_base_files():
-        files = []
-        for f in os.listdir("."):
-            if f.endswith("_base.py"):
-                files.append(f)
-        return files    
-    
+
     @staticmethod
     def _extract_mda_id(file):
         ident = None
