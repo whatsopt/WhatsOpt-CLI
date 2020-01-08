@@ -12,7 +12,7 @@ import zipfile
 import tempfile
 import csv
 import numpy as np
-import click
+from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
     load_from_csv,
     is_user_file,
@@ -21,6 +21,9 @@ from whatsopt.utils import (
     format_shape,
     to_camelcase,
     load_from_sqlite,
+    simple_value,
+    extract_disc_var,
+    print_cases,
 )
 
 try:
@@ -46,33 +49,6 @@ URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
 NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 PROD_URL = "https://selene.onecert.fr/whatsopt"
-
-DEBUG = False
-
-
-def log(*args, **kwargs):
-    click.echo(click.style(*args, **kwargs))
-
-
-def info(*args, **kwargs):
-    kwargs.update(fg="green")
-    log(*args, **kwargs)
-
-
-def warn(*args, **kwargs):
-    kwargs.update(fg="yellow")
-    log(*args, **kwargs)
-
-
-def error(*args, **kwargs):
-    kwargs.update(fg="red")
-    log(*args, **kwargs)
-
-
-def debug(*args, **kwargs):
-    if DEBUG:
-        print("DEBUG ********************************")
-        print(*args, **kwargs)
 
 
 class WhatsOptImportMdaError(Exception):
@@ -369,7 +345,7 @@ class WhatsOpt(object):
             c["values"] = np.nan_to_num(np.array(c["values"])).tolist()
 
         if dry_run:
-            WhatsOpt._print_cases(cases, statuses)
+            print_cases(cases, statuses)
             exit()
 
         resp = None
@@ -602,7 +578,7 @@ class WhatsOpt(object):
                 vattr["io_mode"] == "out"
             ):  # set init value for design variables and parameters (outputs of driver)
                 v = self.vars[vattr["fullname"]]
-                vattr["parameter_attributes"] = {"init": self._simple_value(v)}
+                vattr["parameter_attributes"] = {"init": simple_value(v)}
             if "fullname" in vattr:
                 del vattr["fullname"]  # indeed for WhatsOpt var name is a primary key
 
@@ -651,9 +627,9 @@ class WhatsOpt(object):
         self, varattrs, driver_varattrs, mda, dname, connection
     ):
         fnamesrc = connection["src"]
-        mdasrc, discsrc, varsrc = WhatsOpt._extract_disc_var(fnamesrc)
+        mdasrc, discsrc, varsrc = extract_disc_var(fnamesrc)
         fnametgt = connection["tgt"]
-        mdatgt, disctgt, vartgt = WhatsOpt._extract_disc_var(fnametgt)
+        mdatgt, disctgt, vartgt = extract_disc_var(fnametgt)
         debug("++++ MDA=%s DISC=%s" % (mda, dname))
         debug(
             "######### SRC=%s DISCSRC=%s TGT=%s DISCTGT=%s"
@@ -747,47 +723,3 @@ class WhatsOpt(object):
                     "units": var["units"],
                 }
                 varattrs.append(vattr)
-
-    @staticmethod
-    def _simple_value(var):
-        if var["shape"] == "1" or var["shape"] == "(1,)":
-            ret = float(var["value"])
-            if type == "Integer":
-                ret = int(ret)
-        else:
-            if type == "Integer":
-                var["value"] = var["value"].astype(int)
-            else:
-                var["value"] = var["value"].astype(float)
-            ret = var["value"].tolist()
-        return str(ret)
-
-    @staticmethod
-    def _extract_disc_var(fullname):
-        name_elts = fullname.split(".")
-        if len(name_elts) > 1:
-            mda, disc, var = (
-                ".".join(name_elts[:-2]),
-                ".".join(name_elts[:-1]),
-                name_elts[-1],
-            )
-        else:
-            raise Exception(
-                "Connection qualified name should contain"
-                + " at least one dot, but got %s" % fullname
-            )
-        return mda, disc, var
-
-    @staticmethod
-    def _print_cases(cases, statuses):
-        headers = ["success"]
-        n = len(cases[0]["values"]) if cases else 0
-        for case in cases:
-            h = case["varname"]
-            if case["coord_index"] > -1:
-                h += "[{}]".format(case["coord_index"])
-            headers.append(h)
-        data = []
-        for i in range(n):
-            data.append([statuses[i]] + [case["values"][i] for case in cases])
-        log(tabulate(data, headers))
