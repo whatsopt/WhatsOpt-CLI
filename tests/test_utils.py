@@ -1,6 +1,7 @@
 import os
 import unittest
 from openmdao.api import CaseReader
+import numpy as np
 
 from whatsopt.utils import (
     load_from_csv,
@@ -12,6 +13,7 @@ from whatsopt.utils import (
     check_count,
     load_from_sqlite,
     format_upload_cases,
+    simple_value,
 )
 
 
@@ -74,6 +76,14 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(1, data[2]["coord_index"])
         for i in statuses:
             self.assertEqual(1, i)
+
+    def test_simple_value(self):
+        dict1 = {"type": "Integer", "shape": "1", "value": 1}
+        dict2 = {"type": "Float", "shape": "(1,)", "value": 1.2}
+        dict3 = {"type": "Float", "shape": None, "value": np.array(["1.2", "2.3"])}
+        self.assertEqual("1", simple_value(dict1))
+        self.assertEqual("1.2", simple_value(dict2))
+        self.assertEqual("[1.2, 2.3]", simple_value(dict3))
 
 
 if __name__ == "__main__":

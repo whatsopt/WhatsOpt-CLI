@@ -175,3 +175,19 @@ def format_upload_cases(reader):
     assert inputs_count == len(statuses)
 
     return data, statuses
+
+
+# wop _get_mda_attributes
+def simple_value(var):
+    typ = var["type"]
+    if var["shape"] == "1" or var["shape"] == "(1,)":
+        ret = float(var["value"])
+        if typ == "Integer":
+            ret = int(ret)
+    else:
+        if typ == "Integer":
+            var["value"] = var["value"].astype(int)
+        else:
+            var["value"] = var["value"].astype(float)
+        ret = var["value"].tolist()
+    return str(ret)

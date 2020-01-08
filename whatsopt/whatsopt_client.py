@@ -21,6 +21,7 @@ from whatsopt.utils import (
     format_shape,
     to_camelcase,
     load_from_sqlite,
+    simple_value,
 )
 
 try:
@@ -602,7 +603,7 @@ class WhatsOpt(object):
                 vattr["io_mode"] == "out"
             ):  # set init value for design variables and parameters (outputs of driver)
                 v = self.vars[vattr["fullname"]]
-                vattr["parameter_attributes"] = {"init": self._simple_value(v)}
+                vattr["parameter_attributes"] = {"init": simple_value(v)}
             if "fullname" in vattr:
                 del vattr["fullname"]  # indeed for WhatsOpt var name is a primary key
 
@@ -747,20 +748,6 @@ class WhatsOpt(object):
                     "units": var["units"],
                 }
                 varattrs.append(vattr)
-
-    @staticmethod
-    def _simple_value(var):
-        if var["shape"] == "1" or var["shape"] == "(1,)":
-            ret = float(var["value"])
-            if type == "Integer":
-                ret = int(ret)
-        else:
-            if type == "Integer":
-                var["value"] = var["value"].astype(int)
-            else:
-                var["value"] = var["value"].astype(float)
-            ret = var["value"].tolist()
-        return str(ret)
 
     @staticmethod
     def _extract_disc_var(fullname):
