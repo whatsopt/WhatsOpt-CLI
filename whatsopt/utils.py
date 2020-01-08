@@ -58,9 +58,9 @@ def is_user_file(f):
 
 
 # wop get_analysis_id
-def find_analysis_base_files(dir="."):
+def find_analysis_base_files(directory="."):
     files = []
-    for f in os.listdir(dir):
+    for f in os.listdir(directory):
         if f.endswith("_base.py"):
             files.append(f)
     return files
@@ -94,6 +94,7 @@ def to_camelcase(name):
 # utils format_upload_cases
 def check_count(ios):
     count = None
+    refname = None
     for name in ios:
         if count and count != len(ios[name]):
             raise Exception(
