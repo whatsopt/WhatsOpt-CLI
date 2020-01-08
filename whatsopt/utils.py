@@ -1,4 +1,6 @@
 import os, re, csv
+from six import iteritems
+from openmdao.api import CaseReader
 
 # wop upload
 def load_from_csv(filename):
@@ -45,16 +47,130 @@ def load_from_csv(filename):
             statuses = len(cases[0]["values"]) * [1]
     return name, cases, statuses
 
-# pull_mda
-def is_user_file(f):
-    return (not re.match(r".*_base\.py$", f) and \
-            not re.match(r"^run_.*\.py$", f) and \
-            not re.match(r"^server/", f))
 
-# get_analysis_id
-def find_analysis_base_files():
+# wop pull_mda
+def is_user_file(f):
+    return (
+        not re.match(r".*_base\.py$", f)
+        and not re.match(r"^run_.*\.py$", f)
+        and not re.match(r"^server/", f)
+    )
+
+
+# wop get_analysis_id
+def find_analysis_base_files(dir="."):
     files = []
-    for f in os.listdir("."):
+    for f in os.listdir(dir):
         if f.endswith("_base.py"):
             files.append(f)
-    return files 
+    return files
+
+
+# wop get_analysis_id
+def extract_mda_id(file):
+    ident = None
+    with open(file, "r") as f:
+        for line in f:
+            match = re.match(r"^# analysis_id: (\d+)", line)
+            if match:
+                ident = match.group(1)
+                break
+    return ident
+
+
+# wop _collect_var_infos
+def format_shape(scalar_format, shape):
+    shape = shape.replace("L", "")  # with py27 we can get (1L,)
+    if scalar_format and shape == "(1,)":
+        shape = "1"
+    return shape
+
+
+# wop _get_sub_analysis_attributes, wop _get_discipline_attributes
+def to_camelcase(name):
+    return re.sub(r"(?:^|_)(\w)", lambda x: x.group(1).upper(), name)
+
+
+# utils format_upload_cases
+def check_count(ios):
+    count = None
+    for name in ios:
+        if count and count != len(ios[name]):
+            raise Exception(
+                "Bad value count between (%s, %d) and (%s, %d)"
+                % (refname, count, name, len(ios[name]))
+            )
+        else:
+            refname, count = name, len(ios[name])
+    return count
+
+
+# utils format_upload_cases
+def insert_data(data_io, result):
+    done = {}
+    for n in data_io._values.dtype.names:
+        values = data_io._values[n]
+        name = n.split(".")[-1]
+        if name in done:
+            continue
+        values = values.reshape(-1)
+        for i in range(values.size):
+            if (name, i, values.size) in result:
+                result[(name, i, values.size)].append(float(values[i]))
+            else:
+                result[(name, i, values.size)] = [float(values[i])]
+        done[name] = True
+
+
+# wop upload
+def load_from_sqlite(filename):
+    reader = CaseReader(filename)
+    cases = reader.list_cases("driver")
+    if len(cases) == 0:
+        raise Exception("No case found in {}".format(filename))
+
+    # find driver name
+    driver_first_coord = cases[0]
+    m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
+    name = os.path.splitext(os.path.basename(filename))[0]
+    if m:
+        name = m.group(1)
+
+    # format cases and statuses
+    cases, statuses = format_upload_cases(reader)
+    return name, cases, statuses
+
+
+# utils load_from_sqlited
+def format_upload_cases(reader):
+    cases = reader.list_cases("root", recurse=False)
+    inputs = {}
+    outputs = {}
+    for case_id in cases:
+        if "compute_totals_approx" not in case_id:
+            case = reader.get_case(case_id)
+            if case.inputs is not None:
+                insert_data(case.inputs, inputs)
+            if case.outputs is not None:
+                insert_data(case.outputs, outputs)
+    cases = inputs.copy()
+    cases.update(outputs)
+    inputs_count = check_count(inputs)
+    outputs_count = check_count(outputs)
+    assert inputs_count == outputs_count
+    data = []
+    for key, values in iteritems(cases):
+        idx = key[1]
+        if key[2] == 1:
+            idx = -1  # consider it is a scalar not an array of 1 elt
+        data.append({"varname": key[0], "coord_index": idx, "values": values})
+
+    statuses = []
+    cases = reader.list_cases("driver", recurse=False)
+    for case_id in cases:
+        # if driver_regexp.match(case_id):
+        case = reader.get_case(case_id)
+        statuses.append(case.success)
+    assert inputs_count == len(statuses)
+
+    return data, statuses

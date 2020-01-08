@@ -13,7 +13,15 @@ import tempfile
 import csv
 import numpy as np
 import click
-from .utils import load_from_csv, is_user_file, find_analysis_base_files
+from whatsopt.utils import (
+    load_from_csv,
+    is_user_file,
+    find_analysis_base_files,
+    extract_mda_id,
+    format_shape,
+    to_camelcase,
+    load_from_sqlite,
+)
 
 try:
     # Python 3
@@ -301,7 +309,7 @@ class WhatsOpt(object):
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
         else:
-            name, cases, statuses = self._load_from_sqlite(filename)
+            name, cases, statuses = load_from_sqlite(filename)
 
         if only_success:
             for c in cases:
@@ -386,23 +394,6 @@ class WhatsOpt(object):
             resp.raise_for_status()
             log("Parameters uploaded")
 
-    def _load_from_sqlite(self, filename):
-        reader = CaseReader(filename)
-        cases = reader.list_cases('driver')
-        if len(cases)==0:
-            raise Exception("No case found in {}".format(filename))
-
-        # find driver name
-        driver_first_coord = cases[0]
-        m = re.match(r"\w+:(\w+)|.*", driver_first_coord)
-        name = os.path.splitext(os.path.basename(filename))[0]
-        if m:
-            name = m.group(1)
-
-        # format cases and statuses
-        cases, statuses = self._format_upload_cases(reader)
-        return name, cases, statuses
-
     def check_versions(self):
         url =  self._endpoint('/api/v1/versioning')
         resp = self.session.get(url, headers=self.headers)
@@ -424,31 +415,12 @@ class WhatsOpt(object):
         files = find_analysis_base_files()
         id = None
         for f in files:
-            ident = self._extract_mda_id(f) 
+            ident = extract_mda_id(f) 
             if id and id != ident:
                 raise Exception('Warning: several analysis identifier detected. \n'
                                 'Find %s got %s. Check header comments in %s files .' % (id, ident, str(files)))  
             id = ident    
         return id 
-
-    @staticmethod
-    def _extract_mda_id(file):
-        ident = None
-        with open(file, 'r') as f:
-            for line in f:
-                match = re.match(r"^# analysis_id: (\d+)", line) 
-                if match:
-                    ident = match.group(1)
-                    break
-        return ident
-    
-    @staticmethod
-    def _extract_mda_name(name):
-        match = re.match(r"(\w+)_\w+.sqlite", name)
-        if match:
-            return match.group(1)
-        else:
-            return 'mda'
 
     # # see _get_tree_dict at
     # # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py
@@ -487,7 +459,7 @@ class WhatsOpt(object):
                 if re.match('int', type(meta['value']).__name__):
                     vtype = 'Integer' 
                 shape = str(meta['shape']) 
-                shape = self._format_shape(scalar_format, shape)
+                shape = format_shape(scalar_format, shape)
                 name = system._var_abs2prom[typ][abs_name]
                 self.vars[abs_name] = {'fullname': abs_name,
                                         'name': name,
@@ -514,13 +486,6 @@ class WhatsOpt(object):
                     self.vardescs[name] = meta['desc'] 
                 elif desc!=meta['desc'] and meta['desc']!='':
                     log('Find another description for {}: "{}", keep "{}"'.format(name, meta['desc'], self.vardescs[name]))
-
-    @staticmethod
-    def _format_shape(scalar_format, shape):
-        shape = shape.replace("L", "")  # with py27 we can get (1L,)
-        if scalar_format and shape=='(1,)':
-            shape='1'
-        return shape
 
     def _get_mda_attributes(self, group, tree, group_prefix=''):
         driver_attrs = {'name': NULL_DRIVER_NAME, 'variables_attributes': []}
@@ -568,19 +533,15 @@ class WhatsOpt(object):
 
         return mda_attrs
 
-    @staticmethod
-    def _to_camelcase(name):
-        return re.sub(r'(?:^|_)(\w)', lambda x: x.group(1).upper(), name)
-
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self._get_mda_attributes(group, child, prefix)
-        submda_attrs['name'] = WhatsOpt._to_camelcase(child['name'])
+        submda_attrs['name'] = to_camelcase(child['name'])
         superdisc_attrs = {'name': child['name'], 'sub_analysis_attributes': submda_attrs}
         return superdisc_attrs
 
     def _get_discipline_attributes(self, driver_attrs, mda, dname):
         varattrs = self._get_variables_attrs(driver_attrs['variables_attributes'], mda, dname)
-        discattrs = {'name': WhatsOpt._to_camelcase(self.discmap[dname]), 'variables_attributes': varattrs}
+        discattrs = {'name': to_camelcase(self.discmap[dname]), 'variables_attributes': varattrs}
         return discattrs
 
     def _get_variables_attrs(self, driver_varattrs, mda, dname):
@@ -668,64 +629,6 @@ class WhatsOpt(object):
             raise Exception('Connection qualified name should contain' + 
                             ' at least one dot, but got %s' % fullname)
         return mda, disc, var
-
-    def _format_upload_cases(self, reader):
-        cases = reader.list_cases('root', recurse=False)
-        inputs = {}
-        outputs = {}
-        for case_id in cases:
-            if "compute_totals_approx" not in case_id:
-                case = reader.get_case(case_id)
-                if case.inputs is not None:
-                    self._insert_data(case.inputs, inputs)
-                if case.outputs is not None:
-                    self._insert_data(case.outputs, outputs)
-        cases = inputs.copy()
-        cases.update(outputs)
-        inputs_count = self._check_count(inputs)
-        outputs_count = self._check_count(outputs)
-        assert inputs_count==outputs_count
-        data = []
-        for key, values in iteritems(cases):
-            idx = key[1]
-            if key[2] == 1:
-                idx = -1 # consider it is a scalar not an array of 1 elt
-            data.append({'varname': key[0], 'coord_index': idx, 'values': values})
-        
-        statuses = []
-        cases = reader.list_cases('driver', recurse=False)
-        for case_id in cases:
-            #if driver_regexp.match(case_id):
-            case = reader.get_case(case_id)
-            statuses.append(case.success)
-        assert inputs_count==len(statuses)
-
-        return data, statuses
-        
-    def _check_count(self, ios):
-        count = None
-        for name in ios:
-            if count and count != len(ios[name]):
-                raise Exception('Bad value count between (%s, %d) and (%s, %d)' % \
-                                (refname, count, name, len(ios[name])))
-            else:
-                refname, count = name, len(ios[name])
-        return count
-                            
-    def _insert_data(self, data_io, result):
-        done = {}
-        for n in data_io._values.dtype.names:
-            values = data_io._values[n]
-            name = n.split('.')[-1]
-            if name in done:
-                continue
-            values = values.reshape(-1)
-            for i in range(values.size):
-                if (name, i, values.size) in result:
-                    result[(name, i, values.size)].append(float(values[i]))
-                else:
-                    result[(name, i, values.size)] = [float(values[i])]
-            done[name]=True
 
     @staticmethod
     def _print_cases(cases, statuses):
