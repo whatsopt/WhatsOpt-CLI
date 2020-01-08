@@ -22,6 +22,7 @@ from whatsopt.utils import (
     to_camelcase,
     load_from_sqlite,
     simple_value,
+    extract_disc_var,
 )
 
 try:
@@ -652,9 +653,9 @@ class WhatsOpt(object):
         self, varattrs, driver_varattrs, mda, dname, connection
     ):
         fnamesrc = connection["src"]
-        mdasrc, discsrc, varsrc = WhatsOpt._extract_disc_var(fnamesrc)
+        mdasrc, discsrc, varsrc = extract_disc_var(fnamesrc)
         fnametgt = connection["tgt"]
-        mdatgt, disctgt, vartgt = WhatsOpt._extract_disc_var(fnametgt)
+        mdatgt, disctgt, vartgt = extract_disc_var(fnametgt)
         debug("++++ MDA=%s DISC=%s" % (mda, dname))
         debug(
             "######### SRC=%s DISCSRC=%s TGT=%s DISCTGT=%s"
@@ -748,22 +749,6 @@ class WhatsOpt(object):
                     "units": var["units"],
                 }
                 varattrs.append(vattr)
-
-    @staticmethod
-    def _extract_disc_var(fullname):
-        name_elts = fullname.split(".")
-        if len(name_elts) > 1:
-            mda, disc, var = (
-                ".".join(name_elts[:-2]),
-                ".".join(name_elts[:-1]),
-                name_elts[-1],
-            )
-        else:
-            raise Exception(
-                "Connection qualified name should contain"
-                + " at least one dot, but got %s" % fullname
-            )
-        return mda, disc, var
 
     @staticmethod
     def _print_cases(cases, statuses):

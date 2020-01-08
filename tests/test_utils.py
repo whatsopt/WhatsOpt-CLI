@@ -14,6 +14,7 @@ from whatsopt.utils import (
     load_from_sqlite,
     format_upload_cases,
     simple_value,
+    extract_disc_var,
 )
 
 
@@ -84,6 +85,14 @@ class TestUtils(unittest.TestCase):
         self.assertEqual("1", simple_value(dict1))
         self.assertEqual("1.2", simple_value(dict2))
         self.assertEqual("[1.2, 2.3]", simple_value(dict3))
+
+    def test_extract_disc_var(self):
+        val1, val2, val3 = extract_disc_var("a.b.c.d")
+        self.assertEqual("a.b", val1)
+        self.assertEqual("a.b.c", val2)
+        self.assertEqual("d", val3)
+        # raise Exception
+        self.assertRaises(Exception, extract_disc_var, "a")
 
 
 if __name__ == "__main__":
