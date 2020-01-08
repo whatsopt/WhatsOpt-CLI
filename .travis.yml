@@ -3,7 +3,11 @@ python:
   - "2.7"
   - "3.6"      
   - "3.7"      
-  
+
+jobs:
+  allow_failures:
+  - python: "2.7"
+
 # command to install dependencies
 install:
   - pip install -e .
