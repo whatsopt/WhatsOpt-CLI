@@ -12,7 +12,7 @@ import zipfile
 import tempfile
 import csv
 import numpy as np
-import click
+from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
     load_from_csv,
     is_user_file,
@@ -23,6 +23,7 @@ from whatsopt.utils import (
     load_from_sqlite,
     simple_value,
     extract_disc_var,
+    print_cases,
 )
 
 try:
@@ -48,33 +49,6 @@ URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
 NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 PROD_URL = "https://selene.onecert.fr/whatsopt"
-
-DEBUG = False
-
-
-def log(*args, **kwargs):
-    click.echo(click.style(*args, **kwargs))
-
-
-def info(*args, **kwargs):
-    kwargs.update(fg="green")
-    log(*args, **kwargs)
-
-
-def warn(*args, **kwargs):
-    kwargs.update(fg="yellow")
-    log(*args, **kwargs)
-
-
-def error(*args, **kwargs):
-    kwargs.update(fg="red")
-    log(*args, **kwargs)
-
-
-def debug(*args, **kwargs):
-    if DEBUG:
-        print("DEBUG ********************************")
-        print(*args, **kwargs)
 
 
 class WhatsOptImportMdaError(Exception):
@@ -371,7 +345,7 @@ class WhatsOpt(object):
             c["values"] = np.nan_to_num(np.array(c["values"])).tolist()
 
         if dry_run:
-            WhatsOpt._print_cases(cases, statuses)
+            print_cases(cases, statuses)
             exit()
 
         resp = None
@@ -749,17 +723,3 @@ class WhatsOpt(object):
                     "units": var["units"],
                 }
                 varattrs.append(vattr)
-
-    @staticmethod
-    def _print_cases(cases, statuses):
-        headers = ["success"]
-        n = len(cases[0]["values"]) if cases else 0
-        for case in cases:
-            h = case["varname"]
-            if case["coord_index"] > -1:
-                h += "[{}]".format(case["coord_index"])
-            headers.append(h)
-        data = []
-        for i in range(n):
-            data.append([statuses[i]] + [case["values"][i] for case in cases])
-        log(tabulate(data, headers))

@@ -1,6 +1,8 @@
 import os, re, csv
 from six import iteritems
 from openmdao.api import CaseReader
+from tabulate import tabulate
+from whatsopt.logging import log
 
 # wop upload
 def load_from_csv(filename):
@@ -208,3 +210,18 @@ def extract_disc_var(fullname):
             + " at least one dot, but got %s" % fullname
         )
     return mda, disc, var
+
+
+# wop upload
+def print_cases(cases, statuses):
+    headers = ["success"]
+    n = len(cases[0]["values"]) if cases else 0
+    for case in cases:
+        h = case["varname"]
+        if case["coord_index"] > -1:
+            h += "[{}]".format(case["coord_index"])
+        headers.append(h)
+    data = []
+    for i in range(n):
+        data.append([statuses[i]] + [case["values"][i] for case in cases])
+    log(tabulate(data, headers))
