@@ -234,7 +234,9 @@ class PushCommand(object):
                 self._collect_disc_infos(prefix)
             else:
                 # do not represent IndepVarComp
-                if not isinstance(self.problem.model._subsystems_myproc[i], IndepVarComp):
+                if not isinstance(
+                    self.problem.model._subsystems_myproc[i], IndepVarComp
+                ):
                     self.discmap[group_prefix + child["name"]] = child["name"]
                 else:
                     self.discmap[group_prefix + child["name"]] = "__DRIVER__"
