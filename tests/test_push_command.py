@@ -2,7 +2,6 @@ import unittest
 
 from openmdao.api import Problem, IndepVarComp, ScipyOptimizeDriver
 from openmdao.test_suite.test_examples.test_betz_limit import ActuatorDisc
-from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 from whatsopt.push_command import PushCommand
 
 
@@ -28,8 +27,6 @@ def problem_init():
 
     prob.setup()
     prob.final_setup()
-
-    # data = _get_viewer_data(prob)
     return prob
 
 
