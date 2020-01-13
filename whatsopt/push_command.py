@@ -6,7 +6,7 @@ from openmdao.api import IndepVarComp
 
 try:  # openmdao < 2.9
     from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
-except:  # openmdao >= 2.9
+except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
