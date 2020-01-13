@@ -202,4 +202,3 @@ def serve():
 
 
 cli(prog_name="wop", obj={})
-

@@ -80,7 +80,7 @@ def extract_mda_id(file):
     return ident
 
 
-# wop _collect_var_infos
+# push_command collect_var_infos
 def format_shape(scalar_format, shape):
     shape = shape.replace("L", "")  # with py27 we can get (1L,)
     if scalar_format and shape == "(1,)":
@@ -88,7 +88,7 @@ def format_shape(scalar_format, shape):
     return shape
 
 
-# wop _get_sub_analysis_attributes, wop _get_discipline_attributes
+# push_command _get_sub_analysis_attributes & wop _get_discipline_attributes
 def to_camelcase(name):
     return re.sub(r"(?:^|_)(\w)", lambda x: x.group(1).upper(), name)
 
@@ -179,7 +179,7 @@ def format_upload_cases(reader):
     return data, statuses
 
 
-# wop _get_mda_attributes
+# push_command get_mda_attributes
 def simple_value(var):
     typ = var["type"]
     if var["shape"] == "1" or var["shape"] == "(1,)":
@@ -195,7 +195,7 @@ def simple_value(var):
     return str(ret)
 
 
-# wop _get_varattr_from_connection
+# push_command _get_varattr_from_connection
 def extract_disc_var(fullname):
     name_elts = fullname.split(".")
     if len(name_elts) > 1:
