@@ -1,6 +1,11 @@
 import re
 from six import iteritems
-from whatsopt.utils import simple_value, to_camelcase, extract_disc_var, format_shape
+from whatsopt.push_utils import (
+    simple_value,
+    to_camelcase,
+    extract_disc_var,
+    format_shape,
+)
 from .logging import debug, log
 from openmdao.api import IndepVarComp
 
