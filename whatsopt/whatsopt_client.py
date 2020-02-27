@@ -121,12 +121,23 @@ class WhatsOpt(object):
 
         url = self._endpoint("/api/v1/analyses")
         resp = self.session.get(url, headers=self.headers)
+
+        # bad wop version
+        if resp.status_code == requests.codes.forbidden:
+            error(resp.json()["message"])
+            exit(-1)
+
         if not api_key and already_logged and not resp.ok:
+            # try to propose re-login
             self.logout(
                 echo=False
             )  # log out silently, suppose one was logged on another server
             resp = self.login(api_key, echo)
-        resp.raise_for_status()
+
+        if not resp.ok and echo:
+            error("Login to WhatsOpt (%s) failed." % self.url)
+            exit(-1)
+
         if echo:
             log("Successfully logged into WhatsOpt (%s)" % self.url)
         return resp
