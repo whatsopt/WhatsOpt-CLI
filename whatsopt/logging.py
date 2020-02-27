@@ -7,22 +7,22 @@ def log(*args, **kwargs):
     click.echo(click.style(*args, **kwargs))
 
 
-def info(*args, **kwargs):
+def info(msg, **kwargs):
     kwargs.update(fg="green")
-    log(*args, **kwargs)
+    log(msg, **kwargs)
 
 
-def warn(*args, **kwargs):
+def warn(msg, **kwargs):
     kwargs.update(fg="yellow")
-    log(*args, **kwargs)
+    log(msg, **kwargs)
 
 
-def error(*args, **kwargs):
+def error(msg, **kwargs):
     kwargs.update(fg="red")
-    log(*args, **kwargs)
+    log("Error: {}".format(msg), **kwargs)
 
 
-def debug(*args, **kwargs):
+def debug(msg, **kwargs):
     if DEBUG:
         print("DEBUG ********************************")
-        print(*args, **kwargs)
+        print(msg, **kwargs)

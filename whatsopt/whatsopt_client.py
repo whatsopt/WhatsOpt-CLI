@@ -295,6 +295,7 @@ class WhatsOpt(object):
         dry_run=False,
         outvar_count=1,
         only_success=False,
+        parallel=False,
     ):
         from socket import gethostname
 
@@ -312,7 +313,7 @@ class WhatsOpt(object):
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
         else:
-            name, cases, statuses = load_from_sqlite(filename)
+            name, cases, statuses = load_from_sqlite(filename, parallel)
 
         if only_success:
             for c in cases:
@@ -419,7 +420,7 @@ class WhatsOpt(object):
         try:
             import thrift
         except ImportError:
-            log(
+            error(
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
             exit(-1)

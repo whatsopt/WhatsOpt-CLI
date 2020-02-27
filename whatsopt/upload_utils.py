@@ -4,9 +4,9 @@ import csv
 from six import iteritems
 from openmdao.api import CaseReader
 from tabulate import tabulate
-from whatsopt.logging import log
+from whatsopt.logging import log, error
 
-# wop upload
+
 def load_from_csv(filename):
     name = os.path.splitext(os.path.basename(filename))[0]
     m = re.match(r"\w+__(\w+)", name)
@@ -52,8 +52,50 @@ def load_from_csv(filename):
     return name, cases, statuses
 
 
-# wop upload
-def load_from_sqlite(filename):
+def load_from_sqlite(filename, parallel=False):
+    if parallel:
+        m = re.match(r"(.*_)(\d+)$", filename)
+        if m:
+            file_prefix = m.group(1)
+            file_count = int(m.group(2)) + 1
+            name, cases, statuses = _load_sqlite_file(filename)
+            next_filename = file_prefix + str(file_count)
+            while os.path.exists(next_filename):
+                _, tmp_cases, tmp_statuses = _load_sqlite_file(next_filename)
+                [
+                    cases[i]["values"].extend(tmp_case["values"])
+                    for i, tmp_case in enumerate(tmp_cases)
+                ]
+                statuses.extend(tmp_statuses)
+                file_count = file_count + 1
+                next_filename = file_prefix + str(file_count)
+            return name, cases, statuses
+        else:
+            error(
+                "In parallel mode (-p option), "
+                "filename should end with '_<number>', got {}".format(filename)
+            )
+            exit(-1)
+    else:
+        return _load_sqlite_file(filename)
+
+
+def print_cases(cases, statuses):
+    headers = ["success"]
+    n = len(cases[0]["values"]) if cases else 0
+    for case in cases:
+        h = case["varname"]
+        if case["coord_index"] > -1:
+            h += "[{}]".format(case["coord_index"])
+        headers.append(h)
+    data = []
+    for i in range(n):
+        data.append([statuses[i]] + [case["values"][i] for case in cases])
+    log(tabulate(data, headers))
+
+
+def _load_sqlite_file(filename):
+    log("Load {}...".format(filename))
     reader = CaseReader(filename)
     cases = reader.list_cases("driver")
     if len(cases) == 0:
@@ -67,26 +109,25 @@ def load_from_sqlite(filename):
         name = m.group(1)
 
     # format cases and statuses
-    cases, statuses = format_upload_cases(reader)
+    cases, statuses = _format_upload_cases(reader)
     return name, cases, statuses
 
 
-# utils load_from_sqlite
-def format_upload_cases(reader):
+def _format_upload_cases(reader):
     cases = reader.list_cases("driver", recurse=False)
     inputs = {}
     outputs = {}
     statuses = []
     for case_id in cases:
         case = reader.get_case(case_id)
-        insert_data(case.get_design_vars(), inputs)
-        insert_data(case.get_objectives(), outputs)
+        _insert_data(case.get_design_vars(), inputs)
+        _insert_data(case.get_objectives(), outputs)
         statuses.append(case.success)
 
     cases = inputs.copy()
     cases.update(outputs)
-    inputs_count = check_count(inputs)
-    outputs_count = check_count(outputs)
+    inputs_count = _check_count(inputs)
+    outputs_count = _check_count(outputs)
     assert inputs_count == outputs_count
     assert inputs_count == len(statuses)
 
@@ -100,8 +141,7 @@ def format_upload_cases(reader):
     return data, statuses
 
 
-# utils format_upload_cases
-def insert_data(data_io, result):
+def _insert_data(data_io, result):
     done = {}
     for name in data_io:
         values = data_io[name]
@@ -116,8 +156,7 @@ def insert_data(data_io, result):
         done[name] = True
 
 
-# utils format_upload_cases
-def check_count(ios):
+def _check_count(ios):
     count = None
     refname = None
     for name in ios:
@@ -130,17 +169,3 @@ def check_count(ios):
             refname, count = name, len(ios[name])
     return count
 
-
-# wop upload
-def print_cases(cases, statuses):
-    headers = ["success"]
-    n = len(cases[0]["values"]) if cases else 0
-    for case in cases:
-        h = case["varname"]
-        if case["coord_index"] > -1:
-            h += "[{}]".format(case["coord_index"])
-        headers.append(h)
-    data = []
-    for i in range(n):
-        data.append([statuses[i]] + [case["values"][i] for case in cases])
-    log(tabulate(data, headers))

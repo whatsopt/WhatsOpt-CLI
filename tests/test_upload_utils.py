@@ -6,8 +6,8 @@ import numpy as np
 from whatsopt.upload_utils import (
     load_from_csv,
     load_from_sqlite,
-    format_upload_cases,
-    check_count,
+    _format_upload_cases,
+    _check_count,
 )
 
 
@@ -25,9 +25,9 @@ class TestUploadUtils(unittest.TestCase):
         self.assertEqual(1, statuses[0])
 
     def test_load_from_sqlite(self):
-        name, cases, statuses = load_from_sqlite(
-            os.path.join(TestUploadUtils.DATA_PATH, "test_doe.sqlite")
-        )
+        filepath = os.path.join(TestUploadUtils.DATA_PATH, "test_doe.sqlite")
+        name, cases, statuses = load_from_sqlite(filepath)
+
         self.assertEqual("SMT_DOE_LHS", name)
         self.assertEqual(9.30287, round(cases[0]["values"][4], 5))
         self.assertEqual(1, cases[1]["coord_index"])
@@ -35,14 +35,33 @@ class TestUploadUtils(unittest.TestCase):
         for i in statuses:
             self.assertEqual(1, i)
 
+    def test_load_from_parallel_sqlite(self):
+        filepath = os.path.join(TestUploadUtils.DATA_PATH, "test_parallel_doe.sqlite_0")
+        name, cases, statuses = load_from_sqlite(filepath)
+        self.assertEqual("SMT_DOE_LHS", name)
+        n = len(cases[0]["values"])
+        self.assertEqual(10, n)  # was run with 30 cases on 3 processors, hence 10
+        self.assertEqual(n, len(statuses))
+
+        _, cases2, statuses2 = load_from_sqlite(filepath, parallel=True)
+        self.assertEqual(3 * n, len(cases2[0]["values"]))
+        self.assertEqual(3 * n, len(statuses2))
+
+        filepath1 = os.path.join(
+            TestUploadUtils.DATA_PATH, "test_parallel_doe.sqlite_1"
+        )
+        _, cases2, statuses2 = load_from_sqlite(filepath1, parallel=True)
+        self.assertEqual(2 * n, len(cases2[0]["values"]))
+        self.assertEqual(2 * n, len(statuses2))
+
     def test_check_count(self):
         dict1 = {"A": [1, 2], "B": [3, 4], "C": [5, 6]}
         dict2 = {"A": [1, 2], "B": [3, 4], "C": [5, 6, 7]}
-        self.assertEqual(2, check_count(dict1))
-        self.assertRaises(Exception, check_count, dict2)
+        self.assertEqual(2, _check_count(dict1))
+        self.assertRaises(Exception, _check_count, dict2)
 
     def test_format_upload_cases(self):
-        data, statuses = format_upload_cases(
+        data, statuses = _format_upload_cases(
             CaseReader(os.path.join(TestUploadUtils.DATA_PATH, "test_doe.sqlite"))
         )
         self.assertEqual(9.30287, round(data[0]["values"][4], 5))

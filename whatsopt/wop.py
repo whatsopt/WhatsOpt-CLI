@@ -1,6 +1,7 @@
 import click
 from whatsopt import __version__
 from .whatsopt_client import WhatsOpt
+from logging import error
 
 
 @click.group()
@@ -48,6 +49,7 @@ def list(ctx):
 
 @cli.command()
 @click.option(
+    "-n",
     "--dry-run",
     is_flag=True,
     default=False,
@@ -69,28 +71,35 @@ def push(ctx, dry_run, scalar_format, name, py_filename):
     wop.execute(py_filename, wop.push_mda_cmd, options)
     # if not exited successfully in execute
     if name:
-        print("Error: analysis %s not found" % name)
+        error("Analysis %s not found" % name)
     else:
-        print("Error: analysis not found")
+        error("Analysis not found")
     exit(-1)
 
 
 @cli.command()
 @click.option(
+    "-n",
     "--dry-run",
     is_flag=True,
     default=False,
     help="print analysis pull infos without actually pulling",
 )
-@click.option("--force", is_flag=True, default=False, help="overwrite existing files")
 @click.option(
-    "--server", is_flag=True, default=False, help="generate Thrift server as well"
+    "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
 )
 @click.option(
-    "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+    "-s", "--server", is_flag=True, default=False, help="generate Thrift server as well"
 )
 @click.option(
-    "--test-units", is_flag=True, default=False, help="update discipline test scripts"
+    "-o", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+)
+@click.option(
+    "-u",
+    "--test-units",
+    is_flag=True,
+    default=False,
+    help="update discipline test scripts",
 )
 @click.argument("analysis_id")
 @click.pass_context
@@ -108,18 +117,23 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
 
 @cli.command()
 @click.option(
-    "--analysis-id",
+    "-a" "--analysis-id",
     help="specify the analysis to update from (otherwise guessed from current files)",
 )
-@click.option("--force", is_flag=True, default=False, help="overwrite existing files")
 @click.option(
-    "--server", is_flag=True, default=False, help="update Thrift server as well"
+    "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
 )
 @click.option(
-    "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+    "-s" "--server", is_flag=True, default=False, help="update Thrift server as well"
 )
 @click.option(
-    "--test-units", is_flag=True, default=False, help="update discipline test scripts"
+    "-o" "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+)
+@click.option(
+    "-u" "--test-units",
+    is_flag=True,
+    default=False,
+    help="update discipline test scripts",
 )
 @click.pass_context
 def update(ctx, analysis_id, force, server, run_ops, test_units):
@@ -136,34 +150,42 @@ def update(ctx, analysis_id, force, server, run_ops, test_units):
 @cli.command()
 @click.argument("filename")
 @click.option(
+    "-k",
     "--driver-kind",
     type=click.Choice(["doe", "optimizer", "screening"]),
     help="used with csv data upload to specify driver kind",
 )
 @click.option(
+    "-a",
     "--analysis-id",
     help="specify the analysis to create a new operation otherwise use default analysis",
 )
 @click.option(
-    "--operation-id", help="specify the operation to be updated with new cases"
+    "-o", "--operation-id", help="specify the operation to be updated with new cases"
 )
 @click.option(
+    "-n",
     "--dry-run",
     is_flag=True,
     default=False,
     help="parse data file and display content without uploading",
 )
 @click.option(
+    "-c",
     "--outvar-count",
     type=int,
     default=1,
     help="number of output variable (>0) only used when uploading csv file",
 )
 @click.option(
+    "-x",
     "--only-success",
     is_flag=True,
     default=False,
     help="keep only data from successful executions",
+)
+@click.option(
+    "-p", "--parallel", is_flag=True, default=False, help="use filename as first",
 )
 @click.pass_context
 def upload(
@@ -175,6 +197,7 @@ def upload(
     dry_run,
     outvar_count,
     only_success,
+    parallel,
 ):
     """ Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file"""
     WhatsOpt(**ctx.obj).upload(
@@ -185,6 +208,7 @@ def upload(
         dry_run,
         outvar_count,
         only_success,
+        parallel,
     )
 
 
