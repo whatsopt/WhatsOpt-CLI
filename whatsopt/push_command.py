@@ -186,30 +186,21 @@ class PushCommand(object):
                 varstoadd.append((disctgt, varattrtgt, "target"))
 
         for disc, varattr, orig in varstoadd:
-            debug("**************", connection)
+            debug("**************%s" % connection)
             if disc == dname:
                 if varattr not in varattrs:
+                    debug(">>>>>>>>>>>>> from {}".format(orig))
+                    debug(" ADD to {}".format(mda))
                     debug(
-                        ">>>>>>>>>>>>> from",
-                        orig,
-                        " ADD to ",
-                        mda,
-                        dname,
-                        ": ",
-                        varattr["name"],
-                        varattr["io_mode"],
+                        "__DRIVER__ : {} {}".format(varattr["name"], varattr["io_mode"])
                     )
                     varattrs.append(varattr)
             else:
                 if varattr["name"] not in [vattr["name"] for vattr in driver_varattrs]:
+                    debug(">>>>>>>>>>>>> from {}".format(orig))
+                    debug(" ADD to {}".format(mda))
                     debug(
-                        ">>>>>>>>>>>>> from",
-                        orig,
-                        " ADD to ",
-                        mda,
-                        "__DRIVER__ :",
-                        varattr["name"],
-                        varattr["io_mode"],
+                        "__DRIVER__ : {} {}".format(varattr["name"], varattr["io_mode"])
                     )
                     driver_varattrs.append(varattr)
 
