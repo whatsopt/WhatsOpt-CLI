@@ -12,11 +12,9 @@ import tempfile
 import csv
 import numpy as np
 from whatsopt.logging import log, info, warn, error
-from whatsopt.utils import (
+from whatsopt.utils import is_user_file, get_analysis_id
+from whatsopt.upload_utils import (
     load_from_csv,
-    is_user_file,
-    find_analysis_base_files,
-    extract_mda_id,
     load_from_sqlite,
     print_cases,
 )
@@ -276,7 +274,7 @@ class WhatsOpt(object):
             log(msg)
 
     def update_mda(self, analysis_id=None, options={}):
-        mda_id = analysis_id or self.get_analysis_id()
+        mda_id = analysis_id or get_analysis_id()
         if mda_id is None:
             error(
                 "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
@@ -300,7 +298,7 @@ class WhatsOpt(object):
     ):
         from socket import gethostname
 
-        mda_id = self.get_analysis_id() if not analysis_id else analysis_id
+        mda_id = get_analysis_id() if not analysis_id else analysis_id
 
         name = cases = statuses = None
         if filename == "run_parameters_init.py":
@@ -358,7 +356,7 @@ class WhatsOpt(object):
                     if m:
                         driver = name.lower()
                     else:
-                        driver = "user_defined_algo"
+                        driver = "user_data_uploading"
             operation_params = {
                 "name": name,
                 "driver": driver,
@@ -381,7 +379,7 @@ class WhatsOpt(object):
         return upload_parameters
 
     def upload_parameters(self, problem, options):
-        mda_id = self.get_analysis_id()
+        mda_id = get_analysis_id()
         if mda_id is None:
             error("Unknown analysis with id={}".format(mda_id))
             exit(-1)
@@ -427,16 +425,3 @@ class WhatsOpt(object):
             exit(-1)
         call(["python", "run_server.py"])
 
-    def get_analysis_id(self):
-        files = find_analysis_base_files()
-        id = None
-        for f in files:
-            ident = extract_mda_id(f)
-            if id and id != ident:
-                raise Exception(
-                    "Warning: several analysis identifier detected. \n"
-                    "Find %s got %s. Check header comments in %s files ."
-                    % (id, ident, str(files))
-                )
-            id = ident
-        return id
