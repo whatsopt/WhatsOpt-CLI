@@ -92,10 +92,10 @@ def push(ctx, dry_run, scalar_format, name, py_filename):
     "-s", "--server", is_flag=True, default=False, help="generate Thrift server as well"
 )
 @click.option(
-    "-o", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+    "-r", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
 )
 @click.option(
-    "-u",
+    "-t",
     "--test-units",
     is_flag=True,
     default=False,
@@ -117,20 +117,22 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
 
 @cli.command()
 @click.option(
-    "-a" "--analysis-id",
+    "-a",
+    "--analysis-id",
     help="specify the analysis to update from (otherwise guessed from current files)",
 )
 @click.option(
     "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
 )
 @click.option(
-    "-s" "--server", is_flag=True, default=False, help="update Thrift server as well"
+    "-s", "--server", is_flag=True, default=False, help="update Thrift server as well"
 )
 @click.option(
-    "-o" "--run-ops", is_flag=True, default=False, help="update operation run scripts"
+    "-r", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
 )
 @click.option(
-    "-u" "--test-units",
+    "-t",
+    "--test-units",
     is_flag=True,
     default=False,
     help="update discipline test scripts",
@@ -185,7 +187,7 @@ def update(ctx, analysis_id, force, server, run_ops, test_units):
     help="keep only data from successful executions",
 )
 @click.option(
-    "-p", "--parallel", is_flag=True, default=False, help="use filename as first",
+    "-p", "--parallel", is_flag=True, default=False, help="use filename as first"
 )
 @click.pass_context
 def upload(
