@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/OneraHub/WhatsOpt-CLI.svg?branch=master)](https://travis-ci.org/OneraHub/WhatsOpt-CLI)
+
 # WhatsOpt command line interface
 
 Command line interface to interact with WhatsOpt web application.
