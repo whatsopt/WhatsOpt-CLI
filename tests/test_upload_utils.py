@@ -16,9 +16,9 @@ class TestUploadUtils(unittest.TestCase):
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
     def test_load_from_csv(self):
-        filepath = os.path.join(TestUploadUtils.DATA_PATH, "cases.csv")
+        filepath = os.path.join(TestUploadUtils.DATA_PATH, "test_doe.csv")
         name, cases, statuses = load_from_csv(filepath)
-        self.assertEqual("cases", name)
+        self.assertEqual("test_doe", name)
         self.assertEqual("x", cases[0]["varname"])
         self.assertEqual(-1, cases[0]["coord_index"])
         self.assertEqual(7.5, cases[0]["values"][4])

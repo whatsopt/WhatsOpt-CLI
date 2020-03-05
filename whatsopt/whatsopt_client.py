@@ -11,14 +11,7 @@ import zipfile
 import tempfile
 import csv
 import numpy as np
-from whatsopt.logging import log, info, warn, error
-from whatsopt.utils import is_user_file, get_analysis_id
-from whatsopt.upload_utils import (
-    load_from_csv,
-    load_from_sqlite,
-    print_cases,
-)
-from whatsopt.push_command import PushCommand
+from tabulate import tabulate
 
 try:
     # Python 3
@@ -33,7 +26,19 @@ except:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 from openmdao.api import IndepVarComp, Problem
-from tabulate import tabulate
+import openmdao.utils.hooks as hooks
+from openmdao.utils.file_utils import _load_and_exec
+
+from whatsopt.logging import log, info, warn, error
+from whatsopt.utils import is_user_file, get_analysis_id
+from whatsopt.upload_utils import (
+    load_from_csv,
+    load_from_sqlite,
+    print_cases,
+)
+from whatsopt.push_command import PushCommand
+
+
 from whatsopt import __version__
 
 WHATSOPT_DIRNAME = os.path.join(os.path.expanduser("~"), ".whatsopt")
@@ -165,22 +170,7 @@ class WhatsOpt(object):
         else:
             resp.raise_for_status()
 
-    def execute(self, progname, func, options={}):
-        dir = os.path.dirname(progname)
-        sys.path.insert(0, dir)
-        with open(progname, "rb") as fp:
-            code = compile(fp.read(), progname, "exec")
-        globals_dict = {
-            "__file__": progname,
-            "__name__": "__main__",
-            "__package__": None,
-            "__cached__": None,
-        }
-        Problem._post_setup_func = func(options)
-        sys.argv = [progname]  # suppose progname do not need options
-        exec(code, globals_dict)
-
-    def push_mda_cmd(self, options):
+    def push_mda_cmd(self, py_filename, options):
         def push_mda(prob):
             name = options["--name"]
             pbname = prob.model.__class__.__name__
@@ -191,6 +181,9 @@ class WhatsOpt(object):
                 self.push_mda(prob, options)
                 exit()
 
+        hooks.use_hooks = True
+        hooks._register_hook("final_setup", "Problem", post=push_mda)
+        _load_and_exec(py_filename, [])
         return push_mda
 
     def push_mda(self, problem, options):
@@ -313,14 +306,10 @@ class WhatsOpt(object):
         mda_id = get_analysis_id() if not analysis_id else analysis_id
 
         name = cases = statuses = None
-        if filename == "run_parameters_init.py":
-            if mda_id is None:
-                error("Unknown analysis with id={}".format(mda_id))
-                exit(-1)
-            self.execute(
-                "run_analysis.py", self.upload_parameters_cmd, {"--dry-run": dry_run}
+        if filename.endswith("run_parameters_init.py"):
+            self.upload_parameters_cmd(
+                filename, {"--dry-run": dry_run, "--analysis-id": mda_id},
             )
-            exit()
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
         else:
@@ -383,15 +372,20 @@ class WhatsOpt(object):
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
 
-    def upload_parameters_cmd(self, options):
+    def upload_parameters_cmd(self, py_filename, options):
         def upload_parameters(prob):
             self.upload_parameters(prob, options)
             exit()
 
-        return upload_parameters
+        d = os.path.dirname(py_filename)
+        run_analysis_filename = os.path.join(d, "run_analysis.py")
+
+        hooks.use_hooks = True
+        hooks._register_hook("final_setup", "Problem", post=upload_parameters)
+        _load_and_exec(run_analysis_filename, [])
 
     def upload_parameters(self, problem, options):
-        mda_id = get_analysis_id()
+        mda_id = get_analysis_id() if get_analysis_id() else options["--analysis-id"]
         if mda_id is None:
             error("Unknown analysis with id={}".format(mda_id))
             exit(-1)

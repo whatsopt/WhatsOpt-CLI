@@ -2,6 +2,7 @@ import click
 from whatsopt import __version__
 from .whatsopt_client import WhatsOpt
 from logging import error
+import openmdao.utils.hooks as hooks
 
 
 @click.group()
@@ -66,9 +67,11 @@ def list(ctx):
 @click.pass_context
 def push(ctx, dry_run, scalar_format, name, py_filename):
     """ Push analysis from given PY_FILENAME """
+    ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {"--dry-run": dry_run, "--scalar-format": scalar_format, "--name": name}
-    wop.execute(py_filename, wop.push_mda_cmd, options)
+    wop.push_mda_cmd(py_filename, options)
+
     # if not exited successfully in execute
     if name:
         error("Analysis %s not found" % name)
@@ -112,6 +115,7 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
         "--run-ops": run_ops,
         "--test-units": test_units,
     }
+    ctx.obj["login"] = not dry_run
     WhatsOpt(**ctx.obj).pull_mda(analysis_id, options)
 
 
@@ -202,6 +206,7 @@ def upload(
     parallel,
 ):
     """ Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file"""
+    ctx.obj["login"] = not dry_run
     WhatsOpt(**ctx.obj).upload(
         filename,
         driver_kind,
