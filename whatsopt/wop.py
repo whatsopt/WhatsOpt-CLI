@@ -1,7 +1,7 @@
 import click
 from whatsopt import __version__
 from .whatsopt_client import WhatsOpt
-from logging import error, warn
+from logging import error
 
 
 @click.group()
