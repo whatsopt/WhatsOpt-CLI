@@ -26,8 +26,6 @@ except:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 from openmdao.api import IndepVarComp, Problem
-import openmdao.utils.hooks as hooks
-from openmdao.utils.file_utils import _load_and_exec
 
 from whatsopt.logging import log, info, warn, error
 from whatsopt.utils import is_user_file, get_analysis_id
@@ -180,6 +178,13 @@ class WhatsOpt(object):
             else:
                 self.push_mda(prob, options)
                 exit()
+
+        try:
+            import openmdao.utils.hooks as hooks
+            from openmdao.utils.file_utils import _load_and_exec
+        except ImportError:
+            error("wop > 1.4 requires openmdao >= 2.10 for push command")
+            exit(-1)
 
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=push_mda)
@@ -380,6 +385,12 @@ class WhatsOpt(object):
         d = os.path.dirname(py_filename)
         run_analysis_filename = os.path.join(d, "run_analysis.py")
 
+        try:
+            import openmdao.utils.hooks as hooks
+            from openmdao.utils.file_utils import _load_and_exec
+        except ImportError:
+            error("wop > 1.4 requires openmdao >= 2.10 for upload command")
+            exit(-1)
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=upload_parameters)
         _load_and_exec(run_analysis_filename, [])

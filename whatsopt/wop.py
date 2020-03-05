@@ -1,8 +1,7 @@
 import click
 from whatsopt import __version__
 from .whatsopt_client import WhatsOpt
-from logging import error
-import openmdao.utils.hooks as hooks
+from logging import error, warn
 
 
 @click.group()
