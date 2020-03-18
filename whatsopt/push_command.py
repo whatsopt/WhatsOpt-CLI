@@ -29,8 +29,8 @@ class PushCommand(object):
         self.discmap = {}
 
     def get_mda_attributes(self, group, tree, group_prefix=""):
-        self._collect_disc_infos()
-        self._collect_var_infos()
+        self._collect_disc_infos(self.problem.model, self.tree)
+        self._collect_var_infos(self.problem.model)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
         mda_attrs = {
             "name": group.__class__.__name__,
@@ -74,7 +74,7 @@ class PushCommand(object):
 
         # remove fullname in driver varattrs
         for vattr in driver_attrs["variables_attributes"]:
-            vattr["desc"] = self.vardescs[vattr["name"]]
+            vattr["desc"] = self.vardescs.get(vattr["name"], "")
             if (
                 vattr["io_mode"] == "out"
             ):  # set init value for design variables and parameters (outputs of driver)
@@ -120,7 +120,7 @@ class PushCommand(object):
                     "name": varname,
                     "fullname": absname,
                     "io_mode": io_mode,
-                    "desc": self.vardescs[varname],
+                    "desc": self.vardescs.get(varname, ""),
                     "type": var["type"],
                     "shape": var["shape"],
                     "units": var["units"],
@@ -211,51 +211,49 @@ class PushCommand(object):
                 varattrs, driver_varattrs, mda, dname, conn
             )
         for vattr in varattrs:
-            vattr["desc"] = self.vardescs[vattr["name"]]
+            vattr["desc"] = self.vardescs.get(vattr["name"], "")
             if "fullname" in vattr:
                 del vattr["fullname"]  # indeed for WhatsOpt var name is a primary key
         return varattrs
 
     # # see _get_tree_dict at
     # # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py
-    def _collect_disc_infos(self, group_prefix=""):
-        if "children" not in self.tree:
+    def _collect_disc_infos(self, system, tree, group_prefix=""):
+        if "children" not in tree:
             return
 
-        for i, child in enumerate(self.tree["children"]):
+        for i, child in enumerate(tree["children"]):
             # retain only components, not intermediates (subsystem or group)
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 self.discmap[group_prefix + child["name"]] = child["name"]
                 prefix = group_prefix + child["name"] + "."
-                self._collect_disc_infos(prefix)
+                self._collect_disc_infos(system._subsystems_myproc[i], child, prefix)
             else:
                 # do not represent IndepVarComp
-                if not isinstance(
-                    self.problem.model._subsystems_myproc[i], IndepVarComp
-                ):
+                if not isinstance(system._subsystems_myproc[i], IndepVarComp):
                     self.discmap[group_prefix + child["name"]] = child["name"]
                 else:
                     self.discmap[group_prefix + child["name"]] = "__DRIVER__"
 
     # see _get_tree_dict at
     # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py
-    def _collect_var_infos(self):
+    def _collect_var_infos(self, system):
         for typ in ["input", "output"]:
-            for abs_name in self.problem.model._var_abs_names[typ]:
+            for abs_name in system._var_abs_names[typ]:
                 if typ == "input":
                     io_mode = "in"
                 elif typ == "output":
                     io_mode = "out"
                 else:
                     raise Exception("Unhandled variable type " + typ)
-                meta = self.problem.model._var_abs2meta[abs_name]
+                meta = system._var_abs2meta[abs_name]
 
                 vtype = "Float"
                 if re.match("int", type(meta["value"]).__name__):
                     vtype = "Integer"
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar_format, shape)
-                name = self.problem.model._var_abs2prom[typ][abs_name]
+                name = system._var_abs2prom[typ][abs_name]
                 self.vars[abs_name] = {
                     "fullname": abs_name,
                     "name": name,
@@ -269,14 +267,14 @@ class PushCommand(object):
 
                 # retrieve initial conditions
                 var = self.vars[abs_name]
-                if abs_name in self.problem.model._outputs._views:
-                    var["value"] = self.problem.model._outputs[abs_name]
-                elif abs_name in self.problem.model._inputs._views:
-                    var["value"] = self.problem.model._inputs[abs_name]
-                elif abs_name in self.problem.model._discrete_outputs:
-                    var["value"] = self.problem.model._discrete_outputs[abs_name]
-                elif abs_name in self.problem.model._discrete_inputs:
-                    var["value"] = self.problem.model._discrete_inputs[abs_name]
+                if abs_name in system._outputs._views:
+                    var["value"] = system._outputs[abs_name]
+                elif abs_name in system._inputs._views:
+                    var["value"] = system._inputs[abs_name]
+                elif abs_name in system._discrete_outputs:
+                    var["value"] = system._discrete_outputs[abs_name]
+                elif abs_name in system._discrete_inputs:
+                    var["value"] = system._discrete_inputs[abs_name]
 
                 desc = self.vardescs.setdefault(name, "")
                 if desc == "":

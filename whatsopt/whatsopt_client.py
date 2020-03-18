@@ -183,7 +183,7 @@ class WhatsOpt(object):
             import openmdao.utils.hooks as hooks
             from openmdao.utils.file_utils import _load_and_exec
         except ImportError:
-            error("wop > 1.4 requires openmdao >= 2.10 for push command")
+            error("wop > 1.4.3 requires openmdao >= 2.10.0 for push command")
             exit(-1)
 
         hooks.use_hooks = True
@@ -389,7 +389,7 @@ class WhatsOpt(object):
             import openmdao.utils.hooks as hooks
             from openmdao.utils.file_utils import _load_and_exec
         except ImportError:
-            error("wop > 1.4 requires openmdao >= 2.10 for upload command")
+            error("wop > 1.4.3 requires openmdao >= 2.10.0 for upload command")
             exit(-1)
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=upload_parameters)
