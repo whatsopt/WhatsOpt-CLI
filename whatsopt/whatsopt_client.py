@@ -29,11 +29,7 @@ from openmdao.api import IndepVarComp, Problem
 
 from whatsopt.logging import log, info, warn, error
 from whatsopt.utils import is_user_file, get_analysis_id
-from whatsopt.upload_utils import (
-    load_from_csv,
-    load_from_sqlite,
-    print_cases,
-)
+from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_command import PushCommand
 
 
@@ -62,7 +58,8 @@ class WhatsOpt(object):
 
         # config session object
         self.session = requests.Session()
-        self.set_trust_env()
+        urlinfos = urlparse(self._url)
+        self.session.trust_env = re.match(r"\w+.onera\.fr", urlinfos.netloc)
 
         # login by default
         if login:
@@ -78,12 +75,8 @@ class WhatsOpt(object):
     def url(self):
         return self._url
 
-    def _endpoint(self, path):
+    def endpoint(self, path):
         return self._url + path
-
-    def set_trust_env(self):
-        urlinfos = urlparse(self._url)
-        self.session.trust_env = re.match(r"\w+.onera\.fr", urlinfos.netloc)
 
     @property
     def default_url(self):
@@ -122,7 +115,7 @@ class WhatsOpt(object):
             "User-Agent": "wop/{}".format(__version__),
         }
 
-        url = self._endpoint("/api/v1/analyses")
+        url = self.endpoint("/api/v1/analyses")
         resp = self.session.get(url, headers=self.headers)
 
         # bad wop version
@@ -154,7 +147,7 @@ class WhatsOpt(object):
             log("Sucessfully logged out from WhatsOpt (%s)" % self.url)
 
     def list_analyses(self):
-        url = self._endpoint("/api/v1/analyses")
+        url = self.endpoint("/api/v1/analyses")
         resp = self.session.get(url, headers=self.headers)
         if resp.ok:
             mdas = resp.json()
@@ -200,7 +193,7 @@ class WhatsOpt(object):
         if options["--dry-run"]:
             log(json.dumps(mda_attrs, indent=2))
         else:
-            url = self._endpoint("/api/v1/analyses")
+            url = self.endpoint("/api/v1/analyses")
             resp = self.session.post(
                 url, headers=self.headers, json={"analysis": mda_attrs}
             )
@@ -220,7 +213,7 @@ class WhatsOpt(object):
             param += "&with_unittests=true"
         if param is not "":
             param = "?" + param[1:]
-        url = self._endpoint(
+        url = self.endpoint(
             ("/api/v1/analyses/%s/exports/new.openmdao" + base + param) % mda_id
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
@@ -313,7 +306,7 @@ class WhatsOpt(object):
         name = cases = statuses = None
         if filename.endswith("run_parameters_init.py"):
             self.upload_parameters_cmd(
-                filename, {"--dry-run": dry_run, "--analysis-id": mda_id},
+                filename, {"--dry-run": dry_run, "--analysis-id": mda_id}
             )
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
@@ -336,16 +329,16 @@ class WhatsOpt(object):
 
         resp = None
         if operation_id:
-            url = self._endpoint(("/api/v1/operations/%s") % operation_id)
+            url = self.endpoint(("/api/v1/operations/%s") % operation_id)
             operation_params = {"cases": cases}
             resp = self.session.patch(
                 url, headers=self.headers, json={"operation": operation_params}
             )
         else:
             if mda_id:
-                url = self._endpoint(("/api/v1/analyses/%s/operations") % mda_id)
+                url = self.endpoint(("/api/v1/analyses/%s/operations") % mda_id)
             else:
-                url = self._endpoint("/api/v1/operations")
+                url = self.endpoint("/api/v1/operations")
             if driver_kind:
                 driver = "user_{}_algo".format(driver_kind)
             else:
@@ -415,13 +408,13 @@ class WhatsOpt(object):
         params = {"parameterization": {"parameters": parameters}}
         log(tabulate(data, headers))
         if not options["--dry-run"]:
-            url = self._endpoint(("/api/v1/analyses/%s/parameterization") % mda_id)
+            url = self.endpoint(("/api/v1/analyses/%s/parameterization") % mda_id)
             resp = self.session.put(url, headers=self.headers, json=params)
             resp.raise_for_status()
             log("Parameters uploaded")
 
     def check_versions(self):
-        url = self._endpoint("/api/v1/versioning")
+        url = self.endpoint("/api/v1/versioning")
         resp = self.session.get(url, headers=self.headers)
         resp.raise_for_status()
         version = resp.json()
@@ -441,4 +434,3 @@ class WhatsOpt(object):
             )
             exit(-1)
         call(["python", "run_server.py"])
-

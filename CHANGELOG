@@ -1,4 +1,7 @@
-* 1.5.0 (/03/2020)
+* 1.6.0 (//2020)
+  - add API for WhatsOpt SEGOMOE optimization
+
+* 1.5.0 (18/03/2020)
   - fix upload and push commands using OpenMDAO >= 2.10 hooks
   - drop Python 2.7 support
 
