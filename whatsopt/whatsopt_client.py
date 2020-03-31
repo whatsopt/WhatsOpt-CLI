@@ -78,6 +78,15 @@ class WhatsOpt(object):
     def endpoint(self, path):
         return self._url + path
 
+    def err_msg(self, resp):
+        error(
+            "{} ({}) : {}".format(
+                resp.status_code,
+                requests.status_codes._codes[resp.status_code][0],
+                resp.json()["message"],
+            )
+        )
+
     @property
     def default_url(self):
         self._default_url = PROD_URL
