@@ -1,14 +1,18 @@
-from sys import exit
+import sys
 import numpy as np
 from .whatsopt_client import WhatsOpt
 
 
 class Optimization(object):
-    def __init__(self, xlimits, cstr_specs=[]):
+    def __init__(self, xlimits, cstr_specs=None):
         self._wop = WhatsOpt()
 
         url = self._wop.endpoint("/api/v1/optimizations")
-        optim_config = {"kind": "SEGOMOE", "xlimits": xlimits, "cstr_specs": cstr_specs}
+        optim_config = {
+            "kind": "SEGOMOE",
+            "xlimits": xlimits,
+            "cstr_specs": cstr_specs or [],
+        }
         resp = self._wop.session.post(
             url, headers=self._wop.headers, json={"optimization": optim_config}
         )
@@ -17,6 +21,7 @@ class Optimization(object):
         self._x = np.array([])
         self._y = np.array([])
         self._x_suggested = None
+        self._status = None
 
     def tell_doe(self, x, y):
         self._x = np.atleast_2d(x)
@@ -42,8 +47,8 @@ class Optimization(object):
         self._tell()
 
     def ask(self):
-        ret1, ret2 = self._status, self._x_suggested
-        self._status, self._x_suggested = -1, None  # reset suggestion
+        ret1, ret2 = self._x_suggested, self._status
+        self._x_suggested, self._status = None, -1  # reset suggestion
         return ret1, ret2
 
     def get_result(self):
@@ -64,4 +69,4 @@ class Optimization(object):
             self._status = res["status"]
         else:
             self._wop.err_msg(resp)
-            exit(-1)
+            sys.exit(-1)

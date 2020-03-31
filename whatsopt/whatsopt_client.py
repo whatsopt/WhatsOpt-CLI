@@ -78,7 +78,8 @@ class WhatsOpt(object):
     def endpoint(self, path):
         return self._url + path
 
-    def err_msg(self, resp):
+    @staticmethod
+    def err_msg(resp):
         error(
             "{} ({}) : {}".format(
                 resp.status_code,
