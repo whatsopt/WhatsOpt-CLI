@@ -1,12 +1,7 @@
 import os
 import unittest
-import numpy as np
 
-from whatsopt.utils import (
-    is_user_file,
-    find_analysis_base_files,
-    extract_mda_id,
-)
+from whatsopt.utils import is_user_file, find_analysis_base_files, extract_mda_id
 
 
 class TestUtils(unittest.TestCase):

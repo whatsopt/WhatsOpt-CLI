@@ -1,7 +1,6 @@
 import os
 import unittest
 from openmdao.api import CaseReader
-import numpy as np
 
 from whatsopt.upload_utils import (
     load_from_csv,

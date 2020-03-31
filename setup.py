@@ -4,7 +4,7 @@ Author: Remi Lafage <remi.lafage@onera.fr>
 This package is distributed under Apache 2 license.
 """
 
-from setuptools import setup, Extension
+from setuptools import setup
 from whatsopt import __version__
 
 CLASSIFIERS = """

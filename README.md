@@ -12,16 +12,16 @@ Command line interface to interact with WhatsOpt web application.
 DOI: [10.2514/6.2019-2990](https://doi.org/10.2514/6.2019-2990)
 
 ## Installation
-```
+```bash
 pip install wop
 ```
 
 ## Usage
-```
+```bash
 wop --help
 ```
 
-```
+```bash
 wop <COMMAND> --help
 ```
 

@@ -129,8 +129,12 @@ def _format_upload_cases(reader):
     cases.update(outputs)
     inputs_count = _check_count(inputs)
     outputs_count = _check_count(outputs)
-    assert inputs_count == outputs_count
-    assert inputs_count == len(statuses)
+    if (inputs_count != outputs_count) or (inputs_count != len(statuses)):
+        raise Exception(
+            "Bad counts: inputs({})!=outputs({}) or inputs({})!=statuses({})".format(
+                inputs_count, outputs_count, inputs_count, len(statuses)
+            )
+        )
 
     data = []
     for key, values in iteritems(cases):
@@ -169,4 +173,3 @@ def _check_count(ios):
         else:
             refname, count = name, len(ios[name])
     return count
-
