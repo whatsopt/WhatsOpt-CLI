@@ -1,4 +1,4 @@
-import os, re, csv
+import os, re
 
 
 # wop pull_mda
@@ -33,14 +33,14 @@ def extract_mda_id(file):
 
 def get_analysis_id():
     files = find_analysis_base_files()
-    id = None
+    aid = None
     for f in files:
         ident = extract_mda_id(f)
-        if id and id != ident:
+        if aid and aid != ident:
             raise Exception(
                 "Warning: several analysis identifier detected. \n"
                 "Find %s got %s. Check header comments in %s files ."
-                % (id, ident, str(files))
+                % (aid, ident, str(files))
             )
-        id = ident
-    return id
+        aid = ident
+    return aid

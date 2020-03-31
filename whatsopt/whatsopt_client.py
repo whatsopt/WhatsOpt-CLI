@@ -1,7 +1,6 @@
 from __future__ import print_function
 from shutil import move
 import os
-import sys
 import json
 import getpass
 import requests
@@ -9,7 +8,6 @@ import copy
 import re
 import zipfile
 import tempfile
-import csv
 import numpy as np
 from tabulate import tabulate
 
@@ -25,7 +23,7 @@ try:  # openmdao < 2.9
 except:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
-from openmdao.api import IndepVarComp, Problem
+from openmdao.api import IndepVarComp
 
 from whatsopt.logging import log, info, warn, error
 from whatsopt.utils import is_user_file, get_analysis_id
@@ -106,7 +104,8 @@ class WhatsOpt(object):
             f.write(api_key)
         return api_key
 
-    def _read_api_key(self):
+    @staticmethod
+    def _read_api_key():
         with open(API_KEY_FILENAME, "r") as f:
             api_key = f.read()
             return api_key
@@ -177,7 +176,7 @@ class WhatsOpt(object):
             pbname = prob.model.__class__.__name__
             if name and pbname != name:
                 info("Analysis %s skipped" % pbname)
-                pass  # do not exit
+                # do not exit seeking for another problem (ie analysis)
             else:
                 self.push_mda(prob, options)
                 exit()
@@ -233,11 +232,11 @@ class WhatsOpt(object):
             for chunk in resp.iter_content(chunk_size=128):
                 fd.write(chunk)
             name = fd.name
-        zip = zipfile.ZipFile(name, "r")
+        zipf = zipfile.ZipFile(name, "r")
         tempdir = tempfile.mkdtemp(suffix="wop", dir=tempfile.tempdir)
-        zip.extractall(tempdir)
-        filenames = zip.namelist()
-        zip.close()
+        zipf.extractall(tempdir)
+        filenames = zipf.namelist()
+        zipf.close()
         file_to_move = {}
         for f in filenames:
             file_to = f
@@ -433,7 +432,8 @@ class WhatsOpt(object):
         )
         log("current wop:{}".format(__version__))
 
-    def serve(self):
+    @staticmethod
+    def serve():
         from subprocess import call
 
         try:

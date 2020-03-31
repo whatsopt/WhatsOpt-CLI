@@ -15,6 +15,7 @@ from logging import error
 )
 @click.pass_context
 def cli(ctx, credentials, url):
+    ctx.ensure_object(dict)  # create context dictionary ctx.obj ={}
     ctx.obj["api_key"] = credentials
     ctx.obj["url"] = url
 
@@ -231,4 +232,5 @@ def serve():
     WhatsOpt(login=False).serve()
 
 
-cli(prog_name="wop", obj={})
+if __name__ == "__main__":
+    cli()
