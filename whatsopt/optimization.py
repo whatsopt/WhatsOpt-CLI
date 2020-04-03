@@ -32,9 +32,10 @@ class Optimization(object):
                 for k in ["type", "bound", "tol"]:
                     cstr[k] = cstr.get(k, self.DEFAULT_CSTR[k])
 
+            self._xlimits = np.array(xlimits)
             optim_config = {
                 "kind": "SEGOMOE",
-                "xlimits": xlimits,
+                "xlimits": self._xlimits.tolist(),
                 "cstr_specs": self._cstr_specs,
             }
 
@@ -56,16 +57,13 @@ class Optimization(object):
             )
 
     def tell_doe(self, x, y):
+        self._status = None
         self._x = np.atleast_2d(x)
         self._y = np.atleast_2d(y)
-        self._tell()
 
     def run(self, f_grouped, n_iter=1):
         for i in range(n_iter):
             x_suggested, status = self.ask()
-            if status == Optimization.SOLUTION_REACHED:
-                print("Solution is reached")
-                break
             print(
                 "{} x suggested = {} with status: {}".format(
                     i, x_suggested, Optimization.STATUSES[status]
@@ -77,6 +75,10 @@ class Optimization(object):
             print("new y = {}".format(new_y))
 
             self.tell(x_suggested, new_y)
+            if self.is_solution_reached():
+                print("Solution is reached")
+                break
+
             try:
                 _, y = self.get_result()
                 print("y_opt_tmp = {}".format(y))
@@ -105,12 +107,11 @@ class Optimization(object):
         else:
             self._x = np.vstack((self._x, np.atleast_2d(x)))
             self._y = np.vstack((self._y, np.atleast_2d(y)))
-            self._tell()
 
     def ask(self):
-        ret1, ret2 = self._x_suggested, self._status
-        self._x_suggested, self._status = None, -1  # reset suggestion
-        return ret1, ret2
+        if not self.is_solution_reached():
+            self._optimizer_iteration()
+        return self._x_suggested, self._status
 
     def get_result(self, valid_constraints=True):
         y_opt = self._y[:, 0].min()
@@ -155,7 +156,7 @@ class Optimization(object):
     def is_solution_reached(self):
         return self._status == self.SOLUTION_REACHED
 
-    def _tell(self):
+    def _optimizer_iteration(self):
         try:
             url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
             resp = self._wop.session.put(
