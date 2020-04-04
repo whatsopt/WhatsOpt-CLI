@@ -1,4 +1,5 @@
 import sys
+import time
 import numpy as np
 from requests.exceptions import RequestException
 from .whatsopt_client import WhatsOpt
@@ -19,9 +20,20 @@ class Optimization(object):
     INVALID_POINT = 1
     RUNTIME_ERROR = 2
     SOLUTION_REACHED = 3
-    STATUSES = ["valid point", "invalid point", "runtime error", "solution reached"]
+    RUNNING = 4
+    PENDING = -1
+
+    STATUSES = [
+        "valid point",
+        "invalid point",
+        "runtime error",
+        "solution reached",
+        "running",
+        "pending",
+    ]
 
     DEFAULT_CSTR = {"type": "<", "bound": 0.0, "tol": 1e-4}
+    TIMEOUT = 60
 
     def __init__(self, xlimits, cstr_specs=None):
         try:
@@ -44,20 +56,20 @@ class Optimization(object):
                 url, headers=self._wop.headers, json={"optimization": optim_config}
             )
             if not resp.ok:
-                raise OptimizationInitError("{}: {}", resp.status_code, resp.reason)
+                raise OptimizationError("{}: {}", resp.status_code, resp.reason)
 
             self._id = resp.json()["id"]
             self._x = np.array([])
             self._y = np.array([])
             self._x_suggested = None
-            self._status = None
+            self._status = self.PENDING
         except RequestException as e:
             raise OptimizationError(
                 "Connection failed during initialization: {}".format(e)
             )
 
     def tell_doe(self, x, y):
-        self._status = None
+        self._status = self.PENDING
         self._x = np.atleast_2d(x)
         self._y = np.atleast_2d(y)
 
@@ -110,7 +122,32 @@ class Optimization(object):
 
     def ask(self):
         if not self.is_solution_reached():
+            self._status = self.RUNNING
             self._optimizer_iteration()
+            retry = self.TIMEOUT
+            url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
+            resp = None
+            while retry > 0 and self.is_running():
+                resp = self._wop.session.get(url, headers=self._wop.headers)
+                if resp.ok:
+                    result = resp.json()["outputs"]
+                    self._x_suggested = result["x_suggested"]
+                    self._status = result["status"]
+                if self.is_running():
+                    if retry + 1 % 10 == 0:
+                        print("Waiting for result...")
+                    time.sleep(1)
+                retry = retry - 1
+
+            if retry <= 0:
+                self._x_suggested = self.PENDING
+                self._status = self.RUNTIME_ERROR
+                raise OptimizationError(
+                    "Time out: please check status and history and may be ask again."
+                )
+
+            self.status = self.PENDING
+
         return self._x_suggested, self._status
 
     def get_result(self, valid_constraints=True):
@@ -156,6 +193,9 @@ class Optimization(object):
     def is_solution_reached(self):
         return self._status == self.SOLUTION_REACHED
 
+    def is_running(self):
+        return self._status == self.RUNNING
+
     def _optimizer_iteration(self):
         try:
             url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
@@ -164,11 +204,7 @@ class Optimization(object):
                 headers=self._wop.headers,
                 json={"optimization": {"x": self._x.tolist(), "y": self._y.tolist()}},
             )
-            if resp.ok:
-                res = resp.json()
-                self._x_suggested = res["x_suggested"]
-                self._status = res["status"]
-            else:
+            if not resp.ok:
                 self._wop.err_msg(resp)
                 self._status = self.RUNTIME_ERROR
                 error("Optimizer runtime error")
