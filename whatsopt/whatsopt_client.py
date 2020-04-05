@@ -134,7 +134,7 @@ class WhatsOpt(object):
         # bad wop version
         if resp.status_code == requests.codes.forbidden:
             error(resp.json()["message"])
-            exit(-1)
+            sys.exit(-1)
 
         if not api_key and already_logged and not ok:
             # try to propose re-login
@@ -431,7 +431,7 @@ class WhatsOpt(object):
         resp = self.session.get(url, headers=self.headers)
         resp.raise_for_status()
         version = resp.json()
-        log("WhatsOpt {} recommends wop {}".format(version["whatsopt"], version["wop"]))
+        log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
         log("You use wop {}".format(__version__))
 
     @staticmethod
