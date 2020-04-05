@@ -432,7 +432,7 @@ class WhatsOpt(object):
         resp.raise_for_status()
         version = resp.json()
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
-        log("You use wop {}".format(__version__))
+        log("You are using wop {}".format(__version__))
 
     @staticmethod
     def serve():
