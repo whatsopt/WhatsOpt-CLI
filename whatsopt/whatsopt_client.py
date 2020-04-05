@@ -1,6 +1,7 @@
 from __future__ import print_function
 from shutil import move
 import os
+import sys
 import json
 import getpass
 import requests
@@ -25,7 +26,7 @@ except:  # openmdao >= 2.9
 
 from openmdao.api import IndepVarComp
 
-from whatsopt.logging import log, info, warn, error
+from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_command import PushCommand
@@ -111,6 +112,7 @@ class WhatsOpt(object):
             return api_key
 
     def login(self, api_key=None, echo=None):
+        debug("login()")
         already_logged = False
         if api_key:
             self.api_key = api_key
@@ -118,6 +120,7 @@ class WhatsOpt(object):
             already_logged = True
             self.api_key = self._read_api_key()
         else:
+            debug("Ask for API key")
             self.api_key = self._ask_and_write_api_key()
         self.headers = {
             "Authorization": "Token token=" + self.api_key,
@@ -126,26 +129,27 @@ class WhatsOpt(object):
 
         url = self.endpoint("/api/v1/analyses")
         resp = self.session.get(url, headers=self.headers)
+        ok = resp.ok
 
         # bad wop version
         if resp.status_code == requests.codes.forbidden:
             error(resp.json()["message"])
             exit(-1)
 
-        if not api_key and already_logged and not resp.ok:
+        if not api_key and already_logged and not ok:
             # try to propose re-login
             self.logout(
                 echo=False
             )  # log out silently, suppose one was logged on another server
-            resp = self.login(api_key, echo)
+            ok = self.login(api_key, echo)
 
-        if not resp.ok and echo:
-            error("Login to WhatsOpt (%s) failed." % self.url)
-            exit(-1)
+        if not ok and echo:
+            error("Login to WhatsOpt ({}) failed.".format(self.url))
+            sys.exit(-1)
 
         if echo:
             log("Successfully logged into WhatsOpt (%s)" % self.url)
-        return resp
+        return resp.ok
 
     def logout(self, echo=True):
         if os.path.exists(API_KEY_FILENAME):
@@ -153,7 +157,7 @@ class WhatsOpt(object):
         if os.path.exists(URL_FILENAME):
             os.remove(URL_FILENAME)
         if echo:
-            log("Sucessfully logged out from WhatsOpt (%s)" % self.url)
+            log("Sucessfully logged out from WhatsOpt")
 
     def list_analyses(self):
         url = self.endpoint("/api/v1/analyses")
@@ -427,10 +431,8 @@ class WhatsOpt(object):
         resp = self.session.get(url, headers=self.headers)
         resp.raise_for_status()
         version = resp.json()
-        log(
-            "WhatsOpt:{} recommended wop:{}".format(version["whatsopt"], version["wop"])
-        )
-        log("current wop:{}".format(__version__))
+        log("WhatsOpt {} recommends wop {}".format(version["whatsopt"], version["wop"]))
+        log("You use wop {}".format(__version__))
 
     @staticmethod
     def serve():

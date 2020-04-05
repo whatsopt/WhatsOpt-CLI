@@ -31,6 +31,7 @@ def url():
 @click.pass_context
 def login(ctx, url):
     """ Authenticate to the specified WhatsOpt server given its URL """
+    print("DEBUG")
     ctx.obj["url"] = url
     WhatsOpt(**ctx.obj).login(echo=True)
 
