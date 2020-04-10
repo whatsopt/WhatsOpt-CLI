@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2bfeec24ee434cb7a6665ce29836f052)](https://app.codacy.com/manual/relf/WhatsOpt-CLI?utm_source=github.com&utm_medium=referral&utm_content=OneraHub/WhatsOpt-CLI&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/OneraHub/WhatsOpt-CLI.svg?branch=master)](https://travis-ci.org/OneraHub/WhatsOpt-CLI)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
