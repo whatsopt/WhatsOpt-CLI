@@ -7,11 +7,12 @@
 # analysis_id: 34
 
 
-import numpy as np
+# import numpy as np
 from os import path
 from importlib import import_module
 from yaml import load, FullLoader
 from openmdao.api import ExplicitComponent
+
 
 class Disc1Base(ExplicitComponent):
     """ An OpenMDAO base component to encapsulate Disc1 discipline """
@@ -25,16 +26,12 @@ class Disc1Base(ExplicitComponent):
                 dock = load(dockfile, Loader=FullLoader)
                 impl = dock.get("disc1")
                 if impl:
-                    module = import_module(impl['module'])
-                    self._impl = getattr(module, impl['class'])()
+                    module = import_module(impl["module"])
+                    self._impl = getattr(module, impl["class"])()
 
     def setup(self):
-        self.add_input('x', val=2, desc='')
-        self.add_input('y2', val=1.0, desc='')
-        self.add_input('z', val=[5, 2], desc='')
+        self.add_input("x", val=2, desc="")
+        self.add_input("y2", val=1.0, desc="")
+        self.add_input("z", val=[5, 2], desc="")
 
-        self.add_output('y1', val=1.0, desc='')
-
-
-
-        
+        self.add_output("y1", val=1.0, desc="")
