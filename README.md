@@ -1,9 +1,10 @@
 [![Build Status](https://travis-ci.org/OneraHub/WhatsOpt-CLI.svg?branch=master)](https://travis-ci.org/OneraHub/WhatsOpt-CLI)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2bfeec24ee434cb7a6665ce29836f052)](https://app.codacy.com/manual/relf/WhatsOpt-CLI?utm_source=github.com&utm_medium=referral&utm_content=OneraHub/WhatsOpt-CLI&utm_campaign=Badge_Grade_Dashboard)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 # WhatsOpt command line interface
 
-Command line interface to interact with WhatsOpt web application.
+Command line interface to interact with WhatsOpt web application. See [WhatsOpt documentation](https://github.com/OneraHub/WhatsOpt-Doc).
 
 ## Citation
 >Rémi  Lafage,  Sébastien  Defoort,  and  Thierry  Lefèbvre. Whatsopt: a web application for multidisciplinary design analysis and optimization. In 20th AIAA/ISSMO Multidisciplinary Analysis and Optimization Conference, Dallas, United States, 2019
