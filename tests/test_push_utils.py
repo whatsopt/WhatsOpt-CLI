@@ -7,6 +7,7 @@ from whatsopt.push_utils import (
     extract_disc_var,
     format_shape,
     to_camelcase,
+    problem_pyfile,
 )
 
 
@@ -37,3 +38,11 @@ class TestPushUtils(unittest.TestCase):
         self.assertEqual("d", val3)
         # raise Exception
         self.assertRaises(Exception, extract_disc_var, "a")
+
+    def test_generate_problem_pyfile(self):
+        with problem_pyfile(
+            os.path.join(self.DATA_PATH, "disc1.py"), "Disc1"
+        ) as pbfile:
+            self.assertTrue(os.path.exists(pbfile))
+            self.assertTrue(os.system("python {}".format(pbfile)) == 0)
+        self.assertFalse(os.path.exists(pbfile))

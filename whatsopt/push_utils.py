@@ -1,4 +1,7 @@
 import re
+import os
+import tempfile
+from contextlib import contextmanager
 
 # push_command collect_var_infos
 def format_shape(scalar_format, shape):
@@ -44,3 +47,67 @@ def extract_disc_var(fullname):
             + " at least one dot, but got %s" % fullname
         )
     return mda, disc, var
+
+
+@contextmanager
+def problem_pyfile(py_filename, component):
+    dirname = os.path.dirname(py_filename)
+    filename = os.path.basename(py_filename)
+    module = os.path.splitext(filename)[0]
+    content = """from openmdao.api import Problem, Group, IndepVarComp
+from {} import {}
+
+comp = {}()
+comp_name = "{}"
+
+
+class {}ComponentDiscovery(Group):
+    pass
+
+
+class {}Component(Group):
+    pass
+
+
+model_discovery = {}ComponentDiscovery()
+model_discovery.add_subsystem(comp_name, comp, promotes=["*"])
+pb_discovery = Problem(model_discovery)
+pb_discovery.setup()
+
+
+inputs = comp.list_inputs(out_stream=None)
+indeps = IndepVarComp()
+for name, meta in inputs:
+    args = {{
+        "val": meta.get("value"),
+        "shape": meta.get("shape"),
+        "desc": meta.get("desc", ""),
+        "units": meta.get("units", None)
+    }}
+    indeps.add_output(name, **args)
+
+model = {}Component()
+model.add_subsystem("indeps", indeps, promotes=["*"])
+model.add_subsystem(comp_name, comp, promotes=["*"])
+pb = Problem(model)
+pb.setup()
+pb.final_setup()
+""".format(
+        module,
+        component,
+        component,
+        component,
+        component,
+        component,
+        component,
+        component,
+    )
+    handle, pbfile = tempfile.mkstemp(suffix=".py", dir=dirname)
+    os.close(handle)
+    with open(pbfile, "w") as pbf:
+        pbf.write(content)
+
+    try:
+        yield pbfile
+    finally:
+        os.unlink(pbfile)

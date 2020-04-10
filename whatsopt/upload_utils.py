@@ -62,10 +62,8 @@ def load_from_sqlite(filename, parallel=False):
             next_filename = file_prefix + str(file_count)
             while os.path.exists(next_filename):
                 _, tmp_cases, tmp_statuses = _load_sqlite_file(next_filename)
-                [
+                for i, tmp_case in enumerate(tmp_cases):
                     cases[i]["values"].extend(tmp_case["values"])
-                    for i, tmp_case in enumerate(tmp_cases)
-                ]
                 statuses.extend(tmp_statuses)
                 file_count = file_count + 1
                 next_filename = file_prefix + str(file_count)
