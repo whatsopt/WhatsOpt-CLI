@@ -21,7 +21,7 @@ except ImportError:
 
 try:  # openmdao < 2.9
     from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
-except:  # openmdao >= 2.9
+except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 from openmdao.api import IndepVarComp
@@ -152,7 +152,8 @@ class WhatsOpt(object):
             log("Successfully logged into WhatsOpt (%s)" % self.url)
         return resp.ok
 
-    def logout(self, echo=True):
+    @staticmethod
+    def logout(echo=True):
         if os.path.exists(API_KEY_FILENAME):
             os.remove(API_KEY_FILENAME)
         if os.path.exists(URL_FILENAME):
