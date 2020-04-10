@@ -1,7 +1,6 @@
 import os
 import unittest
 import numpy as np
-import tempfile
 
 from whatsopt.push_utils import (
     simple_value,
