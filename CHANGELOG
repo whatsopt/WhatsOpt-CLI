@@ -1,4 +1,7 @@
-* 1.6.0 (//2020)
+* 1.7.0 (??/04/2020)
+  - wop push: add -c component option allowing to push one OpenMDAO component
+
+* 1.6.0 (05/04/2020)
   - add API for WhatsOpt SEGOMOE optimization
 
 * 1.5.0 (18/03/2020)
