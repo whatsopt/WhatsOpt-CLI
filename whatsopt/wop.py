@@ -64,14 +64,22 @@ def list(ctx):
     help="manage (1,) shape variables as scalar variables",
 )
 @click.option("--name", help="find analysis with given name")
+@click.option(
+    "-c",
+    "--component",
+    help="push the specified OpenMDAO importable from the given file",
+)
 @click.argument("py_filename")
 @click.pass_context
-def push(ctx, dry_run, scalar_format, name, py_filename):
-    """ Push analysis from given PY_FILENAME """
+def push(ctx, dry_run, scalar_format, name, component, py_filename):
+    """ Push OpenMDAO problem from given PY_FILENAME """
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {"--dry-run": dry_run, "--scalar-format": scalar_format, "--name": name}
-    wop.push_mda_cmd(py_filename, options)
+    if component:
+        wop.push_component_cmd(py_filename, component, options)
+    else:
+        wop.push_mda_cmd(py_filename, options)
 
     # if not exited successfully in execute
     if name:

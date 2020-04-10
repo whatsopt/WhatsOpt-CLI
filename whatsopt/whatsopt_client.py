@@ -29,6 +29,7 @@ from openmdao.api import IndepVarComp
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
+from whatsopt.push_utils import problem_pyfile
 from whatsopt.push_command import PushCommand
 
 
@@ -174,6 +175,10 @@ class WhatsOpt(object):
         else:
             resp.raise_for_status()
 
+    def push_component_cmd(self, py_filename, component, options):
+        with problem_pyfile(py_filename, component) as pyf:
+            self.push_mda_cmd(pyf, options)
+
     def push_mda_cmd(self, py_filename, options):
         def push_mda(prob):
             name = options["--name"]
@@ -183,14 +188,14 @@ class WhatsOpt(object):
                 # do not exit seeking for another problem (ie analysis)
             else:
                 self.push_mda(prob, options)
-                exit()
+                sys.exit()
 
         try:
             import openmdao.utils.hooks as hooks
             from openmdao.utils.file_utils import _load_and_exec
         except ImportError:
             error("wop > 1.4.3 requires openmdao >= 2.10.0 for push command")
-            exit(-1)
+            sys.exit(-1)
 
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=push_mda)
@@ -296,7 +301,7 @@ class WhatsOpt(object):
                     mda_id
                 )
             )
-            exit(-1)
+            sys.exit(-1)
         opts = copy.deepcopy(options)
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
@@ -338,7 +343,7 @@ class WhatsOpt(object):
 
         if dry_run:
             print_cases(cases, statuses)
-            exit()
+            sys.exit()
 
         resp = None
         if operation_id:
@@ -386,7 +391,7 @@ class WhatsOpt(object):
     def upload_parameters_cmd(self, py_filename, options):
         def upload_parameters(prob):
             self.upload_parameters(prob, options)
-            exit()
+            sys.exit()
 
         d = os.path.dirname(py_filename)
         run_analysis_filename = os.path.join(d, "run_analysis.py")
@@ -396,7 +401,7 @@ class WhatsOpt(object):
             from openmdao.utils.file_utils import _load_and_exec
         except ImportError:
             error("wop > 1.4.3 requires openmdao >= 2.10.0 for upload command")
-            exit(-1)
+            sys.exit(-1)
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=upload_parameters)
         _load_and_exec(run_analysis_filename, [])
@@ -405,7 +410,7 @@ class WhatsOpt(object):
         mda_id = get_analysis_id() if get_analysis_id() else options["--analysis-id"]
         if mda_id is None:
             error("Unknown analysis with id={}".format(mda_id))
-            exit(-1)
+            sys.exit(-1)
         parameters = []
         headers = ["parameter", "value"]
         data = []
@@ -444,5 +449,5 @@ class WhatsOpt(object):
             error(
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
-            exit(-1)
+            sys.exit(-1)
         call(["python", "run_server.py"])
