@@ -178,6 +178,10 @@ class WhatsOpt(object):
 
     def push_component_cmd(self, py_filename, component, options):
         with problem_pyfile(py_filename, component) as pyf:
+            if options["--dry-run"]:
+                with open(pyf, "r") as pbf:
+                    print(pbf.read())
+                    sys.exit(0)
             self.push_mda_cmd(pyf, options)
 
     def push_mda_cmd(self, py_filename, options):
