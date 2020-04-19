@@ -229,6 +229,26 @@ def upload(
 
 
 @cli.command()
+@click.option(
+    "-n",
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="print analysis pull infos without actually pulling",
+)
+@click.option(
+    "-a",
+    "--analysis-id",
+    help="specify the analysis to create a new operation otherwise use default analysis",
+)
+@click.pass_context
+def show(ctx, dry_run, analysis_id):
+    """ Show current analysis or given its identifier """
+    options = {"--dry-run": dry_run}
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, options)
+
+
+@cli.command()
 @click.pass_context
 def version(ctx):
     """ Show versions of WhatsOpt app and recommended wop command line """

@@ -31,6 +31,7 @@ from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_utils import problem_pyfile
 from whatsopt.push_command import PushCommand
+from whatsopt.show_utils import show
 
 
 from whatsopt import __version__
@@ -310,6 +311,21 @@ class WhatsOpt(object):
         opts = copy.deepcopy(options)
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
+
+    def show_mda(self, analysis_id=None, options={}):
+        mda_id = analysis_id or get_analysis_id()
+        if mda_id is None:
+            error(
+                "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
+                    mda_id
+                )
+            )
+            sys.exit(-1)
+        url = self.endpoint("/api/v1/analyses/{}.xdsm".format(mda_id))
+        resp = self.session.get(url, headers=self.headers)
+        resp.raise_for_status()
+        xdsm = resp.json()
+        show(xdsm)
 
     def upload(
         self,
