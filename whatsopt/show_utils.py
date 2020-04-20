@@ -25,8 +25,7 @@ HTML_TEMPLATE = """
             cellsize: {{ w: 150, h: 50 }},
             padding: 10,
         }},
-        noDefaultDriver: true,
-        noTitleTooltip: false,
+        withDefaultDriver: false,
       }};
       xdsmjs.XDSMjs(config).createXdsm(mdo);
     }});
@@ -42,13 +41,13 @@ HTML_TEMPLATE = """
 """
 
 
-def show(xdsm):
-    html = generate_html(xdsm)
+def generate_xdsm_html(xdsm, outfilename="xdsm.html"):
+    html = _generate_html(xdsm)
 
-    with open("xdsm.html", "w") as f:
+    with open(outfilename, "w") as f:
         f.write(html)
 
 
-def generate_html(xdsm):
+def _generate_html(xdsm):
     html = HTML_TEMPLATE.format(css(), bundlejs(), xdsm)
     return html
