@@ -12,17 +12,14 @@ import tempfile
 import numpy as np
 from tabulate import tabulate
 
-try:
-    # Python 3
-    from urllib.parse import urlparse
-except ImportError:
-    # Python 2
-    from urlparse import urlparse
+# Python 3
+from urllib.parse import urlparse
 
 try:  # openmdao < 2.9
     from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
 except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
+    from openmdao.utils.webview import webview
 
 from openmdao.api import IndepVarComp
 
@@ -31,6 +28,7 @@ from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_utils import problem_pyfile
 from whatsopt.push_command import PushCommand
+from whatsopt.show_utils import generate_xdsm_html
 
 
 from whatsopt import __version__
@@ -310,6 +308,25 @@ class WhatsOpt(object):
         opts = copy.deepcopy(options)
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
+
+    def show_mda(self, analysis_id=None, batch=False):
+        mda_id = analysis_id or get_analysis_id()
+        if mda_id is None:
+            error(
+                "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
+                    mda_id
+                )
+            )
+            sys.exit(-1)
+        url = self.endpoint("/api/v1/analyses/{}.xdsm".format(mda_id))
+        resp = self.session.get(url, headers=self.headers)
+        resp.raise_for_status()
+        xdsm = resp.json()
+        outfile = "xdsm.html"
+        generate_xdsm_html(xdsm, outfile)
+        log("XDSM of analysis {} generated in {}".format(mda_id, outfile))
+        if not batch:
+            webview(outfile)
 
     def upload(
         self,

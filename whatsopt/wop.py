@@ -229,6 +229,25 @@ def upload(
 
 
 @cli.command()
+@click.option(
+    "-a",
+    "--analysis-id",
+    help="specify the analysis to create a new operation otherwise use default analysis",
+)
+@click.option(
+    "-b",
+    "--batch",
+    is_flag=True,
+    default=False,
+    help="batch mode: do not launch browser",
+)
+@click.pass_context
+def show(ctx, analysis_id, batch):
+    """ Show current analysis or given its identifier """
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, batch)
+
+
+@cli.command()
 @click.pass_context
 def version(ctx):
     """ Show versions of WhatsOpt app and recommended wop command line """

@@ -1,3 +1,6 @@
+* 1.7.2 (20/04/2020)
+  - wop show -a: display XDSM of given analysis
+
 * 1.7.0 (15/04/2020)
   - wop push: add -c component option allowing to push one OpenMDAO component
 

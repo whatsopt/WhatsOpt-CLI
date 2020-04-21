@@ -22,7 +22,7 @@ def error(msg, **kwargs):
     log("Error: {}".format(msg), **kwargs)
 
 
-def debug(msg, **kwargs):
+def debug(msg):
     if DEBUG:
         print("DEBUG ********************************")
-        print(msg, **kwargs)
+        print(msg)
