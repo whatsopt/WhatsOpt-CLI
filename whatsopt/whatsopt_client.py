@@ -44,6 +44,11 @@ class WhatsOptImportMdaError(Exception):
     pass
 
 
+class AnalysisPushedException(Exception):
+    def __init__(self, xdsm):
+        self.xdsm = xdsm
+
+
 class WhatsOpt(object):
     def __init__(self, url=None, api_key=None, login=True):
         if url:
@@ -179,7 +184,7 @@ class WhatsOpt(object):
             if options["--dry-run"]:
                 with open(pyf, "r") as pbf:
                     print(pbf.read())
-                    sys.exit(0)
+                    sys.exit()
             self.push_mda_cmd(pyf, options)
 
     def push_mda_cmd(self, py_filename, options):
@@ -190,8 +195,12 @@ class WhatsOpt(object):
                 info("Analysis %s skipped" % pbname)
                 # do not exit seeking for another problem (ie analysis)
             else:
-                self.push_mda(prob, options)
-                sys.exit()
+                xdsm = self.push_mda(prob, options)
+                if options.get("--xdsm"):  # show command
+                    # required to interrupt pb execution
+                    raise AnalysisPushedException(xdsm=xdsm)
+                else:
+                    sys.exit()
 
         try:
             import openmdao.utils.hooks as hooks
@@ -207,19 +216,24 @@ class WhatsOpt(object):
 
     def push_mda(self, problem, options):
         name = problem.model.__class__.__name__
-        scalar_format = options["--scalar-format"]
+        scalar_format = options.get("--scalar-format")
         push_cmd = PushCommand(problem, scalar_format)
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
 
         if options["--dry-run"]:
             log(json.dumps(mda_attrs, indent=2))
         else:
-            url = self.endpoint("/api/v1/analyses")
+            format = options.get("--xdsm")
+            suffix = ""
+            if format:
+                suffix = ".xdsm"
+            url = self.endpoint("/api/v1/analyses{}".format(suffix))
             resp = self.session.post(
                 url, headers=self.headers, json={"analysis": mda_attrs}
             )
             resp.raise_for_status()
             log("Analysis %s pushed" % name)
+            return resp.json()
 
     def pull_mda(self, mda_id, options={}, msg=None):
         if not msg:
@@ -309,22 +323,34 @@ class WhatsOpt(object):
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
 
-    def show_mda(self, analysis_id=None, batch=False):
-        mda_id = analysis_id or get_analysis_id()
-        if mda_id is None:
-            error(
-                "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
-                    mda_id
+    def show_mda(self, analysis_id, pbfile, name, outfile, batch):
+        options = {"--xdsm": True, "--name": name, "--dry-run": False}
+        xdsm = None
+        if pbfile:
+            try:
+                self.push_mda_cmd(pbfile, options)
+            except AnalysisPushedException as pushed:
+                xdsm = pushed.xdsm
+
+        if not xdsm:
+            mda_id = analysis_id or get_analysis_id()
+            if mda_id is None:
+                error(
+                    "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
+                        mda_id
+                    )
                 )
-            )
-            sys.exit(-1)
-        url = self.endpoint("/api/v1/analyses/{}.xdsm".format(mda_id))
-        resp = self.session.get(url, headers=self.headers)
-        resp.raise_for_status()
-        xdsm = resp.json()
-        outfile = "xdsm.html"
+                sys.exit(-1)
+            url = self.endpoint("/api/v1/analyses/{}.xdsm".format(mda_id))
+            resp = self.session.get(url, headers=self.headers)
+            resp.raise_for_status()
+            xdsm = resp.json()
+
         generate_xdsm_html(xdsm, outfile)
-        log("XDSM of analysis {} generated in {}".format(mda_id, outfile))
+        if pbfile:
+            log("XDSM of analysis from {} generated in {}".format(pbfile, outfile))
+        else:
+            log("XDSM of analysis {} generated in {}".format(mda_id, outfile))
         if not batch:
             webview(outfile)
 

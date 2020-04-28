@@ -1,5 +1,9 @@
-* 1.7.2 (20/04/2020)
-  - wop show -a: display XDSM of given analysis
+* 1.8.0 (20/04/2020)
+  - wop show: display XDSM of given analysis :
+    - either an existing on the remote server (-a option)
+    - or by specifying an openmdao problem python file (-f option)
+    - otherwise use current analysis from code (previously generated with wop pull)
+  - require openmdao_extensions >= 1.0.0, openmdao >= 3.0.0
 
 * 1.7.0 (15/04/2020)
   - wop push: add -c component option allowing to push one OpenMDAO component

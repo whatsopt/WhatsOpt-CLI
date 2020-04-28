@@ -31,7 +31,6 @@ def url():
 @click.pass_context
 def login(ctx, url):
     """ Authenticate to the specified WhatsOpt server given its URL """
-    print("DEBUG")
     ctx.obj["url"] = url
     WhatsOpt(**ctx.obj).login(echo=True)
 
@@ -67,7 +66,7 @@ def list(ctx):
 @click.option(
     "-c",
     "--component",
-    help="push the specified OpenMDAO importable from the given file",
+    help="push the specified OpenMDAO component importable from the given python file",
 )
 @click.argument("py_filename")
 @click.pass_context
@@ -232,7 +231,16 @@ def upload(
 @click.option(
     "-a",
     "--analysis-id",
-    help="specify the analysis to create a new operation otherwise use default analysis",
+    help="specify the id of the analysis available on the remote server",
+)
+@click.option(
+    "-f", "--pbfile", help="specify the analysis given an OpenMDAO problem python file"
+)
+@click.option(
+    "--name", help="find analysis with given name (only used with pbfile option)"
+)
+@click.option(
+    "-o", "--outfile", default="xdsm.html", help="specify output filename to store html"
 )
 @click.option(
     "-b",
@@ -242,9 +250,10 @@ def upload(
     help="batch mode: do not launch browser",
 )
 @click.pass_context
-def show(ctx, analysis_id, batch):
-    """ Show current analysis or given its identifier """
-    WhatsOpt(**ctx.obj).show_mda(analysis_id, batch)
+def show(ctx, analysis_id, pbfile, name, outfile, batch):
+    """ Show current analysis from pulled code or given its identifier (-a) on remote server 
+    or discovered in OpenMDAO problem file (-f)"""
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch)
 
 
 @cli.command()
