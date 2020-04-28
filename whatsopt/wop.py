@@ -251,7 +251,7 @@ def upload(
 )
 @click.pass_context
 def show(ctx, analysis_id, pbfile, name, outfile, batch):
-    """ Show current analysis from pulled code or given its identifier (-a) on remote server 
+    """ Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
     WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch)
 

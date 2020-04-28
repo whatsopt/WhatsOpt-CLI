@@ -223,9 +223,8 @@ class WhatsOpt(object):
         if options["--dry-run"]:
             log(json.dumps(mda_attrs, indent=2))
         else:
-            format = options.get("--xdsm")
             suffix = ""
-            if format:
+            if options.get("--xdsm"):
                 suffix = ".xdsm"
             url = self.endpoint("/api/v1/analyses{}".format(suffix))
             resp = self.session.post(
