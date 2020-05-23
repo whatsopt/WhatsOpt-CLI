@@ -24,6 +24,7 @@ class PushCommand(object):
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
+        print(self.connections)
         self.vars = {}
         self.vardescs = {}
         self.discmap = {}
@@ -31,6 +32,10 @@ class PushCommand(object):
     def get_mda_attributes(self, group, tree, group_prefix=""):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
+        for k, v in self.vars.items():
+            print(k, v)
+        # print(self.vardescs)
+        print(self.discmap)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
         mda_attrs = {
             "name": group.__class__.__name__,
@@ -254,6 +259,7 @@ class PushCommand(object):
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar_format, shape)
                 name = system._var_abs2prom[typ][abs_name]
+                # name = abs_name
                 self.vars[abs_name] = {
                     "fullname": abs_name,
                     "name": name,

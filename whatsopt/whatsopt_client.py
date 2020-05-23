@@ -221,6 +221,7 @@ class WhatsOpt(object):
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
 
         if options["--dry-run"]:
+            pass
             log(json.dumps(mda_attrs, indent=2))
         else:
             suffix = ""

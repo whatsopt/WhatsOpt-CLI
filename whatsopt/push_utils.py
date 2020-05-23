@@ -49,6 +49,19 @@ def extract_disc_var(fullname):
     return mda, disc, var
 
 
+# push_command _get_varattr_from_connection
+def extract_disc_var2(fullname):
+    name_elts = fullname.split(".")
+    if len(name_elts) > 1:
+        mda, var = name_elts[:-1], name_elts[-1]
+    else:
+        raise Exception(
+            "Connection qualified name should contain"
+            + " at least one dot, but got %s" % fullname
+        )
+    return mda, var
+
+
 @contextmanager
 def problem_pyfile(py_filename, component):
     dirname = os.path.dirname(py_filename)
