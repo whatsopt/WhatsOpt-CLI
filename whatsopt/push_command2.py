@@ -119,7 +119,8 @@ class PushCommand2(object):
             disc_endpoint = mda_endpoint[0]
             for discattrs in mda_attrs["disciplines_attributes"]:
                 if self.discmap[disc_endpoint] == discattrs["name"]:
-                    discattrs["variables_attributes"].append(varattrs)
+                    if discattrs.get("variables_attributes") is not None:
+                        discattrs["variables_attributes"].append(varattrs)
                     submda_attrs = discattrs.get("sub_analysis_attributes")
                     break
             varattr_driver = varattrs.copy()
@@ -132,6 +133,8 @@ class PushCommand2(object):
             )
 
     def _set_varattr(self, discattrs, endpoint, varname, conn_name, io_mode):
+        if discattrs.get("variables_attributes") is None:
+            return
         found = False
         for vattr in discattrs["variables_attributes"]:
             found = vattr["name"] == varname
@@ -171,7 +174,7 @@ class PushCommand2(object):
         self.mdas[prefix] = submda_attrs
         superdisc_attrs = {
             "name": child["name"],
-            #            "variables_attributes": [],
+            # "variables_attributes": [],
             "sub_analysis_attributes": submda_attrs,
         }
         return superdisc_attrs
