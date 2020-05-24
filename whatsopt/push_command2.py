@@ -15,7 +15,7 @@ try:  # openmdao < 2.9
 except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
-NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
+DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 
 class PushCommand2(object):
@@ -25,19 +25,14 @@ class PushCommand2(object):
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
-        print(self.connections)
-        # self.hierarchy = self.parse_connections(self.connections)
-        # print(self.hierarchy)
         self.vars = {}
         self.vardescs = {}
         self.discmap = {}
         self.mdas = {}
-        self.driver_name = None
 
     def get_mda_attributes(self, group, tree, group_prefix=""):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
-        print(self.vars)
 
         mda_attrs = self._get_mda_hierarchy(group, tree, group_prefix="")
         self._populate_varattrs(mda_attrs)
@@ -46,7 +41,13 @@ class PushCommand2(object):
 
     def _get_mda_hierarchy(self, group, tree, group_prefix=""):
         name = tree["name"]
-        mda_attrs = {"name": name, "disciplines_attributes": []}
+
+        mda_attrs = {
+            "name": group.__class__.__name__ if name is "root" else name,
+            "disciplines_attributes": [
+                {"name": DRIVER_NAME, "variables_attributes": []}
+            ],
+        }
         self.mdas[group_prefix] = mda_attrs
         for i, child in enumerate(tree["children"]):
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
@@ -58,18 +59,13 @@ class PushCommand2(object):
                 )
                 mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
             else:
-                if isinstance(group._subsystems_myproc[i], IndepVarComp):
-                    self.driver_name = child["name"]
-                    discattrs = {"name": "__DRIVER__", "variables_attributes": []}
-                else:
+                if not isinstance(group._subsystems_myproc[i], IndepVarComp):
                     discattrs = {"name": child["name"], "variables_attributes": []}
-                mda_attrs["disciplines_attributes"].append(discattrs)
+                    mda_attrs["disciplines_attributes"].append(discattrs)
         return mda_attrs
 
     def _populate_varattrs(self, mda_attrs):
-        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ POPULATE ", mda_attrs["name"])
         for conn in self.connections:
-            print(conn)
             mda_src, varname_src = extract_disc_var2(conn["src"])
             mda_tgt, varname_tgt = extract_disc_var2(conn["tgt"])
             hat = []
@@ -79,7 +75,6 @@ class PushCommand2(object):
                 mda_tgt = mda_tgt[1:]
             conn_name = self._get_conn_name(conn)
             for discattrs in self.mdas[".".join(hat)]["disciplines_attributes"]:
-                print("DISCATTRS ", discattrs)
                 # mda hat: src
                 if self.discmap[mda_src[0]] == discattrs["name"]:
                     self._set_varattr(
@@ -108,8 +103,6 @@ class PushCommand2(object):
                         upward=False,
                     )
 
-    #             break
-
     def _set_varattr_in_depth(
         self, mda_attrs, mda_endpoint, endpoint, conn_name, upward
     ):
@@ -117,7 +110,6 @@ class PushCommand2(object):
             var = self.vars[endpoint]
             varattrs = {
                 "name": conn_name,
-                "fullname": endpoint,
                 "io_mode": "out" if upward else "in",
                 "desc": self.vardescs.get(endpoint, ""),
                 "type": var["type"],
@@ -150,7 +142,6 @@ class PushCommand2(object):
             discattrs["variables_attributes"].append(
                 {
                     "name": conn_name,
-                    "fullname": endpoint,
                     "io_mode": io_mode,
                     "desc": self.vardescs.get(endpoint, ""),
                     "type": var["type"],
@@ -176,13 +167,11 @@ class PushCommand2(object):
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self._get_mda_hierarchy(group, child, prefix)
         submda_attrs["name"] = child["name"]
-        submda_attrs["disciplines_attributes"] = [
-            {"name": "__DRIVER__", "variables_attributes": []}
-        ] + submda_attrs["disciplines_attributes"]
+        submda_attrs["disciplines_attributes"] = submda_attrs["disciplines_attributes"]
         self.mdas[prefix] = submda_attrs
         superdisc_attrs = {
             "name": child["name"],
-            "variables_attributes": [],
+            #            "variables_attributes": [],
             "sub_analysis_attributes": submda_attrs,
         }
         return superdisc_attrs
@@ -200,7 +189,7 @@ class PushCommand2(object):
             else:
                 # do not represent IndepVarComp
                 if isinstance(system._subsystems_myproc[i], IndepVarComp):
-                    self.discmap[child["name"]] = "__DRIVER__"
+                    self.discmap[child["name"]] = DRIVER_NAME
                 else:
                     self.discmap[child["name"]] = child["name"]
 
@@ -223,13 +212,11 @@ class PushCommand2(object):
                 name = system._var_abs2prom[typ][abs_name]
                 # name = abs_name
                 self.vars[abs_name] = {
-                    "fullname": abs_name,
                     "name": name,
                     "io_mode": io_mode,
                     "type": vtype,
                     "shape": shape,
                     "units": meta["units"],
-                    #'desc': meta['desc'],
                     "value": meta["value"],
                 }
 
@@ -248,7 +235,7 @@ class PushCommand2(object):
                 if desc == "":
                     self.vardescs[name] = meta["desc"]
                 elif desc != meta["desc"] and meta["desc"] != "":
-                    log(
+                    debug(
                         'Find another description for {}: "{}", keep "{}"'.format(
                             name, meta["desc"], self.vardescs[name]
                         )
