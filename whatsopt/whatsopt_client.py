@@ -26,7 +26,7 @@ from openmdao.api import IndepVarComp
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
-from whatsopt.push_utils import problem_pyfile
+from whatsopt.push_utils import problem_pyfile, to_camelcase
 from whatsopt.push_command import PushCommand
 from whatsopt.push_command2 import PushCommand2
 from whatsopt.show_utils import generate_xdsm_html
@@ -196,6 +196,7 @@ class WhatsOpt(object):
                 info("Analysis %s skipped" % pbname)
                 # do not exit seeking for another problem (ie analysis)
             else:
+                options["--pyfilename"] = py_filename
                 xdsm = self.push_mda(prob, options)
                 if options.get("--xdsm"):  # show command
                     # required to interrupt pb execution
@@ -216,10 +217,14 @@ class WhatsOpt(object):
         return push_mda
 
     def push_mda(self, problem, options):
-        name = problem.model.__class__.__name__
         scalar_format = options.get("--scalar-format")
         push_cmd = PushCommand2(problem, scalar_format)
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
+
+        if mda_attrs["name"] == "Group" and options.get("--pyfilename"):
+            mda_attrs["name"] = os.path.splitext(
+                to_camelcase(os.path.basename(options.get("--pyfilename")))
+            )[0]
 
         if options["--dry-run"]:
             pass
@@ -233,7 +238,7 @@ class WhatsOpt(object):
                 url, headers=self.headers, json={"analysis": mda_attrs}
             )
             resp.raise_for_status()
-            log("Analysis %s pushed" % name)
+            log("Analysis %s pushed" % mda_attrs["name"])
             return resp.json()
 
     def pull_mda(self, mda_id, options={}, msg=None):
