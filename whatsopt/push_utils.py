@@ -50,7 +50,7 @@ def extract_disc_var(fullname):
 
 
 # push_command _get_varattr_from_connection
-def extract_disc_var2(fullname):
+def extract_mda_var(fullname):
     name_elts = fullname.split(".")
     if len(name_elts) > 1:
         mda, var = name_elts[:-1], name_elts[-1]

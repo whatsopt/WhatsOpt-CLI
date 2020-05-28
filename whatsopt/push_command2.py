@@ -4,7 +4,7 @@ from whatsopt.push_utils import (
     simple_value,
     to_camelcase,
     extract_disc_var,
-    extract_disc_var2,
+    extract_mda_var,
     format_shape,
 )
 from .logging import debug, log
@@ -25,17 +25,31 @@ class PushCommand2(object):
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
-        self.vars = {}
+        self.vars = {"in": {}, "out": {}}
         self.vardescs = {}
         self.discmap = {}
         self.mdas = {}
 
-    def get_mda_attributes(self, group, tree, group_prefix=""):
+    def get_mda_attributes(self, group, tree):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
 
-        mda_attrs = self._get_mda_hierarchy(group, tree, group_prefix="")
-        self._populate_varattrs(mda_attrs)
+        mda_attrs = self._get_mda_hierarchy(group, tree)
+
+        mda_attrs["name"] = ""
+        self._populate_varattrs_from_connections(mda_attrs)
+        self._populate_varattrs_from_outputs(mda_attrs)
+
+        # retrieve init values
+        driver_attrs = mda_attrs["disciplines_attributes"][0]
+        for vattr in driver_attrs["variables_attributes"]:
+            if vattr["io_mode"] == "out":
+                # set init value for design variables and parameters (outputs of driver)
+                conn_name = vattr["name"].split("==")[0]
+                v = self.vars["out"][conn_name]
+                vattr["parameter_attributes"] = {"init": simple_value(v)}
+
+        mda_attrs["name"] = group.__class__.__name__
 
         return mda_attrs
 
@@ -43,7 +57,7 @@ class PushCommand2(object):
         name = tree["name"]
 
         mda_attrs = {
-            "name": group.__class__.__name__ if name is "root" else name,
+            "name": name,
             "disciplines_attributes": [
                 {"name": DRIVER_NAME, "variables_attributes": []}
             ],
@@ -64,10 +78,10 @@ class PushCommand2(object):
                     mda_attrs["disciplines_attributes"].append(discattrs)
         return mda_attrs
 
-    def _populate_varattrs(self, mda_attrs):
+    def _populate_varattrs_from_connections(self, mda_attrs):
         for conn in self.connections:
-            mda_src, varname_src = extract_disc_var2(conn["src"])
-            mda_tgt, varname_tgt = extract_disc_var2(conn["tgt"])
+            mda_src, varname_src = extract_mda_var(conn["src"])
+            mda_tgt, varname_tgt = extract_mda_var(conn["tgt"])
             hat = []
             while mda_src and mda_tgt and mda_src[0] == mda_tgt[0]:
                 hat.append(mda_src[0])
@@ -107,10 +121,11 @@ class PushCommand2(object):
         self, mda_attrs, mda_endpoint, endpoint, conn_name, upward
     ):
         if mda_attrs:
-            var = self.vars[endpoint]
+            io_mode = "out" if upward else "in"
+            var = self.vars[io_mode][endpoint]
             varattrs = {
                 "name": conn_name,
-                "io_mode": "out" if upward else "in",
+                "io_mode": io_mode,
                 "desc": self.vardescs.get(endpoint, ""),
                 "type": var["type"],
                 "shape": var["shape"],
@@ -120,14 +135,22 @@ class PushCommand2(object):
             for discattrs in mda_attrs["disciplines_attributes"]:
                 if self.discmap[disc_endpoint] == discattrs["name"]:
                     if discattrs.get("variables_attributes") is not None:
-                        discattrs["variables_attributes"].append(varattrs)
+                        already_present = [
+                            varattr["name"]
+                            for varattr in discattrs["variables_attributes"]
+                        ]
+                        if conn_name not in already_present:
+                            discattrs["variables_attributes"].append(varattrs)
                     submda_attrs = discattrs.get("sub_analysis_attributes")
                     break
-            varattr_driver = varattrs.copy()
-            varattr_driver["io_mode"] = "in" if upward else "out"
-            mda_attrs["disciplines_attributes"][0]["variables_attributes"].append(
-                varattr_driver
-            )
+            driver_varattrs = mda_attrs["disciplines_attributes"][0][
+                "variables_attributes"
+            ]
+            already_present = [varattr["name"] for varattr in driver_varattrs]
+            if conn_name not in already_present:
+                varattr_driver = varattrs.copy()
+                varattr_driver["io_mode"] = "in" if upward else "out"
+                driver_varattrs.append(varattr_driver)
             self._set_varattr_in_depth(
                 submda_attrs, mda_endpoint[1:], endpoint, conn_name, upward
             )
@@ -135,13 +158,11 @@ class PushCommand2(object):
     def _set_varattr(self, discattrs, endpoint, varname, conn_name, io_mode):
         if discattrs.get("variables_attributes") is None:
             return
-        found = False
-        for vattr in discattrs["variables_attributes"]:
-            found = vattr["name"] == varname
-            if found:
-                break
-        if not found:
-            var = self.vars[endpoint]
+        already_present = [
+            varattr["name"] for varattr in discattrs["variables_attributes"]
+        ]
+        if conn_name not in already_present:
+            var = self.vars[io_mode][endpoint]
             discattrs["variables_attributes"].append(
                 {
                     "name": conn_name,
@@ -153,6 +174,47 @@ class PushCommand2(object):
                 }
             )
 
+    def _populate_varattrs_from_outputs(self, mda_attrs, group_prefix=""):
+        mda_prefix = group_prefix
+        if mda_prefix:
+            mda_prefix += "."
+        if mda_attrs["name"]:
+            mda_prefix += mda_attrs["name"] + "."
+        for discattrs in mda_attrs["disciplines_attributes"]:
+            sub_mda_attrs = discattrs.get("sub_analysis_attributes")
+            if sub_mda_attrs is None:
+                for absname, varattrs in self.vars["out"].items():
+                    mda, _ = extract_mda_var(absname)
+                    scope = discattrs["name"]
+                    if mda_prefix:
+                        scope = mda_prefix + scope
+                    if ".".join(mda) == scope:
+                        vattr = {
+                            "name": varattrs["name"],
+                            "desc": self.vardescs.get(absname, ""),
+                            "type": varattrs["type"],
+                            "shape": varattrs["shape"],
+                            "units": varattrs["units"],
+                        }
+                        self._set_varattrs_from_outputs(
+                            vattr, "out", discattrs["variables_attributes"]
+                        )
+                        dvattr = vattr.copy()
+                        dvattr["io_mode"] = "in"
+                        driver_attrs = mda_attrs["disciplines_attributes"][0]
+                        self._set_varattrs_from_outputs(
+                            dvattr, "in", driver_attrs["variables_attributes"]
+                        )
+            else:
+                self._populate_varattrs_from_outputs(sub_mda_attrs, mda_prefix[:-1])
+
+    def _set_varattrs_from_outputs(self, varattr, io_mode, varattrs):
+        already_present = [varattr["name"] for varattr in varattrs]
+        if varattr["name"] not in already_present:
+            vattr = varattr.copy()
+            vattr["io_mode"] = io_mode
+            varattrs.append(vattr)
+
     def _get_reduced(self, conn):
         src = conn["src"].split(".")
         tgt = conn["tgt"].split(".")
@@ -162,8 +224,11 @@ class PushCommand2(object):
         return src, tgt
 
     def _get_conn_name(self, conn):
-        if self.vars[conn["src"]]["name"] == self.vars[conn["tgt"]]["name"]:
-            return self.vars[conn["src"]]["name"]
+        if (
+            self.vars["out"][conn["src"]]["name"]
+            == self.vars["in"][conn["tgt"]]["name"]
+        ):
+            return self.vars["out"][conn["src"]]["name"]
         else:
             return conn["src"] + "==" + conn["tgt"]
 
@@ -214,9 +279,8 @@ class PushCommand2(object):
                 shape = format_shape(self.scalar_format, shape)
                 name = system._var_abs2prom[typ][abs_name]
                 # name = abs_name
-                self.vars[abs_name] = {
+                self.vars[io_mode][abs_name] = {
                     "name": name,
-                    "io_mode": io_mode,
                     "type": vtype,
                     "shape": shape,
                     "units": meta["units"],
@@ -224,7 +288,7 @@ class PushCommand2(object):
                 }
 
                 # retrieve initial conditions
-                var = self.vars[abs_name]
+                var = self.vars[io_mode][abs_name]
                 if abs_name in system._outputs._views:
                     var["value"] = system._outputs[abs_name]
                 elif abs_name in system._inputs._views:
