@@ -36,18 +36,10 @@ class PushCommand2(object):
 
         mda_attrs = self._get_mda_hierarchy(group, tree)
 
-        mda_attrs["name"] = ""
+        mda_attrs["name"] = ""  # root -> ""
         self._populate_varattrs_from_connections(mda_attrs)
         self._populate_varattrs_from_outputs(mda_attrs)
-
-        # retrieve init values
-        driver_attrs = mda_attrs["disciplines_attributes"][0]
-        for vattr in driver_attrs["variables_attributes"]:
-            if vattr["io_mode"] == "out":
-                # set init value for design variables and parameters (outputs of driver)
-                conn_name = vattr["name"].split("==")[0]
-                v = self.vars["out"][conn_name]
-                vattr["parameter_attributes"] = {"init": simple_value(v)}
+        self._populate_initial_values(mda_attrs)
 
         mda_attrs["name"] = group.__class__.__name__
 
@@ -117,6 +109,55 @@ class PushCommand2(object):
                         upward=False,
                     )
 
+    def _populate_varattrs_from_outputs(self, mda_attrs, group_prefix=""):
+        mda_prefix = group_prefix
+        if mda_prefix:
+            mda_prefix += "."
+        if mda_attrs["name"]:
+            mda_prefix += mda_attrs["name"] + "."
+        for discattrs in mda_attrs["disciplines_attributes"]:
+            sub_mda_attrs = discattrs.get("sub_analysis_attributes")
+            if sub_mda_attrs is None:
+                for absname, varattrs in self.vars["out"].items():
+                    mda, _ = extract_mda_var(absname)
+                    scope = discattrs["name"]
+                    if mda_prefix:
+                        scope = mda_prefix + scope
+                    if ".".join(mda) == scope:
+                        vattr = {
+                            "name": varattrs["name"],
+                            "desc": self.vardescs.get(absname, ""),
+                            "type": varattrs["type"],
+                            "shape": varattrs["shape"],
+                            "units": varattrs["units"],
+                        }
+                        self._set_varattrs_from_outputs(
+                            vattr, "out", discattrs["variables_attributes"]
+                        )
+                        dvattr = vattr.copy()
+                        dvattr["io_mode"] = "in"
+                        driver_attrs = mda_attrs["disciplines_attributes"][0]
+                        self._set_varattrs_from_outputs(
+                            dvattr, "in", driver_attrs["variables_attributes"]
+                        )
+            else:
+                self._populate_varattrs_from_outputs(sub_mda_attrs, mda_prefix[:-1])
+
+    def _populate_initial_values(self, mda_attrs):
+        driver_attrs = mda_attrs["disciplines_attributes"][0]
+        for vattr in driver_attrs["variables_attributes"]:
+            if vattr["io_mode"] == "out":
+                # set init value for design variables and parameters (outputs of driver)
+                conn_name = vattr["name"].split("==")[0]
+                if self.vars["out"].get(conn_name):
+                    v = self.vars["out"][conn_name]
+                    vattr["parameter_attributes"] = {"init": simple_value(v)}
+                else:  # indep comp promoted
+                    for _, v in self.vars["out"].items():
+                        if conn_name == v["name"]:
+                            vattr["parameter_attributes"] = {"init": simple_value(v)}
+                            break
+
     def _set_varattr_in_depth(
         self, mda_attrs, mda_endpoint, endpoint, conn_name, upward
     ):
@@ -173,40 +214,6 @@ class PushCommand2(object):
                     "units": var["units"],
                 }
             )
-
-    def _populate_varattrs_from_outputs(self, mda_attrs, group_prefix=""):
-        mda_prefix = group_prefix
-        if mda_prefix:
-            mda_prefix += "."
-        if mda_attrs["name"]:
-            mda_prefix += mda_attrs["name"] + "."
-        for discattrs in mda_attrs["disciplines_attributes"]:
-            sub_mda_attrs = discattrs.get("sub_analysis_attributes")
-            if sub_mda_attrs is None:
-                for absname, varattrs in self.vars["out"].items():
-                    mda, _ = extract_mda_var(absname)
-                    scope = discattrs["name"]
-                    if mda_prefix:
-                        scope = mda_prefix + scope
-                    if ".".join(mda) == scope:
-                        vattr = {
-                            "name": varattrs["name"],
-                            "desc": self.vardescs.get(absname, ""),
-                            "type": varattrs["type"],
-                            "shape": varattrs["shape"],
-                            "units": varattrs["units"],
-                        }
-                        self._set_varattrs_from_outputs(
-                            vattr, "out", discattrs["variables_attributes"]
-                        )
-                        dvattr = vattr.copy()
-                        dvattr["io_mode"] = "in"
-                        driver_attrs = mda_attrs["disciplines_attributes"][0]
-                        self._set_varattrs_from_outputs(
-                            dvattr, "in", driver_attrs["variables_attributes"]
-                        )
-            else:
-                self._populate_varattrs_from_outputs(sub_mda_attrs, mda_prefix[:-1])
 
     def _set_varattrs_from_outputs(self, varattr, io_mode, varattrs):
         already_present = [varattr["name"] for varattr in varattrs]
