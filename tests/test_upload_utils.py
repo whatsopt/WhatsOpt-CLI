@@ -28,7 +28,7 @@ class TestUploadUtils(unittest.TestCase):
         name, cases, statuses = load_from_sqlite(filepath)
 
         self.assertEqual("SMT_DOE_LHS", name)
-        self.assertEqual(9.30287, round(cases[0]["values"][4], 5))
+        self.assertEqual(1.44753, round(cases[0]["values"][2], 5))
         self.assertEqual(1, cases[1]["coord_index"])
         self.assertEqual("z", cases[1]["varname"])
         for i in statuses:
@@ -39,7 +39,9 @@ class TestUploadUtils(unittest.TestCase):
         name, cases, statuses = load_from_sqlite(filepath)
         self.assertEqual("SMT_DOE_LHS", name)
         n = len(cases[0]["values"])
-        self.assertEqual(10, n)  # was run with 30 cases on 3 processors, hence 10
+        self.assertEqual(
+            50, n
+        )  # supposedly run with 150 cases on 3 processors, hence 50
         self.assertEqual(n, len(statuses))
 
         _, cases2, statuses2 = load_from_sqlite(filepath, parallel=True)
@@ -63,7 +65,7 @@ class TestUploadUtils(unittest.TestCase):
         data, statuses = _format_upload_cases(
             CaseReader(os.path.join(TestUploadUtils.DATA_PATH, "test_doe.sqlite"))
         )
-        self.assertEqual(9.30287, round(data[0]["values"][4], 5))
+        self.assertEqual(1.44753, round(data[0]["values"][2], 5))
         self.assertEqual("z", data[1]["varname"])
         self.assertEqual(1, data[1]["coord_index"])
         for i in statuses:
