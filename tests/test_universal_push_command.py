@@ -7,7 +7,7 @@ from openmdao.test_suite.test_examples.test_betz_limit import ActuatorDisc
 from openmdao.test_suite.test_examples.beam_optimization.multipoint_beam_stress import (
     MultipointBeamGroup,
 )
-from whatsopt.push_command2 import PushCommand2
+from whatsopt.universal_push_command import UniversalPushCommand
 
 
 def problem_init():
@@ -74,7 +74,7 @@ class TestPushCommand2(unittest.TestCase):
     def test_get_mda_attributes(self):
 
         problem = problem_init2()
-        push_cmd = PushCommand2(problem, False)
+        push_cmd = UniversalPushCommand(problem, False)
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
         print(json.dumps(mda_attrs, indent=2))
 

@@ -11,6 +11,7 @@ def file(name):
 
 COMMANDS = [
     "wop push -n {}".format(file("sellar.py")),
+    "wop push -x -n {}".format(file("sellar.py")),
     "wop upload -n -a 1 {}".format(file("run_parameters_init.py")),
     "wop upload -n {}".format(file("test_doe.csv")),
     "wop upload -n {}".format(file("test_doe.sqlite")),

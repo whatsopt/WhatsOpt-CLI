@@ -28,7 +28,7 @@ from whatsopt.utils import is_user_file, get_analysis_id
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_utils import problem_pyfile, to_camelcase
 from whatsopt.push_command import PushCommand
-from whatsopt.push_command2 import PushCommand2
+from whatsopt.universal_push_command import UniversalPushCommand
 from whatsopt.show_utils import generate_xdsm_html
 
 
@@ -218,7 +218,10 @@ class WhatsOpt(object):
 
     def push_mda(self, problem, options):
         scalar_format = options.get("--scalar-format")
-        push_cmd = PushCommand2(problem, scalar_format)
+        push_cmd = PushCommand(problem, scalar_format)
+        if options.get("--experimental"):
+            push_cmd = UniversalPushCommand(problem, scalar_format)
+
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
 
         if mda_attrs["name"] == "Group" and options.get("--pyfilename"):

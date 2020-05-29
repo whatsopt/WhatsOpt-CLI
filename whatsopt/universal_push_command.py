@@ -18,7 +18,12 @@ except ImportError:  # openmdao >= 2.9
 DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 
-class PushCommand2(object):
+class UniversalPushCommand(object):
+    """
+    This push command allows to push any OpenMDAO problem 
+    (as opposed to regular push command which works with "all vars promoted/no connect" assumption)
+    """
+
     def __init__(self, problem, scalar_format):
         data = _get_viewer_data(problem)
         self.problem = problem
