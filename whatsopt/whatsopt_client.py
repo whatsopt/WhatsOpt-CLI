@@ -230,7 +230,6 @@ class WhatsOpt(object):
             )[0]
 
         if options["--dry-run"]:
-            pass
             log(json.dumps(mda_attrs, indent=2))
         else:
             suffix = ""

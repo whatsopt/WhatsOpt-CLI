@@ -1,13 +1,10 @@
 import re
-from six import iteritems
 from whatsopt.push_utils import (
     simple_value,
-    to_camelcase,
     extract_disc_var,
     extract_mda_var,
     format_shape,
 )
-from .logging import debug, log
 from openmdao.api import IndepVarComp
 
 try:  # openmdao < 2.9
@@ -20,7 +17,7 @@ DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 class UniversalPushCommand(object):
     """
-    This push command allows to push any OpenMDAO problem 
+    This push command allows to push any OpenMDAO problem
     (as opposed to regular push command which works with "all vars promoted/no connect" assumption)
     """
 
@@ -226,14 +223,6 @@ class UniversalPushCommand(object):
             vattr = varattr.copy()
             vattr["io_mode"] = io_mode
             varattrs.append(vattr)
-
-    def _get_reduced(self, conn):
-        src = conn["src"].split(".")
-        tgt = conn["tgt"].split(".")
-        while src[0] == tgt[0]:
-            src = src[1:]
-            tgt = tgt[1:]
-        return src, tgt
 
     def _get_conn_name(self, conn):
         if (

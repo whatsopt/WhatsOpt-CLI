@@ -1,5 +1,4 @@
 import unittest
-import numpy as np
 import json
 
 import openmdao.api as om
