@@ -24,7 +24,6 @@ class PushCommand(object):
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
-        print(self.connections)
         self.vars = {}
         self.vardescs = {}
         self.discmap = {}
@@ -32,10 +31,6 @@ class PushCommand(object):
     def get_mda_attributes(self, group, tree, group_prefix=""):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
-        for k, v in self.vars.items():
-            print(k, v)
-        # print(self.vardescs)
-        print(self.discmap)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
         mda_attrs = {
             "name": group.__class__.__name__,
@@ -119,7 +114,9 @@ class PushCommand(object):
 
     def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs):
         for absname, varname in iteritems(outputs):
-            if varname not in [varattr["name"] for varattr in varattrs]:
+            if varname.find(".") < 0 and varname not in [
+                varattr["name"] for varattr in varattrs
+            ]:
                 var = self.vars[absname]
                 vattr = {
                     "name": varname,
