@@ -18,9 +18,10 @@ NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 
 class PushCommand(object):
-    def __init__(self, problem, scalar_format):
+    def __init__(self, problem, depth, scalar_format):
         data = _get_viewer_data(problem)
         self.problem = problem
+        self.depth = depth
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
@@ -28,7 +29,7 @@ class PushCommand(object):
         self.vardescs = {}
         self.discmap = {}
 
-    def get_mda_attributes(self, group, tree, group_prefix=""):
+    def get_mda_attributes(self, group, tree, group_prefix="", cut=False):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
@@ -46,6 +47,7 @@ class PushCommand(object):
                     group._subsystems_myproc[i], child, prefix
                 )
                 mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
+
             else:
                 if not isinstance(group._subsystems_myproc[i], IndepVarComp):
                     mda = group_prefix[:-1]
@@ -59,6 +61,11 @@ class PushCommand(object):
                         "out",
                         discattrs["variables_attributes"],
                     )
+                    self._set_varattrs_from_outputs(
+                        group._subsystems_myproc[i]._var_abs2prom["input"],
+                        "in",
+                        discattrs["variables_attributes"],
+                    )
 
                     mda_attrs["disciplines_attributes"].append(discattrs)
                 else:
@@ -68,8 +75,20 @@ class PushCommand(object):
                         driver_attrs["variables_attributes"],
                     )
 
+        in_names = [name for name in group._var_abs2prom["input"]]
+        out_names = [name for name in group._var_abs2prom["output"]]
+        state_names = [name for name in in_names if name in out_names]
         self._set_varattrs_from_outputs(
-            group._var_abs2prom["output"], "in", driver_attrs["variables_attributes"]
+            group._var_abs2prom["input"],
+            "out",
+            driver_attrs["variables_attributes"],
+            state_names,
+        )
+        self._set_varattrs_from_outputs(
+            group._var_abs2prom["output"],
+            "in",
+            driver_attrs["variables_attributes"],
+            state_names,
         )
 
         # remove fullname in driver varattrs
@@ -90,8 +109,38 @@ class PushCommand(object):
                         del vattr[
                             "fullname"
                         ]  # indeed for WhatsOpt var name is a primary key
+        if cut:
+            PushCommand.cut(mda_attrs, self.depth)
 
         return mda_attrs
+
+    @staticmethod
+    def cut(mda_attrs, depth):
+        if depth <= 0:
+            return mda_attrs
+        elif depth == 1:
+            PushCommand.flatten(mda_attrs)
+        else:
+            for disc in mda_attrs["disciplines_attributes"]:
+                sub_mdattrs = disc.get("sub_analysis_attributes")
+                if sub_mdattrs:
+                    PushCommand.cut(sub_mdattrs, depth - 1)
+
+    @staticmethod
+    def flatten(mda_attrs):
+        # print("-------- flatten ", mda_attrs["name"])
+        for disc in mda_attrs["disciplines_attributes"]:
+            # print("************** ", disc["name"])
+            sub_mdattrs = disc.get("sub_analysis_attributes")
+            if sub_mdattrs:
+                varattrs = disc.get("variables_attributes", [])
+                driver = sub_mdattrs["disciplines_attributes"][0]
+                for vattr in driver["variables_attributes"]:
+                    v = vattr.copy()
+                    v["io_mode"] = "out" if vattr["io_mode"] == "in" else "in"
+                    varattrs.append(v)
+                del disc["sub_analysis_attributes"]
+                disc["variables_attributes"] = varattrs
 
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self.get_mda_attributes(group, child, prefix)
@@ -112,8 +161,10 @@ class PushCommand(object):
         }
         return discattrs
 
-    def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs):
+    def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs, state_names=None):
         for absname, varname in iteritems(outputs):
+            if state_names and absname in state_names:
+                continue
             if varname.find(".") < 0 and varname not in [
                 varattr["name"] for varattr in varattrs
             ]:

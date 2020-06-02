@@ -75,9 +75,17 @@ def list(ctx):
     "--component",
     help="push the specified OpenMDAO component importable from the given python file",
 )
+@click.option(
+    "-d",
+    "--depth",
+    default=3,
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit)",
+)
 @click.argument("py_filename")
 @click.pass_context
-def push(ctx, dry_run, scalar_format, experimental, name, component, py_filename):
+def push(
+    ctx, dry_run, scalar_format, experimental, name, component, depth, py_filename
+):
     """ Push OpenMDAO problem from given PY_FILENAME """
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
@@ -86,6 +94,7 @@ def push(ctx, dry_run, scalar_format, experimental, name, component, py_filename
         "--scalar-format": scalar_format,
         "--experimental": experimental,
         "--name": name,
+        "--depth": depth,
     }
     if component:
         wop.push_component_cmd(py_filename, component, options)

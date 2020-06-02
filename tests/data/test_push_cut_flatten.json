@@ -1,0 +1,152 @@
+{
+  "input": {
+    "name": "Outer",
+    "disciplines_attributes": [
+      {
+        "name": "__DRIVER__",
+        "variables_attributes": [
+          {
+            "name": "x",
+            "io_mode": "out",
+            "desc": "",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null,
+            "parameter_attributes": {
+              "init": "1.0"
+            }
+          },
+          {
+            "name": "z",
+            "io_mode": "in",
+            "desc": "",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null
+          }
+        ]
+      },
+      {
+        "name": "Inner",
+        "sub_analysis_attributes": {
+          "name": "Inner",
+          "disciplines_attributes": [
+            {
+              "name": "__DRIVER__",
+              "variables_attributes": [
+                {
+                  "name": "x",
+                  "io_mode": "out",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null,
+                  "desc": ""
+                },
+                {
+                  "name": "z",
+                  "io_mode": "in",
+                  "desc": "",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "variables_attributes": [
+                {
+                  "name": "y",
+                  "io_mode": "out",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null,
+                  "desc": ""
+                },
+                {
+                  "name": "x",
+                  "io_mode": "in",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null,
+                  "desc": ""
+                }
+              ]
+            },
+            {
+              "name": "B",
+              "variables_attributes": [
+                {
+                  "name": "y",
+                  "io_mode": "in",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null,
+                  "desc": ""
+                },
+                {
+                  "name": "z",
+                  "io_mode": "out",
+                  "desc": "",
+                  "type": "Float",
+                  "shape": "(1,)",
+                  "units": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "expected": {
+    "name": "Outer",
+    "disciplines_attributes": [
+      {
+        "name": "__DRIVER__",
+        "variables_attributes": [
+          {
+            "name": "x",
+            "io_mode": "out",
+            "desc": "",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null,
+            "parameter_attributes": {
+              "init": "1.0"
+            }
+          },
+          {
+            "name": "z",
+            "io_mode": "in",
+            "desc": "",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null
+          }
+        ]
+      },
+      {
+        "name": "Test",
+        "variables_attributes": [
+          {
+            "name": "x",
+            "io_mode": "in",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null,
+            "desc": ""
+          },
+          {
+            "name": "z",
+            "io_mode": "out",
+            "desc": "",
+            "type": "Float",
+            "shape": "(1,)",
+            "units": null
+          }
+        ]
+      }
+    ]
+  }
+}

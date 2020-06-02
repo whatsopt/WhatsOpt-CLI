@@ -24,6 +24,7 @@ class UniversalPushCommand(object):
     def __init__(self, problem, scalar_format):
         data = _get_viewer_data(problem)
         self.problem = problem
+        self.depth = 0
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
@@ -32,7 +33,7 @@ class UniversalPushCommand(object):
         self.discmap = {}
         self.mdas = {}
 
-    def get_mda_attributes(self, group, tree):
+    def get_mda_attributes(self, group, tree, cut=False):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
 
