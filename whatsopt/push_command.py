@@ -79,12 +79,6 @@ class PushCommand(object):
         out_names = [name for name in group._var_abs2prom["output"]]
         state_names = [name for name in in_names if name in out_names]
         self._set_varattrs_from_outputs(
-            group._var_abs2prom["input"],
-            "out",
-            driver_attrs["variables_attributes"],
-            state_names,
-        )
-        self._set_varattrs_from_outputs(
             group._var_abs2prom["output"],
             "in",
             driver_attrs["variables_attributes"],
@@ -134,13 +128,26 @@ class PushCommand(object):
             sub_mdattrs = disc.get("sub_analysis_attributes")
             if sub_mdattrs:
                 varattrs = disc.get("variables_attributes", [])
-                driver = sub_mdattrs["disciplines_attributes"][0]
-                for vattr in driver["variables_attributes"]:
+                subdriver = sub_mdattrs["disciplines_attributes"][0]
+                print("<<<< DRIVER ", subdriver["variables_attributes"])
+                for vattr in subdriver["variables_attributes"]:
                     v = vattr.copy()
                     v["io_mode"] = "out" if vattr["io_mode"] == "in" else "in"
                     varattrs.append(v)
                 del disc["sub_analysis_attributes"]
                 disc["variables_attributes"] = varattrs
+                print(">>>>", disc["name"])
+                print(disc["variables_attributes"])
+
+                driver = mda_attrs["disciplines_attributes"][0]
+                for vattr in subdriver["variables_attributes"]:
+                    already_present = [
+                        v["name"] for v in driver["variables_attributes"]
+                    ]
+                    if vattr["name"] not in already_present:
+                        v = vattr.copy()
+                        print("ADD DRIVER of ", mda_attrs["name"], v)
+                        driver["variables_attributes"].append(v)
 
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self.get_mda_attributes(group, child, prefix)
