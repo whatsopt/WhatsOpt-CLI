@@ -1,6 +1,7 @@
 import re
 from six import iteritems
 from whatsopt.push_utils import (
+    cut,
     simple_value,
     to_camelcase,
     extract_disc_var,
@@ -29,7 +30,7 @@ class PushCommand(object):
         self.vardescs = {}
         self.discmap = {}
 
-    def get_mda_attributes(self, group, tree, group_prefix="", cut=False):
+    def get_mda_attributes(self, group, tree, group_prefix="", use_depth=False):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
@@ -114,51 +115,10 @@ class PushCommand(object):
                         del vattr[
                             "fullname"
                         ]  # indeed for WhatsOpt var name is a primary key
-        if cut:
-            PushCommand.cut(mda_attrs, self.depth)
+        if use_depth:
+            cut(mda_attrs, self.depth)
 
         return mda_attrs
-
-    @staticmethod
-    def cut(mda_attrs, depth):
-        if depth <= 0:
-            return mda_attrs
-        elif depth == 1:
-            PushCommand.flatten(mda_attrs)
-        else:
-            for disc in mda_attrs["disciplines_attributes"]:
-                sub_mdattrs = disc.get("sub_analysis_attributes")
-                if sub_mdattrs:
-                    PushCommand.cut(sub_mdattrs, depth - 1)
-
-    @staticmethod
-    def flatten(mda_attrs):
-        # print("-------- flatten ", mda_attrs["name"])
-        for disc in mda_attrs["disciplines_attributes"]:
-            # print("************** ", disc["name"])
-            sub_mdattrs = disc.get("sub_analysis_attributes")
-            if sub_mdattrs:
-                varattrs = disc.get("variables_attributes", [])
-                subdriver = sub_mdattrs["disciplines_attributes"][0]
-                # print("<<<< DRIVER ", subdriver["variables_attributes"])
-                for vattr in subdriver["variables_attributes"]:
-                    v = vattr.copy()
-                    v["io_mode"] = "out" if vattr["io_mode"] == "in" else "in"
-                    varattrs.append(v)
-                del disc["sub_analysis_attributes"]
-                disc["variables_attributes"] = varattrs
-                # print(">>>>", disc["name"])
-                # print(disc["variables_attributes"])
-
-                driver = mda_attrs["disciplines_attributes"][0]
-                for vattr in subdriver["variables_attributes"]:
-                    already_present = [
-                        v["name"] for v in driver["variables_attributes"]
-                    ]
-                    if vattr["name"] not in already_present:
-                        v = vattr.copy()
-                        # print("ADD DRIVER of ", mda_attrs["name"], v)
-                        driver["variables_attributes"].append(v)
 
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self.get_mda_attributes(group, child, prefix)

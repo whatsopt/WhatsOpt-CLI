@@ -221,9 +221,11 @@ class WhatsOpt(object):
         depth = options.get("--depth")
         push_cmd = PushCommand(problem, depth, scalar_format)
         if options.get("--experimental"):
-            push_cmd = UniversalPushCommand(problem, scalar_format)
+            push_cmd = UniversalPushCommand(problem, depth, scalar_format)
 
-        mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree, cut=True)
+        mda_attrs = push_cmd.get_mda_attributes(
+            problem.model, push_cmd.tree, use_depth=True
+        )
 
         if mda_attrs["name"] == "Group" and options.get("--pyfilename"):
             mda_attrs["name"] = os.path.splitext(

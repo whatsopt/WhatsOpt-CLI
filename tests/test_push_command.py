@@ -5,6 +5,7 @@ import json
 from openmdao.api import Problem, IndepVarComp, ScipyOptimizeDriver
 from openmdao.test_suite.test_examples.test_betz_limit import ActuatorDisc
 from whatsopt.push_command import PushCommand
+from whatsopt.push_utils import cut
 
 
 def problem_init():
@@ -64,7 +65,7 @@ class TestPushCommand(unittest.TestCase):
         with open(test_datafile) as f:
             testdata = json.load(f)
             mda_attrs = testdata["input"]
-            PushCommand.cut(mda_attrs, 1)
+            cut(mda_attrs, 1)
             expect = testdata["expected"]
             self.assertEqual(
                 expect["disciplines_attributes"][1]["variables_attributes"],

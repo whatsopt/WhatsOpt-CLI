@@ -73,7 +73,7 @@ class TestPushCommand2(unittest.TestCase):
     def test_get_mda_attributes(self):
 
         problem = problem_init2()
-        push_cmd = UniversalPushCommand(problem, False)
+        push_cmd = UniversalPushCommand(problem, 0, False)
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
         print(json.dumps(mda_attrs, indent=2))
 

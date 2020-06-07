@@ -3,6 +3,46 @@ import os
 import tempfile
 from contextlib import contextmanager
 
+
+def cut(mda_attrs, depth):
+    if depth <= 0:
+        return mda_attrs
+    elif depth == 1:
+        flatten(mda_attrs)
+    else:
+        for disc in mda_attrs["disciplines_attributes"]:
+            sub_mdattrs = disc.get("sub_analysis_attributes")
+            if sub_mdattrs:
+                cut(sub_mdattrs, depth - 1)
+
+
+def flatten(mda_attrs):
+    # print("-------- flatten ", mda_attrs["name"])
+    for disc in mda_attrs["disciplines_attributes"]:
+        # print("************** ", disc["name"])
+        sub_mdattrs = disc.get("sub_analysis_attributes")
+        if sub_mdattrs:
+            varattrs = disc.get("variables_attributes", [])
+            subdriver = sub_mdattrs["disciplines_attributes"][0]
+            # print("<<<< DRIVER ", subdriver["variables_attributes"])
+            for vattr in subdriver["variables_attributes"]:
+                v = vattr.copy()
+                v["io_mode"] = "out" if vattr["io_mode"] == "in" else "in"
+                varattrs.append(v)
+            del disc["sub_analysis_attributes"]
+            disc["variables_attributes"] = varattrs
+            # print(">>>>", disc["name"])
+            # print(disc["variables_attributes"])
+
+            driver = mda_attrs["disciplines_attributes"][0]
+            for vattr in subdriver["variables_attributes"]:
+                already_present = [v["name"] for v in driver["variables_attributes"]]
+                if vattr["name"] not in already_present:
+                    v = vattr.copy()
+                    # print("ADD DRIVER of ", mda_attrs["name"], v)
+                    driver["variables_attributes"].append(v)
+
+
 # push_command collect_var_infos
 def format_shape(scalar_format, shape):
     shape = shape.replace("L", "")  # with py27 we can get (1L,)

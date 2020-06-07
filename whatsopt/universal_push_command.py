@@ -1,5 +1,6 @@
 import re
 from whatsopt.push_utils import (
+    cut,
     simple_value,
     extract_disc_var,
     extract_mda_var,
@@ -21,10 +22,10 @@ class UniversalPushCommand(object):
     (as opposed to regular push command which works with "all vars promoted/no connect" assumption)
     """
 
-    def __init__(self, problem, scalar_format):
+    def __init__(self, problem, depth, scalar_format):
         data = _get_viewer_data(problem)
         self.problem = problem
-        self.depth = 0
+        self.depth = depth
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
@@ -33,7 +34,7 @@ class UniversalPushCommand(object):
         self.discmap = {}
         self.mdas = {}
 
-    def get_mda_attributes(self, group, tree, cut=False):
+    def get_mda_attributes(self, group, tree, use_depth=False):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
 
@@ -45,6 +46,9 @@ class UniversalPushCommand(object):
         self._populate_initial_values(mda_attrs)
 
         mda_attrs["name"] = group.__class__.__name__
+
+        if use_depth:
+            cut(mda_attrs, self.depth)
 
         return mda_attrs
 
