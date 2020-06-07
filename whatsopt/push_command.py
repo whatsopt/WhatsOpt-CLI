@@ -41,6 +41,7 @@ class PushCommand(object):
             return
 
         for i, child in enumerate(tree["children"]):
+
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 prefix = group_prefix + child["name"] + "."
                 sub_analysis_attrs = self._get_sub_analysis_attributes(
@@ -55,7 +56,7 @@ class PushCommand(object):
                     discattrs = self._get_discipline_attributes(
                         driver_attrs, mda, discname
                     )
-
+                    print("############### {}".format(child["name"]))
                     self._set_varattrs_from_outputs(
                         group._subsystems_myproc[i]._var_abs2prom["output"],
                         "out",
@@ -69,15 +70,25 @@ class PushCommand(object):
 
                     mda_attrs["disciplines_attributes"].append(discattrs)
                 else:
+                    print("############### DRIVER")
                     self._set_varattrs_from_outputs(
                         group._subsystems_myproc[i]._var_abs2prom["output"],
                         "out",
                         driver_attrs["variables_attributes"],
                     )
 
-        in_names = [name for name in group._var_abs2prom["input"]]
-        out_names = [name for name in group._var_abs2prom["output"]]
+        in_names = [name for name in group._var_abs2prom["input"].values()]
+        print("IN NAMES {}".format(in_names))
+        out_names = [name for name in group._var_abs2prom["output"].values()]
+        print("OUT NAMES {}".format(out_names))
         state_names = [name for name in in_names if name in out_names]
+        print("STATE NAMES {}".format(state_names))
+        self._set_varattrs_from_outputs(
+            group._var_abs2prom["input"],
+            "out",
+            driver_attrs["variables_attributes"],
+            state_names,
+        )
         self._set_varattrs_from_outputs(
             group._var_abs2prom["output"],
             "in",
@@ -170,11 +181,12 @@ class PushCommand(object):
 
     def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs, state_names=None):
         for absname, varname in iteritems(outputs):
-            if state_names and absname in state_names:
-                continue
+            if io_mode == "out" and state_names and varname in state_names:
+                continue  # avoid adding in var to driver when it is a state var
             if varname.find(".") < 0 and varname not in [
                 varattr["name"] for varattr in varattrs
             ]:
+                # print("++++ add {} {}".format(varname, io_mode))
                 var = self.vars[absname]
                 vattr = {
                     "name": varname,
