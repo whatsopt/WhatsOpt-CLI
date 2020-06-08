@@ -79,7 +79,7 @@ def list(ctx):
     "-d",
     "--depth",
     default=3,
-    help="specify the max depth of the sub-analysis nesting (0 meaning no limit)",
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
 @click.argument("py_filename")
 @click.pass_context
@@ -270,11 +270,17 @@ def upload(
     default=False,
     help="batch mode: do not launch browser",
 )
+@click.option(
+    "-d",
+    "--depth",
+    default=3,
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
+)
 @click.pass_context
-def show(ctx, analysis_id, pbfile, name, outfile, batch):
+def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
     """ Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
-    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch)
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch, depth)
 
 
 @cli.command()

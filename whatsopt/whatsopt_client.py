@@ -334,8 +334,8 @@ class WhatsOpt(object):
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
 
-    def show_mda(self, analysis_id, pbfile, name, outfile, batch):
-        options = {"--xdsm": True, "--name": name, "--dry-run": False}
+    def show_mda(self, analysis_id, pbfile, name, outfile, batch, depth):
+        options = {"--xdsm": True, "--name": name, "--dry-run": False, "--depth": depth}
         xdsm = None
         if pbfile:
             try:
