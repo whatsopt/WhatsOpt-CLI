@@ -1,6 +1,7 @@
 import re
 from six import iteritems
 from whatsopt.push_utils import (
+    cut,
     simple_value,
     to_camelcase,
     extract_disc_var,
@@ -18,9 +19,10 @@ NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
 
 
 class PushCommand(object):
-    def __init__(self, problem, scalar_format):
+    def __init__(self, problem, depth, scalar_format):
         data = _get_viewer_data(problem)
         self.problem = problem
+        self.depth = depth
         self.scalar_format = scalar_format
         self.tree = data["tree"]
         self.connections = data["connections_list"]
@@ -28,7 +30,7 @@ class PushCommand(object):
         self.vardescs = {}
         self.discmap = {}
 
-    def get_mda_attributes(self, group, tree, group_prefix=""):
+    def get_mda_attributes(self, group, tree, group_prefix="", use_depth=False):
         self._collect_disc_infos(self.problem.model, self.tree)
         self._collect_var_infos(self.problem.model)
         driver_attrs = {"name": NULL_DRIVER_NAME, "variables_attributes": []}
@@ -40,12 +42,14 @@ class PushCommand(object):
             return
 
         for i, child in enumerate(tree["children"]):
+
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 prefix = group_prefix + child["name"] + "."
                 sub_analysis_attrs = self._get_sub_analysis_attributes(
                     group._subsystems_myproc[i], child, prefix
                 )
                 mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
+
             else:
                 if not isinstance(group._subsystems_myproc[i], IndepVarComp):
                     mda = group_prefix[:-1]
@@ -53,23 +57,44 @@ class PushCommand(object):
                     discattrs = self._get_discipline_attributes(
                         driver_attrs, mda, discname
                     )
-
+                    # print("############### {}".format(child["name"]))
                     self._set_varattrs_from_outputs(
                         group._subsystems_myproc[i]._var_abs2prom["output"],
                         "out",
                         discattrs["variables_attributes"],
                     )
+                    self._set_varattrs_from_outputs(
+                        group._subsystems_myproc[i]._var_abs2prom["input"],
+                        "in",
+                        discattrs["variables_attributes"],
+                    )
 
                     mda_attrs["disciplines_attributes"].append(discattrs)
                 else:
+                    # print("############### DRIVER")
                     self._set_varattrs_from_outputs(
                         group._subsystems_myproc[i]._var_abs2prom["output"],
                         "out",
                         driver_attrs["variables_attributes"],
                     )
 
+        in_names = [name for name in group._var_abs2prom["input"].values()]
+        # print("IN NAMES {}".format(in_names))
+        out_names = [name for name in group._var_abs2prom["output"].values()]
+        # print("OUT NAMES {}".format(out_names))
+        state_names = [name for name in in_names if name in out_names]
+        # print("STATE NAMES {}".format(state_names))
         self._set_varattrs_from_outputs(
-            group._var_abs2prom["output"], "in", driver_attrs["variables_attributes"]
+            group._var_abs2prom["input"],
+            "out",
+            driver_attrs["variables_attributes"],
+            state_names,
+        )
+        self._set_varattrs_from_outputs(
+            group._var_abs2prom["output"],
+            "in",
+            driver_attrs["variables_attributes"],
+            state_names,
         )
 
         # remove fullname in driver varattrs
@@ -90,6 +115,8 @@ class PushCommand(object):
                         del vattr[
                             "fullname"
                         ]  # indeed for WhatsOpt var name is a primary key
+        if use_depth:
+            cut(mda_attrs, self.depth)
 
         return mda_attrs
 
@@ -112,9 +139,14 @@ class PushCommand(object):
         }
         return discattrs
 
-    def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs):
+    def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs, state_names=None):
         for absname, varname in iteritems(outputs):
-            if varname not in [varattr["name"] for varattr in varattrs]:
+            if io_mode == "out" and state_names and varname in state_names:
+                continue  # avoid adding in var to driver when it is a state var
+            if varname.find(".") < 0 and varname not in [
+                varattr["name"] for varattr in varattrs
+            ]:
+                # print("++++ add {} {}".format(varname, io_mode))
                 var = self.vars[absname]
                 vattr = {
                     "name": varname,
@@ -254,6 +286,7 @@ class PushCommand(object):
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar_format, shape)
                 name = system._var_abs2prom[typ][abs_name]
+                # name = abs_name
                 self.vars[abs_name] = {
                     "fullname": abs_name,
                     "name": name,

@@ -1,8 +1,11 @@
 import unittest
+import os
+import json
 
 from openmdao.api import Problem, IndepVarComp, ScipyOptimizeDriver
 from openmdao.test_suite.test_examples.test_betz_limit import ActuatorDisc
 from whatsopt.push_command import PushCommand
+from whatsopt.push_utils import cut
 
 
 def problem_init():
@@ -31,10 +34,13 @@ def problem_init():
 
 
 class TestPushCommand(unittest.TestCase):
+
+    DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
+
     def test_get_mda_attributes(self):
 
         problem = problem_init()
-        push_cmd = PushCommand(problem, False)
+        push_cmd = PushCommand(problem, 0, False)
         mda_attrs = push_cmd.get_mda_attributes(problem.model, push_cmd.tree)
 
         driver = mda_attrs["disciplines_attributes"][0]
@@ -53,6 +59,18 @@ class TestPushCommand(unittest.TestCase):
                     self.assertFalse(dic_driver["io_mode"] == dic_adisk["io_mode"])
                     self.assertTrue(dic_driver["type"] == dic_adisk["type"])
                     self.assertTrue(dic_driver["units"] == dic_adisk["units"])
+
+    def test_cut_flatten(self):
+        test_datafile = os.path.join(self.DATA_PATH, "test_push_cut_flatten.json")
+        with open(test_datafile) as f:
+            testdata = json.load(f)
+            mda_attrs = testdata["input"]
+            cut(mda_attrs, 1)
+            expect = testdata["expected"]
+            self.assertEqual(
+                expect["disciplines_attributes"][1]["variables_attributes"],
+                mda_attrs["disciplines_attributes"][1]["variables_attributes"],
+            )
 
 
 if __name__ == "__main__":

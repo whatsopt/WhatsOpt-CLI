@@ -62,19 +62,40 @@ def list(ctx):
     default=False,
     help="manage (1,) shape variables as scalar variables",
 )
+@click.option(
+    "-x",
+    "--experimental",
+    is_flag=True,
+    default=False,
+    help="use experimental push dealing with connect calls and unpromoted variables",
+)
 @click.option("--name", help="find analysis with given name")
 @click.option(
     "-c",
     "--component",
     help="push the specified OpenMDAO component importable from the given python file",
 )
+@click.option(
+    "-d",
+    "--depth",
+    default=3,
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit)",
+)
 @click.argument("py_filename")
 @click.pass_context
-def push(ctx, dry_run, scalar_format, name, component, py_filename):
+def push(
+    ctx, dry_run, scalar_format, experimental, name, component, depth, py_filename
+):
     """ Push OpenMDAO problem from given PY_FILENAME """
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
-    options = {"--dry-run": dry_run, "--scalar-format": scalar_format, "--name": name}
+    options = {
+        "--dry-run": dry_run,
+        "--scalar-format": scalar_format,
+        "--experimental": experimental,
+        "--name": name,
+        "--depth": depth,
+    }
     if component:
         wop.push_component_cmd(py_filename, component, options)
     else:
