@@ -4,7 +4,7 @@ python:
   - "3.7"
 
 env:
-  - OPENMDAO_REQUIRE_MPI = 0
+  - OPENMDAO_REQUIRE_MPI=0
 
 # command to install dependencies
 install:
