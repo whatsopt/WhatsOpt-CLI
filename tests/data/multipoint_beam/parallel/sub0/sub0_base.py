@@ -9,7 +9,6 @@
 
 import numpy as np
 from numpy import nan
-from packaging import version
 
 from openmdao.api import Problem, Group, ParallelGroup, IndepVarComp
 from openmdao.api import NonlinearBlockGS
