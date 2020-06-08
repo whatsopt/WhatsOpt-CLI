@@ -6,6 +6,7 @@ from whatsopt.push_utils import (
     extract_mda_var,
     format_shape,
 )
+from whatsopt.logging import debug
 from openmdao.api import IndepVarComp
 
 try:  # openmdao < 2.9
