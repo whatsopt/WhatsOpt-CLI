@@ -1,3 +1,11 @@
+* 1.9.0 (08/06/2020)
+  - wop push: 
+    - add --experimental (-x) push option allowing to push any code for reverse-engineering only
+    - add --depth <n> push only n levels of sub-analyses (0 means no limit, default is 3)
+    - Know bug: -d option using -x experimental push can lead to duplicate variables
+  - wop show:
+    - add --depth option (see push command above)  
+
 * 1.8.0 (20/04/2020)
   - wop show: display XDSM of given analysis :
     - either an existing on the remote server (-a option)
