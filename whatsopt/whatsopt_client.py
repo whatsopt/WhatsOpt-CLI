@@ -17,7 +17,6 @@ from urllib.parse import urlparse
 import openmdao.utils.hooks as hooks
 from openmdao.utils.file_utils import _load_and_exec
 
-from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 from openmdao.utils.webview import webview
 from openmdao.api import IndepVarComp
 
