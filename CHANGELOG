@@ -1,3 +1,8 @@
+* 1.10.0 (??/07/2020)
+  - new wop status command: returns the current server and pulled analysis status
+  - wop push: default depth change from 3 to 2
+  - wop show: add --experimental option to allow showing any openmdao code
+
 * 1.9.0 (08/06/2020)
   - wop push: 
     - add --experimental (-x) push option allowing to push any code for reverse-engineering only
