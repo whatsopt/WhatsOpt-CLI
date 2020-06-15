@@ -20,15 +20,17 @@ class TestUtils(unittest.TestCase):
 
     def test_find_analysis_base_files(self):
         self.assertEqual(
-            [
-                "i_comp_base.py",
-                "interp_base.py",
-                "multipoint_beam_group_base.py",
-                "volume_comp_base.py",
-                "obj_sum_base.py",
-                "local_stiffness_matrix_comp_base.py",
-            ],
-            find_analysis_base_files(TestUtils.DATA_PATH),
+            set(
+                [
+                    "i_comp_base.py",
+                    "interp_base.py",
+                    "multipoint_beam_group_base.py",
+                    "volume_comp_base.py",
+                    "obj_sum_base.py",
+                    "local_stiffness_matrix_comp_base.py",
+                ]
+            ),
+            set(find_analysis_base_files(TestUtils.DATA_PATH)),
         )
 
     def test_get_analysis_id(self):
