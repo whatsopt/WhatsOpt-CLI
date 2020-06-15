@@ -129,13 +129,7 @@ class WhatsOpt(object):
             "User-Agent": "wop/{}".format(__version__),
         }
 
-        resp = self._test_connection()
-        ok = resp.ok
-
-        # bad wop version
-        if resp.status_code == requests.codes.forbidden:
-            error(resp.json()["message"])
-            sys.exit(-1)
+        ok = self._test_connection()
 
         if not api_key and already_logged and not ok:
             # try to propose re-login
@@ -150,7 +144,7 @@ class WhatsOpt(object):
 
         if echo:
             log("Successfully logged into WhatsOpt (%s)" % self.url)
-        return resp.ok
+        return ok
 
     @staticmethod
     def logout(echo=True):
@@ -178,8 +172,7 @@ class WhatsOpt(object):
             resp.raise_for_status()
 
     def get_status(self):
-        resp = self._test_connection()
-        connected = resp.ok
+        connected = self._test_connection()
         whatsopt_url = get_whatsopt_url() or self.url
         if connected:
             info("You are logged in {}".format(self.url))
@@ -551,5 +544,12 @@ class WhatsOpt(object):
 
     def _test_connection(self):
         url = self.endpoint("/api/v1/versioning")
-        resp = self.session.get(url, headers=self.headers)
-        return resp
+        try:
+            resp = self.session.get(url, headers=self.headers)
+            # special case: bad wop version < minimal required version
+            if resp.status_code == requests.codes.forbidden:
+                error(resp.json()["message"])
+                sys.exit(-1)
+            return True
+        except requests.exceptions.ConnectionError:
+            return False
