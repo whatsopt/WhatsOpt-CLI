@@ -61,6 +61,7 @@ class WhatsOpt(object):
         self.session = requests.Session()
         urlinfos = urlparse(self._url)
         self.session.trust_env = re.match(r"\w+.onera\.fr", urlinfos.netloc)
+        self.headers = {}
 
         # login by default
         if login:
@@ -180,15 +181,15 @@ class WhatsOpt(object):
     def get_status(self):
         resp = self._test_connection()
         connected = resp.ok
+        whatsopt_url = get_whatsopt_url() or self.url
         if connected:
             info("You are logged in {}".format(self.url))
         else:
             warn("You are not connected.")
-            print("  (use 'wop login {}' command to log in)".format(self.url))
+            print("  (use 'wop login {}' command to log in)".format(whatsopt_url))
         mda_id = get_analysis_id()
-        whatsopt_url = get_whatsopt_url()
         if mda_id:
-            info("Current pulled analysis is #{} from {}".format(mda_id, whatsopt_url))
+            info("Found analysis id=#{} pulled from {}".format(mda_id, whatsopt_url))
             if whatsopt_url == self.url:
                 # connected to the right server from which the analysis was pulled
                 url = self.endpoint("/api/v1/analyses/{}".format(mda_id))
@@ -203,26 +204,27 @@ class WhatsOpt(object):
                     log(
                         "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
                     )
-            else:
-                # connected to another server
+            elif connected:
+                # connected to another server with a pulled analysis
                 warn("You are connected to a different server")
                 log(
-                    "  (use 'wop push <analysis.py>' to push the "
-                    "analysis in the connected server {})".format(self.url)
+                    "  (use 'wop push <analysis.py>' to push the local "
+                    "analysis in the current server {})".format(self.url)
                 )
                 log(
-                    "  (use 'wop logout' and 'wop login {}' to log in the right server)".format(
+                    "  (use 'wop logout' and 'wop login {}' to log in to the right server)".format(
                         whatsopt_url
                     )
                 )
         else:
-            info("No WhatsOpt analysis found")
-            log(
-                "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)"
-            )
-            log(
-                "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
-            )
+            info("No local analysis found")
+            if connected:
+                log(
+                    "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)"
+                )
+                log(
+                    "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
+                )
         log("")
 
     def push_component_cmd(self, py_filename, component, options):

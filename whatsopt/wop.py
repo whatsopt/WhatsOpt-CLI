@@ -54,7 +54,7 @@ def list(ctx):
 @click.pass_context
 def status(ctx):
     """ List server connection and current pulled analysis status """
-    WhatsOpt(**ctx.obj).get_status()
+    WhatsOpt(login=False).get_status()
 
 
 @cli.command()
