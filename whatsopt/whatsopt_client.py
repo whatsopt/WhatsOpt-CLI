@@ -11,26 +11,23 @@ import zipfile
 import tempfile
 import numpy as np
 from tabulate import tabulate
-
-# Python 3
 from urllib.parse import urlparse
 
-try:  # openmdao < 2.9
-    from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
-except ImportError:  # openmdao >= 2.9
-    from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
-    from openmdao.utils.webview import webview
+# push
+import openmdao.utils.hooks as hooks
+from openmdao.utils.file_utils import _load_and_exec
 
+from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
+from openmdao.utils.webview import webview
 from openmdao.api import IndepVarComp
 
 from whatsopt.logging import log, info, warn, error, debug
-from whatsopt.utils import is_user_file, get_analysis_id
+from whatsopt.utils import is_user_file, get_analysis_id, get_whatsopt_url
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_utils import problem_pyfile, to_camelcase
 from whatsopt.push_command import PushCommand
 from whatsopt.universal_push_command import UniversalPushCommand
 from whatsopt.show_utils import generate_xdsm_html
-
 
 from whatsopt import __version__
 
@@ -132,8 +129,7 @@ class WhatsOpt(object):
             "User-Agent": "wop/{}".format(__version__),
         }
 
-        url = self.endpoint("/api/v1/analyses")
-        resp = self.session.get(url, headers=self.headers)
+        resp = self._test_connection()
         ok = resp.ok
 
         # bad wop version
@@ -177,8 +173,57 @@ class WhatsOpt(object):
                 data.append([mda["id"], mda["name"], date])
             info("Server: {}".format(self._url))
             log(tabulate(data, headers))
+            log("")
         else:
             resp.raise_for_status()
+
+    def get_status(self):
+        resp = self._test_connection()
+        connected = resp.ok
+        if connected:
+            info("You are logged in {}".format(self.url))
+        else:
+            warn("You are not connected.")
+            print("  (use 'wop login {}' command to log in)".format(self.url))
+        mda_id = get_analysis_id()
+        whatsopt_url = get_whatsopt_url()
+        if mda_id:
+            info("Current pulled analysis is #{} from {}".format(mda_id, whatsopt_url))
+            if whatsopt_url == self.url:
+                # connected to the right server from which the analysis was pulled
+                url = self.endpoint("/api/v1/analyses/{}".format(mda_id))
+                resp = self.session.get(url, headers=self.headers)
+                if resp.ok:
+                    mda = resp.json()
+                    headers = ["id", "name", "created_at", "owner_email", "notes"]
+                    data = [mda[k] for k in headers]
+                    info(tabulate(data, headers))
+                else:
+                    error("Analysis not found on the server anymore (probably deleted)")
+                    log(
+                        "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
+                    )
+            else:
+                # connected to another server
+                warn("You are connected to a different server")
+                log(
+                    "  (use 'wop push <analysis.py>' to push the "
+                    "analysis in the connected server {})".format(self.url)
+                )
+                log(
+                    "  (use 'wop logout' and 'wop login {}' to log in the right server)".format(
+                        whatsopt_url
+                    )
+                )
+        else:
+            info("No WhatsOpt analysis found")
+            log(
+                "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)"
+            )
+            log(
+                "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
+            )
+        log("")
 
     def push_component_cmd(self, py_filename, component, options):
         with problem_pyfile(py_filename, component) as pyf:
@@ -203,13 +248,6 @@ class WhatsOpt(object):
                     raise AnalysisPushedException(xdsm=xdsm)
                 else:
                     sys.exit()
-
-        try:
-            import openmdao.utils.hooks as hooks
-            from openmdao.utils.file_utils import _load_and_exec
-        except ImportError:
-            error("wop > 1.4.3 requires openmdao >= 2.10.0 for push command")
-            sys.exit(-1)
 
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=push_mda)
@@ -334,8 +372,14 @@ class WhatsOpt(object):
         opts.update({"--base": True, "--update": True})
         self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
 
-    def show_mda(self, analysis_id, pbfile, name, outfile, batch, depth):
-        options = {"--xdsm": True, "--name": name, "--dry-run": False, "--depth": depth}
+    def show_mda(self, analysis_id, pbfile, experimental, name, outfile, batch, depth):
+        options = {
+            "--xdsm": True,
+            "--experimental": experimental,
+            "--name": name,
+            "--dry-run": False,
+            "--depth": depth,
+        }
         xdsm = None
         if pbfile:
             try:
@@ -454,13 +498,6 @@ class WhatsOpt(object):
 
         d = os.path.dirname(py_filename)
         run_analysis_filename = os.path.join(d, "run_analysis.py")
-
-        try:
-            import openmdao.utils.hooks as hooks
-            from openmdao.utils.file_utils import _load_and_exec
-        except ImportError:
-            error("wop > 1.4.3 requires openmdao >= 2.10.0 for upload command")
-            sys.exit(-1)
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=upload_parameters)
         _load_and_exec(run_analysis_filename, [])
@@ -510,3 +547,8 @@ class WhatsOpt(object):
             )
             sys.exit(-1)
         call(["python", "run_server.py"])
+
+    def _test_connection(self):
+        url = self.endpoint("/api/v1/versioning")
+        resp = self.session.get(url, headers=self.headers)
+        return resp

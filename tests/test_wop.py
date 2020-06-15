@@ -16,6 +16,7 @@ COMMANDS = [
     "wop upload -n -a 1 {}".format(file("run_parameters_init.py")),
     "wop upload -n {}".format(file("test_doe.csv")),
     "wop upload -n {}".format(file("test_doe.sqlite")),
+    "wop status",
 ]
 
 
