@@ -1,4 +1,3 @@
-from __future__ import print_function
 from shutil import move
 import os
 import sys
@@ -124,26 +123,23 @@ class WhatsOpt(object):
         else:
             debug("Ask for API key")
             self.api_key = self._ask_and_write_api_key()
-        self.headers = {
-            "Authorization": "Token token=" + self.api_key,
-            "User-Agent": "wop/{}".format(__version__),
-        }
-
-        ok = self._test_connection()
+        ok = self._test_connection(api_key)
 
         if not api_key and already_logged and not ok:
             # try to propose re-login
             self.logout(
                 echo=False
             )  # log out silently, suppose one was logged on another server
-            ok = self.login(api_key, echo)
+            ok = self.login(api_key, echo=False)
 
         if not ok and echo:
             error("Login to WhatsOpt ({}) failed.".format(self.url))
+            log("")
             sys.exit(-1)
 
         if echo:
             log("Successfully logged into WhatsOpt (%s)" % self.url)
+            log("")
         return ok
 
     @staticmethod
@@ -154,6 +150,7 @@ class WhatsOpt(object):
             os.remove(URL_FILENAME)
         if echo:
             log("Sucessfully logged out from WhatsOpt")
+            log("")
 
     def list_analyses(self):
         url = self.endpoint("/api/v1/analyses")
@@ -178,36 +175,42 @@ class WhatsOpt(object):
             info("You are logged in {}".format(self.url))
         else:
             warn("You are not connected.")
-            print("  (use 'wop login {}' command to log in)".format(whatsopt_url))
         mda_id = get_analysis_id()
         if mda_id:
-            info("Found analysis id=#{} pulled from {}".format(mda_id, whatsopt_url))
-            if whatsopt_url == self.url:
+            if connected and whatsopt_url == self.url:
+                info("Found local analysis code (id=#{})".format(mda_id))
                 # connected to the right server from which the analysis was pulled
                 url = self.endpoint("/api/v1/analyses/{}".format(mda_id))
                 resp = self.session.get(url, headers=self.headers)
+
                 if resp.ok:
                     mda = resp.json()
                     headers = ["id", "name", "created_at", "owner_email", "notes"]
-                    data = [mda[k] for k in headers]
-                    info(tabulate(data, headers))
+                    data = [[mda[k] for k in headers]]
+                    log(tabulate(data, headers))
                 else:
                     error("Analysis not found on the server anymore (probably deleted)")
                     log(
                         "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
                     )
-            elif connected:
-                # connected to another server with a pulled analysis
-                warn("You are connected to a different server")
-                log(
-                    "  (use 'wop push <analysis.py>' to push the local "
-                    "analysis in the current server {})".format(self.url)
+            else:
+                info(
+                    "Found local analysis code (id=#{}) "
+                    "pulled from {}".format(mda_id, whatsopt_url)
                 )
-                log(
-                    "  (use 'wop logout' and 'wop login {}' to log in to the right server)".format(
-                        whatsopt_url
+                if connected:
+                    # connected to another server with a pulled analysis
+                    warn("You are connected to a different server")
+                    log(
+                        "  (use 'wop push <analysis.py>' to push the local "
+                        "analysis in the current server {})".format(self.url)
                     )
-                )
+                    log(
+                        "  (use 'wop logout' and 'wop login {}' "
+                        "to log in to the right server)".format(whatsopt_url)
+                    )
+                else:
+                    log("  (use 'wop login {}' command to log in)".format(whatsopt_url))
         else:
             info("No local analysis found")
             if connected:
@@ -357,14 +360,14 @@ class WhatsOpt(object):
         mda_id = analysis_id or get_analysis_id()
         if mda_id is None:
             error(
-                "Unknown analysis with id={} (maybe use wop pull <analysis-id>)".format(
+                "Unknown analysis with id=#{} (maybe use wop pull <analysis-id>)".format(
                     mda_id
                 )
             )
             sys.exit(-1)
         opts = copy.deepcopy(options)
         opts.update({"--base": True, "--update": True})
-        self.pull_mda(mda_id, opts, "Analysis %s updated" % mda_id)
+        self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
 
     def show_mda(self, analysis_id, pbfile, experimental, name, outfile, batch, depth):
         options = {
@@ -542,14 +545,26 @@ class WhatsOpt(object):
             sys.exit(-1)
         call(["python", "run_server.py"])
 
-    def _test_connection(self):
-        url = self.endpoint("/api/v1/versioning")
-        try:
-            resp = self.session.get(url, headers=self.headers)
-            # special case: bad wop version < minimal required version
-            if resp.status_code == requests.codes.forbidden:
-                error(resp.json()["message"])
-                sys.exit(-1)
-            return True
-        except requests.exceptions.ConnectionError:
+    def _test_connection(self, api_key=None):
+        test_api_key = api_key
+        if test_api_key is None and os.path.exists(API_KEY_FILENAME):
+            test_api_key = self._read_api_key()
+
+        if test_api_key:
+            self.headers = {
+                "Authorization": "Token token=" + test_api_key,
+                "User-Agent": "wop/{}".format(__version__),
+            }
+            url = self.endpoint("/api/v1/versioning")
+            try:
+                resp = self.session.get(url, headers=self.headers)
+                # special case: bad wop version < minimal required version
+                if resp.status_code == requests.codes.forbidden:
+                    error(resp.json()["message"])
+                    sys.exit(-1)
+                return resp.ok
+            except requests.exceptions.ConnectionError:
+                return False
+        else:
             return False
+
