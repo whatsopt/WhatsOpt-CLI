@@ -68,7 +68,7 @@ def status(ctx):
 @click.option(
     "--scalar-format",
     is_flag=True,
-    default=False,
+    default=True,
     help="manage (1,) shape variables as scalar variables",
 )
 @click.option(
