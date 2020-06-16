@@ -76,7 +76,7 @@
           "io_mode": "in",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         },
         {
@@ -84,7 +84,7 @@
           "io_mode": "in",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         },
         {
@@ -92,7 +92,7 @@
           "io_mode": "in",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         },
         {
@@ -100,7 +100,7 @@
           "io_mode": "in",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         }
       ]
@@ -219,7 +219,7 @@
           "io_mode": "out",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         },
         {
@@ -227,7 +227,7 @@
           "io_mode": "out",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         }
       ]
@@ -248,7 +248,7 @@
           "io_mode": "out",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         }
       ]
@@ -260,7 +260,7 @@
           "name": "compliance_0",
           "io_mode": "in",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null,
           "desc": ""
         },
@@ -268,7 +268,7 @@
           "name": "compliance_1",
           "io_mode": "in",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null,
           "desc": ""
         },
@@ -277,7 +277,7 @@
           "io_mode": "out",
           "desc": "",
           "type": "Float",
-          "shape": "(1,)",
+          "shape": "1",
           "units": null
         }
       ]

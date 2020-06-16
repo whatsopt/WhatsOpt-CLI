@@ -3,6 +3,8 @@ from whatsopt import __version__
 from .whatsopt_client import WhatsOpt
 from logging import error
 
+DEFAULT_PUSH_DEPTH = 2
+
 
 @click.group()
 @click.version_option(__version__)
@@ -49,6 +51,13 @@ def list(ctx):
 
 
 @cli.command()
+@click.pass_context
+def status(ctx):
+    """ List server connection and current pulled analysis status """
+    WhatsOpt(login=False).get_status()
+
+
+@cli.command()
 @click.option(
     "-n",
     "--dry-run",
@@ -59,7 +68,7 @@ def list(ctx):
 @click.option(
     "--scalar-format",
     is_flag=True,
-    default=False,
+    default=True,
     help="manage (1,) shape variables as scalar variables",
 )
 @click.option(
@@ -78,7 +87,7 @@ def list(ctx):
 @click.option(
     "-d",
     "--depth",
-    default=3,
+    default=DEFAULT_PUSH_DEPTH,
     help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
 @click.argument("py_filename")
@@ -258,6 +267,13 @@ def upload(
     "-f", "--pbfile", help="specify the analysis given an OpenMDAO problem python file"
 )
 @click.option(
+    "-x",
+    "--experimental",
+    is_flag=True,
+    default=False,
+    help="use experimental push dealing with connect calls and unpromoted variables",
+)
+@click.option(
     "--name", help="find analysis with given name (only used with pbfile option)"
 )
 @click.option(
@@ -273,14 +289,16 @@ def upload(
 @click.option(
     "-d",
     "--depth",
-    default=3,
+    default=DEFAULT_PUSH_DEPTH,
     help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
 @click.pass_context
-def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
+def show(ctx, analysis_id, pbfile, experimental, name, outfile, batch, depth):
     """ Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
-    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch, depth)
+    WhatsOpt(**ctx.obj).show_mda(
+        analysis_id, pbfile, experimental, name, outfile, batch, depth
+    )
 
 
 @cli.command()
