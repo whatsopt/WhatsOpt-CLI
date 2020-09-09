@@ -45,6 +45,8 @@ class UniversalPushCommand(object):
         self._populate_varattrs_from_connections(mda_attrs)
         self._populate_varattrs_from_outputs(mda_attrs)
         self._populate_initial_values(mda_attrs)
+        for _, mda in self.mdas.items():
+            self._populate_initial_values(mda)
 
         mda_attrs["name"] = group.__class__.__name__
 
@@ -63,19 +65,22 @@ class UniversalPushCommand(object):
             ],
         }
         self.mdas[group_prefix] = mda_attrs
-        for i, child in enumerate(tree["children"]):
+        for child in tree["children"]:
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 prefix = child["name"]
                 if group_prefix:
                     prefix = group_prefix + "." + child["name"]
-                sub_analysis_attrs = self._get_sub_analysis_attributes(
-                    group._subsystems_myproc[i], child, prefix
-                )
+                for s in group._subsystems_myproc:
+                    if s.name == child["name"]:
+                        sub_analysis_attrs = self._get_sub_analysis_attributes(
+                            s, child, prefix
+                        )
                 mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
             else:
-                if not isinstance(group._subsystems_myproc[i], IndepVarComp):
-                    discattrs = {"name": child["name"], "variables_attributes": []}
-                    mda_attrs["disciplines_attributes"].append(discattrs)
+                for s in group._subsystems_myproc:
+                    if s.name == child["name"] and not isinstance(s, IndepVarComp):
+                        discattrs = {"name": child["name"], "variables_attributes": []}
+                        mda_attrs["disciplines_attributes"].append(discattrs)
         return mda_attrs
 
     def _populate_varattrs_from_connections(self, mda_attrs):
@@ -89,8 +94,12 @@ class UniversalPushCommand(object):
                 mda_tgt = mda_tgt[1:]
             conn_name = self._get_conn_name(conn)
             for discattrs in self.mdas[".".join(hat)]["disciplines_attributes"]:
+
                 # mda hat: src
-                if self.discmap[mda_src[0]] == discattrs["name"]:
+                if (
+                    mda_src[0] != "_auto_ivc"
+                    and self.discmap[mda_src[0]] == discattrs["name"]
+                ):
                     self._set_varattr(
                         discattrs, conn["src"], varname_src, conn_name, "out"
                     )
@@ -108,6 +117,12 @@ class UniversalPushCommand(object):
                     self._set_varattr(
                         discattrs, conn["tgt"], varname_tgt, conn_name, "in"
                     )
+                    if mda_src[0] == "_auto_ivc":
+                        driver_attrs = mda_attrs["disciplines_attributes"][0]
+                        self._set_varattr(
+                            driver_attrs, conn["src"], varname_tgt, conn_name, "out"
+                        )
+
                     # hat -> tgt
                     self._set_varattr_in_depth(
                         discattrs.get("sub_analysis_attributes"),
@@ -236,6 +251,11 @@ class UniversalPushCommand(object):
             == self.vars["in"][conn["tgt"]]["name"]
         ):
             return self.vars["out"][conn["src"]]["name"]
+        elif conn["src"].startswith(
+            "_auto_ivc"
+        ):  # special case take varname of target when auto_ivc
+            _, varname = extract_mda_var(conn["tgt"])
+            return varname
         else:
             return conn["src"] + "==" + conn["tgt"]
 
@@ -257,7 +277,7 @@ class UniversalPushCommand(object):
         if "children" not in tree:
             return
 
-        for i, child in enumerate(tree["children"]):
+        for child in tree["children"]:
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 self.discmap[child["name"]] = child["name"]
                 for s in system._subsystems_myproc:
@@ -265,10 +285,12 @@ class UniversalPushCommand(object):
                         self._collect_disc_infos(s, child)
             else:
                 # do not represent IndepVarComp
-                if isinstance(system._subsystems_myproc[i], IndepVarComp):
-                    self.discmap[child["name"]] = DRIVER_NAME
-                else:
-                    self.discmap[child["name"]] = child["name"]
+                for s in system._subsystems_myproc:
+                    if s.name == child["name"]:
+                        if isinstance(s, IndepVarComp):
+                            self.discmap[child["name"]] = DRIVER_NAME
+                        else:
+                            self.discmap[child["name"]] = child["name"]
 
     def _collect_var_infos(self, system):
         for typ in ["input", "output"]:
