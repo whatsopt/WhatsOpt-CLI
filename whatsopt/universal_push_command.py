@@ -260,7 +260,9 @@ class UniversalPushCommand(object):
         for i, child in enumerate(tree["children"]):
             if child["type"] == "subsystem" and child["subsystem_type"] == "group":
                 self.discmap[child["name"]] = child["name"]
-                self._collect_disc_infos(system._subsystems_myproc[i], child)
+                for s in system._subsystems_myproc:
+                    if s.name == child["name"]:
+                        self._collect_disc_infos(s, child)
             else:
                 # do not represent IndepVarComp
                 if isinstance(system._subsystems_myproc[i], IndepVarComp):
