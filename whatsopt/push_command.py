@@ -16,7 +16,7 @@ except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 # Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
-NULL_DRIVER_NAME = "__DRIVER__" 
+NULL_DRIVER_NAME = "__DRIVER__"
 
 
 class PushCommand(object):
