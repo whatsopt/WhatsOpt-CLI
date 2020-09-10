@@ -15,7 +15,8 @@ try:  # openmdao < 2.9
 except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
-NULL_DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
+# Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
+NULL_DRIVER_NAME = "__DRIVER__" 
 
 
 class PushCommand(object):
@@ -42,18 +43,18 @@ class PushCommand(object):
             return
 
         for child in tree["children"]:
-
-            if child["type"] == "subsystem" and child["subsystem_type"] == "group":
-                prefix = group_prefix + child["name"] + "."
-                for s in group._subsystems_myproc:
-                    if s.name == child["name"]:
+            for s in group._subsystems_myproc:
+                if s.name == child["name"]:
+                    if (
+                        child["type"] == "subsystem"
+                        and child["subsystem_type"] == "group"
+                    ):
+                        prefix = group_prefix + child["name"] + "."
                         sub_analysis_attrs = self._get_sub_analysis_attributes(
                             s, child, prefix
                         )
                         mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
-            else:
-                for s in group._subsystems_myproc:
-                    if s.name == child["name"]:
+                    else:
                         if not isinstance(s, IndepVarComp):
                             mda = group_prefix[:-1]
                             discname = group_prefix + child["name"]
@@ -256,20 +257,23 @@ class PushCommand(object):
         if "children" not in tree:
             return
 
-        for i, child in enumerate(tree["children"]):
-            # retain only components, not intermediates (subsystem or group)
-            if child["type"] == "subsystem" and child["subsystem_type"] == "group":
-                self.discmap[group_prefix + child["name"]] = child["name"]
-                prefix = group_prefix + child["name"] + "."
-                for s in system._subsystems_myproc:
-                    if s.name == child["name"]:
+        for child in tree["children"]:
+            for s in system._subsystems_myproc:
+                if s.name == child["name"]:
+                    # retain only components, not intermediates (subsystem or group)
+                    if (
+                        child["type"] == "subsystem"
+                        and child["subsystem_type"] == "group"
+                    ):
+                        self.discmap[group_prefix + child["name"]] = child["name"]
+                        prefix = group_prefix + child["name"] + "."
                         self._collect_disc_infos(s, child, prefix)
-            else:
-                # do not represent IndepVarComp
-                if isinstance(system._subsystems_myproc[i], IndepVarComp):
-                    self.discmap[group_prefix + child["name"]] = "__DRIVER__"
-                else:
-                    self.discmap[group_prefix + child["name"]] = child["name"]
+                    else:
+                        # do not represent IndepVarComp
+                        if isinstance(s, IndepVarComp):
+                            self.discmap[group_prefix + child["name"]] = "__DRIVER__"
+                        else:
+                            self.discmap[group_prefix + child["name"]] = child["name"]
 
     # see _get_tree_dict at
     # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py

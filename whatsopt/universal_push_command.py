@@ -14,7 +14,10 @@ try:  # openmdao < 2.9
 except ImportError:  # openmdao >= 2.9
     from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
-DRIVER_NAME = "__DRIVER__"  # check WhatsOpt Discipline model
+# Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
+DRIVER_NAME = "__DRIVER__"
+# OpenMDAO 3.2+ component name (handles indep vars automatically)
+AUTO_IVC = "_auto_ivc"
 
 
 class UniversalPushCommand(object):
@@ -66,21 +69,26 @@ class UniversalPushCommand(object):
         }
         self.mdas[group_prefix] = mda_attrs
         for child in tree["children"]:
-            if child["type"] == "subsystem" and child["subsystem_type"] == "group":
-                prefix = child["name"]
-                if group_prefix:
-                    prefix = group_prefix + "." + child["name"]
-                for s in group._subsystems_myproc:
-                    if s.name == child["name"]:
+            for s in group._subsystems_myproc:
+                if s.name == child["name"]:
+                    if (
+                        child["type"] == "subsystem"
+                        and child["subsystem_type"] == "group"
+                    ):
+                        prefix = child["name"]
+                        if group_prefix:
+                            prefix = group_prefix + "." + child["name"]
                         sub_analysis_attrs = self._get_sub_analysis_attributes(
                             s, child, prefix
                         )
-                mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
-            else:
-                for s in group._subsystems_myproc:
-                    if s.name == child["name"] and not isinstance(s, IndepVarComp):
-                        discattrs = {"name": child["name"], "variables_attributes": []}
-                        mda_attrs["disciplines_attributes"].append(discattrs)
+                        mda_attrs["disciplines_attributes"].append(sub_analysis_attrs)
+                    else:
+                        if not isinstance(s, IndepVarComp):
+                            discattrs = {
+                                "name": child["name"],
+                                "variables_attributes": [],
+                            }
+                            mda_attrs["disciplines_attributes"].append(discattrs)
         return mda_attrs
 
     def _populate_varattrs_from_connections(self, mda_attrs):
@@ -97,7 +105,7 @@ class UniversalPushCommand(object):
 
                 # mda hat: src
                 if (
-                    mda_src[0] != "_auto_ivc"
+                    mda_src[0] != AUTO_IVC
                     and self.discmap[mda_src[0]] == discattrs["name"]
                 ):
                     self._set_varattr(
@@ -117,7 +125,7 @@ class UniversalPushCommand(object):
                     self._set_varattr(
                         discattrs, conn["tgt"], varname_tgt, conn_name, "in"
                     )
-                    if mda_src[0] == "_auto_ivc":
+                    if mda_src[0] == AUTO_IVC:
                         driver_attrs = mda_attrs["disciplines_attributes"][0]
                         self._set_varattr(
                             driver_attrs, conn["src"], varname_tgt, conn_name, "out"
@@ -252,7 +260,7 @@ class UniversalPushCommand(object):
         ):
             return self.vars["out"][conn["src"]]["name"]
         elif conn["src"].startswith(
-            "_auto_ivc"
+            AUTO_IVC
         ):  # special case take varname of target when auto_ivc
             _, varname = extract_mda_var(conn["tgt"])
             return varname
@@ -278,15 +286,16 @@ class UniversalPushCommand(object):
             return
 
         for child in tree["children"]:
-            if child["type"] == "subsystem" and child["subsystem_type"] == "group":
-                self.discmap[child["name"]] = child["name"]
-                for s in system._subsystems_myproc:
-                    if s.name == child["name"]:
+            for s in system._subsystems_myproc:
+                if s.name == child["name"]:
+                    if (
+                        child["type"] == "subsystem"
+                        and child["subsystem_type"] == "group"
+                    ):
+                        self.discmap[child["name"]] = child["name"]
                         self._collect_disc_infos(s, child)
-            else:
-                # do not represent IndepVarComp
-                for s in system._subsystems_myproc:
-                    if s.name == child["name"]:
+                    else:
+                        # do not represent IndepVarComp
                         if isinstance(s, IndepVarComp):
                             self.discmap[child["name"]] = DRIVER_NAME
                         else:
