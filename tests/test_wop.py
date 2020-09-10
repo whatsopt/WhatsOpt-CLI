@@ -34,6 +34,7 @@ class TestWopCommand(unittest.TestCase):
             self._test_wop_cmd(cmd)
 
     def test_push_depth(self):
+        self.maxDiff = None
         for d in range(3):
             out = self._test_wop_cmd(
                 "wop push -d {} -n {}".format(
@@ -41,8 +42,8 @@ class TestWopCommand(unittest.TestCase):
                 )
             )
             with open(file("multipoint_beam_group_d{}.json".format(d))) as f:
-                expected = f.read()
-                actual = json.dumps(json.loads(out), indent=2)
+                expected = json.dumps(json.loads(f.read()), sort_keys=True, indent=2)
+                actual = json.dumps(json.loads(out), sort_keys=True, indent=2)
                 self.assertEqual(expected, actual)
 
 
