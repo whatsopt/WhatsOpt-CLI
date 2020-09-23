@@ -48,7 +48,7 @@ class AnalysisPushedException(Exception):
 class WhatsOpt(object):
     def __init__(self, url=None, api_key=None, login=True):
         if url:
-            self._url = url
+            self._url = url.strip("/")
         elif os.path.exists(URL_FILENAME):
             with open(URL_FILENAME, "r") as f:
                 self._url = f.read()
