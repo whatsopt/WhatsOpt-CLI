@@ -1,3 +1,7 @@
+* 1.11.0 (23/09/2020)
+  - wop pull: add --json option to dump pushable analysis json format 
+  - wop push: add --json option to import analysis from json format 
+
 * 1.10.0 (18/06/2020)
   - new wop status command: returns the current server and pulled analysis status
   - wop push: default depth change from 3 to 2
