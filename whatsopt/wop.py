@@ -90,12 +90,18 @@ def status(ctx):
     default=DEFAULT_PUSH_DEPTH,
     help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
-@click.argument("py_filename")
+@click.option(
+    "--json",
+    is_flag=True,
+    default=False,
+    help="import analysis from file in WhatsOpt analysis json format (disable other options)",
+)
+@click.argument("filename")
 @click.pass_context
 def push(
-    ctx, dry_run, scalar_format, experimental, name, component, depth, py_filename
+    ctx, dry_run, scalar_format, experimental, name, component, depth, json, filename
 ):
-    """ Push OpenMDAO problem from given PY_FILENAME """
+    """ Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME """
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
@@ -106,9 +112,12 @@ def push(
         "--depth": depth,
     }
     if component:
-        wop.push_component_cmd(py_filename, component, options)
+        wop.push_component_cmd(filename, component, options)
+    elif json:
+        wop.push_mda_json(filename)
+        exit()
     else:
-        wop.push_mda_cmd(py_filename, options)
+        wop.push_mda_cmd(filename, options)
 
     # if not exited successfully in execute
     if name:
@@ -142,9 +151,15 @@ def push(
     default=False,
     help="update discipline test scripts",
 )
+@click.option(
+    "--json",
+    is_flag=True,
+    default=False,
+    help="export analysis in json format on stdout (disable other options)",
+)
 @click.argument("analysis_id")
 @click.pass_context
-def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
+def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
     """ Pull analysis given its identifier """
     options = {
         "--dry-run": dry_run,
@@ -153,8 +168,11 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, analysis_id):
         "--run-ops": run_ops,
         "--test-units": test_units,
     }
-    ctx.obj["login"] = not dry_run
-    WhatsOpt(**ctx.obj).pull_mda(analysis_id, options)
+    ctx.obj["login"] = not dry_run or json
+    if json:
+        WhatsOpt(**ctx.obj).pull_mda_json(analysis_id)
+    else:
+        WhatsOpt(**ctx.obj).pull_mda(analysis_id, options)
 
 
 @cli.command()
