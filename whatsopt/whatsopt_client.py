@@ -48,7 +48,7 @@ class AnalysisPushedException(Exception):
 class WhatsOpt(object):
     def __init__(self, url=None, api_key=None, login=True):
         if url:
-            self._url = url
+            self._url = url.strip("/")
         elif os.path.exists(URL_FILENAME):
             with open(URL_FILENAME, "r") as f:
                 self._url = f.read()
@@ -281,6 +281,16 @@ class WhatsOpt(object):
             log("Analysis %s pushed" % mda_attrs["name"])
             return resp.json()
 
+    def push_mda_json(self, filename):
+        with open(filename, "rb") as f:
+            mda_attrs = json.load(f)
+        url = self.endpoint("/api/v1/analyses")
+        resp = self.session.post(
+            url, headers=self.headers, json={"analysis": mda_attrs}
+        )
+        resp.raise_for_status()
+        log("Analysis %s pushed" % mda_attrs["name"])
+
     def pull_mda(self, mda_id, options={}, msg=None):
         if not msg:
             msg = "Analysis %s pulled" % mda_id
@@ -355,6 +365,12 @@ class WhatsOpt(object):
                 if file_to_move[file_to]:
                     move(file_from, dir_to)
             log(msg)
+
+    def pull_mda_json(self, mda_id):
+        url = self.endpoint(("/api/v1/analyses/%s/exports/new.mdajson") % mda_id)
+        resp = self.session.get(url, headers=self.headers, stream=True)
+        resp.raise_for_status()
+        print(json.dumps(resp.json()))
 
     def update_mda(self, analysis_id=None, options={}):
         mda_id = analysis_id or get_analysis_id()
