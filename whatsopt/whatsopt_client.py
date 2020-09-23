@@ -8,7 +8,6 @@ import copy
 import re
 import zipfile
 import tempfile
-import io
 import numpy as np
 from tabulate import tabulate
 from urllib.parse import urlparse
