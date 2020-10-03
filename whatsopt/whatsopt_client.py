@@ -152,8 +152,13 @@ class WhatsOpt(object):
             log("Sucessfully logged out from WhatsOpt")
             log("")
 
-    def list_analyses(self):
-        url = self.endpoint("/api/v1/analyses")
+    def list_analyses(self, all=False, project_query=None):
+        param = ""
+        if all:
+            param = "?all=true"
+        elif project_query:
+            param = "?design_project_query={}".format(project_query)
+        url = self.endpoint("/api/v1/analyses" + param)
         resp = self.session.get(url, headers=self.headers)
         if resp.ok:
             mdas = resp.json()
