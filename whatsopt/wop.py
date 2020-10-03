@@ -44,10 +44,19 @@ def logout():
 
 
 @cli.command()
+@click.option(
+    "-a", "--all", is_flag=True, default=False, help="list all analyses available"
+)
+@click.option(
+    "-p",
+    "--project-query",
+    type=str,
+    help="list all analyses available whose project name matches the given substring",
+)
 @click.pass_context
-def list(ctx):
-    """ List analyses """
-    WhatsOpt(**ctx.obj).list_analyses()
+def list(ctx, all, project_query):
+    """ List analyses owned by the user """
+    WhatsOpt(**ctx.obj).list_analyses(all, project_query)
 
 
 @cli.command()
