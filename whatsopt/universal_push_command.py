@@ -1,4 +1,5 @@
 import re
+from itertools import chain
 from whatsopt.push_utils import (
     cut,
     simple_value,
@@ -279,8 +280,8 @@ class UniversalPushCommand(object):
         }
         return superdisc_attrs
 
-    # # see _get_tree_dict at
-    # # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/devtools/problem_viewer/problem_viewer.py
+    # see _get_tree_dict at
+    # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/visualization/n2_viewer/n2_viewer.py
     def _collect_disc_infos(self, system, tree):
         if "children" not in tree:
             return
@@ -301,23 +302,25 @@ class UniversalPushCommand(object):
                         else:
                             self.discmap[child["name"]] = child["name"]
 
+    # see _get_tree_dict at
+    # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/visualization/n2_viewer/n2_viewer.py
     def _collect_var_infos(self, system):
-        for typ in ["input", "output"]:
-            for abs_name in system._var_abs_names[typ]:
-                if typ == "input":
+        for io in ("input", "output"):
+            for abs_name in system._var_abs2meta[io]:
+                if io == "input":
                     io_mode = "in"
-                elif typ == "output":
+                elif io == "output":
                     io_mode = "out"
                 else:
-                    raise Exception("Unhandled variable type " + typ)
-                meta = system._var_abs2meta[abs_name]
+                    raise Exception("Unhandled variable type " + io)
+                meta = system._var_abs2meta[io][abs_name]
 
                 vtype = "Float"
                 if re.match("int", type(meta["value"]).__name__):
                     vtype = "Integer"
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar_format, shape)
-                name = system._var_abs2prom[typ][abs_name]
+                name = system._var_abs2prom[io][abs_name]
                 # name = abs_name
                 self.vars[io_mode][abs_name] = {
                     "name": name,
