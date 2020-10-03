@@ -525,8 +525,8 @@ class WhatsOpt(object):
         data = []
         for s in problem.model._subsystems_myproc:
             if isinstance(s, IndepVarComp):
-                for absname in s._var_allprocs_abs_names["output"]:
-                    name = s._var_allprocs_abs2prom["output"][absname]
+                for absname in s._var_abs2meta["output"]:
+                    name = s._var_abs2prom["output"][absname]
                     value = s._outputs._views[absname][:]
                     if isinstance(value, np.ndarray):
                         value = str(value.tolist())
