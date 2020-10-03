@@ -32,7 +32,7 @@ metadata = dict(
     install_requires=[
         "openmdao>=3.4.0",
         "openmdao_extensions>=1.0.0",
-        "xdsmjs>=0.8.4",
+        "xdsmjs>=1.0.0",
         "Click>=6.7",
         "tabulate>=0.8.2",
         "requests",

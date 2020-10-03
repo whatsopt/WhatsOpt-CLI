@@ -1,3 +1,10 @@
+* 1.12.0 (03/10/2020)
+  - wop list: list analyses owned by the user
+  - wop list -a: list all analyses available for the user
+  - wop list -p project: list all analyses available for the user of the given project substring
+  - fix OpenMDAO 3.4 compatibility
+  - require OpenMDAO >= 3.4, xdsmjs>=1.0.0
+
 * 1.11.0 (23/09/2020)
   - wop pull: add --json option to dump pushable analysis json format 
   - wop push: add --json option to import analysis from json format 
