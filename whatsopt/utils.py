@@ -63,5 +63,5 @@ def get_analysis_id(directory="."):
 def get_whatsopt_url(directory="."):
     try:
         return _get_key(WHATSOPT_URL_KEY, directory)
-    except:
+    except ValueError:
         return False
