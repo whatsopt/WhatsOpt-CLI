@@ -1,7 +1,8 @@
-* 1.12.0 (03/10/2020)
+* 1.12.0 (??/10/2020)
   - wop list: list analyses owned by the user
   - wop list -a: list all analyses available for the user
   - wop list -p project: list all analyses available for the user of the given project substring
+  - remove wop url (not really used and not relevant anymore with wop status)
   - fix OpenMDAO 3.4 compatibility
   - require OpenMDAO >= 3.4, xdsmjs>=1.0.0
 

@@ -179,8 +179,12 @@ class WhatsOpt(object):
         if connected:
             info("You are logged in {}".format(self.url))
         else:
-            warn("You are not connected.")
-        mda_id = get_analysis_id()
+            info("You are not connected.")
+        mda_id = None
+        try:
+            mda_id = get_analysis_id()
+        except ValueError as err:
+            warn(str(err))
         if mda_id:
             if connected and whatsopt_url == self.url:
                 info("Found local analysis code (id=#{})".format(mda_id))

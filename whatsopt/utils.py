@@ -45,9 +45,9 @@ def _get_key(key, directory="."):
     for f in files:
         newval = _extract_key(os.path.join(directory, f), key)
         if val and val != newval:
-            raise Exception(
+            raise ValueError(
                 "Several {} key detected. "
-                "Find {} then {}.\n"
+                "Find #{} then #{}.\n"
                 "Check header comments in {} files.".format(
                     key, val, newval, str(files)
                 )
@@ -61,4 +61,7 @@ def get_analysis_id(directory="."):
 
 
 def get_whatsopt_url(directory="."):
-    return _get_key(WHATSOPT_URL_KEY, directory)
+    try:
+        return _get_key(WHATSOPT_URL_KEY, directory)
+    except:
+        return False
