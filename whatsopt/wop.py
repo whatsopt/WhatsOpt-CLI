@@ -23,12 +23,6 @@ def cli(ctx, credentials, url):
 
 
 @cli.command()
-def url():
-    """ WhatsOpt server url """
-    print(WhatsOpt(login=False).url)
-
-
-@cli.command()
 @click.argument("url")
 @click.pass_context
 def login(ctx, url):
