@@ -1,4 +1,4 @@
-* 1.12.0 (??/10/2020)
+* 1.12.0 (05/10/2020)
   - wop list: list analyses owned by the user
   - wop list -a: list all analyses available for the user
   - wop list -p project: list all analyses available for the user of the given project substring
