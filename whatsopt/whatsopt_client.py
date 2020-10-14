@@ -557,10 +557,7 @@ class WhatsOpt(object):
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
         log("You are using wop {}".format(__version__))
 
-    @staticmethod
-    def serve():
-        from subprocess import call
-
+    def serve(self, port):
         try:
             import thrift
         except ImportError:
@@ -568,7 +565,32 @@ class WhatsOpt(object):
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
             sys.exit(-1)
-        call(["python", "run_server.py"])
+        try:
+            import os, sys
+
+            # insert current dir first as another run_server exists under whatsopt/services
+            sys.path.insert(0, os.getcwd())
+            from run_server import run_server
+        except ImportError as err:
+            print(str(err))
+            error("Server not found!")
+            try:
+                mda_id = get_analysis_id()
+                if mda_id:
+                    log(
+                        "  (use 'wop update -s' to generate server for current analysis #{})".format(
+                            mda_id
+                        )
+                    )
+                else:
+                    warn("No local analysis found")
+                    log(
+                        "  (use 'wop pull -s <id>' to generate server for the analysis #id)"
+                    )
+            except ValueError as err:
+                warn(str(err))
+            sys.exit(-1)
+        run_server(port)
 
     def _test_connection(self, api_key=None):
         test_api_key = api_key

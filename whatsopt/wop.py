@@ -330,9 +330,16 @@ def version(ctx):
 
 
 @cli.command()
-def serve():
+@click.option(
+    "-p",
+    "--port",
+    default=31400,
+    type=int,
+    help="specify the listening port number of the analysis server",
+)
+def serve(port):
     """ Launch analysis server """
-    WhatsOpt(login=False).serve()
+    WhatsOpt(login=False).serve(port)
 
 
 if __name__ == "__main__":
