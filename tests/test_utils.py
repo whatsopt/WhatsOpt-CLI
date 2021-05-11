@@ -6,6 +6,7 @@ from whatsopt.utils import (
     find_analysis_base_files,
     get_analysis_id,
     get_whatsopt_url,
+    has_gemseo_import,
 )
 
 
@@ -40,6 +41,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(
             "https://ether.onera.fr/whatsopt", get_whatsopt_url(TestUtils.DATA_PATH)
         )
+
+    def test_has_gemseo_import(self):
+        self.assertEqual(False, has_gemseo_import(TestUtils.DATA_PATH))
 
 
 if __name__ == "__main__":

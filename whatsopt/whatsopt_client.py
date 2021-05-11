@@ -20,7 +20,12 @@ from openmdao.utils.webview import webview
 from openmdao.api import IndepVarComp
 
 from whatsopt.logging import log, info, warn, error, debug
-from whatsopt.utils import is_user_file, get_analysis_id, get_whatsopt_url
+from whatsopt.utils import (
+    has_gemseo_import,
+    is_user_file,
+    get_analysis_id,
+    get_whatsopt_url,
+)
 from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
 from whatsopt.push_utils import problem_pyfile, to_camelcase
 from whatsopt.push_command import PushCommand
@@ -303,18 +308,28 @@ class WhatsOpt(object):
     def pull_mda(self, mda_id, options={}, msg=None):
         if not msg:
             msg = "Analysis %s pulled" % mda_id
-        base = ""
+
+        format = "openmdao"
+        if options.get("--gemseo"):
+            format = "gemseo"
+
         param = ""
-        if options.get("--server"):
-            param += "&with_server=true"
         if options.get("--run-ops"):
             param += "&with_runops=true"
+        if options.get("--server"):
+            if format == "openmdao":
+                param += "&with_server=true"
+            else:
+                warn("Can not generate server in GEMSEO format. --server is ignored")
         if options.get("--test-units"):
-            param += "&with_unittests=true"
-        if param is not "":
+            if format == "openmdao":
+                param += "&with_unittests=true"
+            else:
+                warn("Can not generate tests in GEMSEO format. --test-units is ignored")
+        if param:
             param = "?" + param[1:]
         url = self.endpoint(
-            ("/api/v1/analyses/%s/exports/new.openmdao" + base + param) % mda_id
+            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format, param))
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
         resp.raise_for_status()
@@ -391,7 +406,7 @@ class WhatsOpt(object):
             )
             sys.exit(-1)
         opts = copy.deepcopy(options)
-        opts.update({"--base": True, "--update": True})
+        opts.update({"--base": True, "--update": True, "--gemseo": has_gemseo_import()})
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
 
     def show_mda(self, analysis_id, pbfile, experimental, name, outfile, batch, depth):

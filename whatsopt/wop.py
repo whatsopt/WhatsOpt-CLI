@@ -160,9 +160,15 @@ def push(
     default=False,
     help="export analysis in json format on stdout (disable other options)",
 )
+@click.option(
+    "--gemseo",
+    is_flag=True,
+    default=False,
+    help="pull analysis as GEMSEO source code",
+)
 @click.argument("analysis_id")
 @click.pass_context
-def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
+def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysis_id):
     """Pull analysis given its identifier"""
     options = {
         "--dry-run": dry_run,
@@ -170,6 +176,7 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
         "--server": server,
         "--run-ops": run_ops,
         "--test-units": test_units,
+        "--gemseo": gemseo,
     }
     ctx.obj["login"] = not dry_run or json
     if json:
