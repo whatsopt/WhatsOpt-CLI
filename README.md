@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/OneraHub/WhatsOpt-CLI.svg?branch=master)](https://travis-ci.org/OneraHub/WhatsOpt-CLI)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2bfeec24ee434cb7a6665ce29836f052)](https://app.codacy.com/manual/relf/WhatsOpt-CLI?utm_source=github.com&utm_medium=referral&utm_content=OneraHub/WhatsOpt-CLI&utm_campaign=Badge_Grade_Dashboard)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/78559b54a0db44e5aeb5b0a3f5dcf9e2)](https://www.codacy.com/gh/OneraHub/WhatsOpt-CLI/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=OneraHub/WhatsOpt-CLI&amp;utm_campaign=Badge_Grade)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 # WhatsOpt command line interface
