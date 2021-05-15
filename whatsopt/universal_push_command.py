@@ -27,11 +27,11 @@ class UniversalPushCommand(object):
     (as opposed to regular push command which works with "all vars promoted/no connect" assumption)
     """
 
-    def __init__(self, problem, depth, scalar_format):
+    def __init__(self, problem, depth, scalar):
         data = _get_viewer_data(problem)
         self.problem = problem
         self.depth = depth
-        self.scalar_format = scalar_format
+        self.scalar = scalar
         self.tree = data["tree"]
         self.connections = data["connections_list"]
         self.vars = {"in": {}, "out": {}}
@@ -319,7 +319,7 @@ class UniversalPushCommand(object):
                 if re.match("int", type(meta["value"]).__name__):
                     vtype = "Integer"
                 shape = str(meta["shape"])
-                shape = format_shape(self.scalar_format, shape)
+                shape = format_shape(self.scalar, shape)
                 name = system._var_abs2prom[io][abs_name]
                 # name = abs_name
                 self.vars[io_mode][abs_name] = {

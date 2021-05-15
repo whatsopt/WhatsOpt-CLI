@@ -44,9 +44,9 @@ def flatten(mda_attrs):
 
 
 # push_command collect_var_infos
-def format_shape(scalar_format, shape):
+def format_shape(scalar, shape):
     shape = shape.replace("L", "")  # with py27 we can get (1L,)
-    if scalar_format and shape == "(1,)":
+    if scalar and shape == "(1,)":
         shape = "1"
     return shape
 

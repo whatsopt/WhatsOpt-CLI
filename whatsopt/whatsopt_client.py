@@ -266,11 +266,11 @@ class WhatsOpt(object):
         return push_mda
 
     def push_mda(self, problem, options):
-        scalar_format = options.get("--scalar-format")
+        scalar = options.get("--scalar")
         depth = options.get("--depth")
-        push_cmd = PushCommand(problem, depth, scalar_format)
+        push_cmd = PushCommand(problem, depth, scalar)
         if options.get("--experimental"):
-            push_cmd = UniversalPushCommand(problem, depth, scalar_format)
+            push_cmd = UniversalPushCommand(problem, depth, scalar)
 
         mda_attrs = push_cmd.get_mda_attributes(
             problem.model, push_cmd.tree, use_depth=True

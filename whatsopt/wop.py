@@ -69,8 +69,7 @@ def status(ctx):
     help="generate analysis push data without actually pushing",
 )
 @click.option(
-    "--scalar-format",
-    is_flag=True,
+    "--scalar/--no-scalar",
     default=True,
     help="manage (1,) shape variables as scalar variables",
 )
@@ -101,15 +100,13 @@ def status(ctx):
 )
 @click.argument("filename")
 @click.pass_context
-def push(
-    ctx, dry_run, scalar_format, experimental, name, component, depth, json, filename
-):
+def push(ctx, dry_run, scalar, experimental, name, component, depth, json, filename):
     """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME"""
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
         "--dry-run": dry_run,
-        "--scalar-format": scalar_format,
+        "--scalar": scalar,
         "--experimental": experimental,
         "--name": name,
         "--depth": depth,
