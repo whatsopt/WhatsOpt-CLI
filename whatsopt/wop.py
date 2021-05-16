@@ -216,7 +216,6 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysi
 @click.pass_context
 def update(ctx, analysis_id, force, server, run_ops, test_units, gemseo, openmdao):
     """Update analysis connections"""
-    print(gemseo)
     options = {
         "--force": force,
         "--server": server,
