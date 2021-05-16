@@ -1,5 +1,4 @@
 import re
-from six import iteritems
 from itertools import chain
 from whatsopt.push_utils import (
     cut,
@@ -144,7 +143,7 @@ class PushCommand(object):
         return discattrs
 
     def _set_varattrs_from_outputs(self, outputs, io_mode, varattrs, state_names=None):
-        for absname, varname in iteritems(outputs):
+        for absname, varname in outputs.items():
             if io_mode == "out" and state_names and varname in state_names:
                 continue  # avoid adding in var to driver when it is a state var
             if varname.find(".") < 0 and varname not in [

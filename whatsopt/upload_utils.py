@@ -1,7 +1,6 @@
 import os
 import re
 import csv
-from six import iteritems
 from openmdao.api import CaseReader
 from tabulate import tabulate
 from whatsopt.logging import log, error
@@ -135,7 +134,7 @@ def _format_upload_cases(reader):
         )
 
     data = []
-    for key, values in iteritems(cases):
+    for key, values in cases.items():
         idx = key[1]
         if key[2] == 1:
             idx = -1  # consider it is a scalar not an array of 1 elt
