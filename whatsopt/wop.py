@@ -69,8 +69,7 @@ def status(ctx):
     help="generate analysis push data without actually pushing",
 )
 @click.option(
-    "--scalar-format",
-    is_flag=True,
+    "--scalar/--no-scalar",
     default=True,
     help="manage (1,) shape variables as scalar variables",
 )
@@ -101,15 +100,13 @@ def status(ctx):
 )
 @click.argument("filename")
 @click.pass_context
-def push(
-    ctx, dry_run, scalar_format, experimental, name, component, depth, json, filename
-):
+def push(ctx, dry_run, scalar, experimental, name, component, depth, json, filename):
     """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME"""
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
         "--dry-run": dry_run,
-        "--scalar-format": scalar_format,
+        "--scalar": scalar,
         "--experimental": experimental,
         "--name": name,
         "--depth": depth,
@@ -160,9 +157,14 @@ def push(
     default=False,
     help="export analysis in json format on stdout (disable other options)",
 )
+@click.option(
+    "--gemseo/--openmdao",
+    default=False,
+    help="pull analysis as GEMSEO source code (default OpenMDAO)",
+)
 @click.argument("analysis_id")
 @click.pass_context
-def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
+def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysis_id):
     """Pull analysis given its identifier"""
     options = {
         "--dry-run": dry_run,
@@ -170,6 +172,7 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
         "--server": server,
         "--run-ops": run_ops,
         "--test-units": test_units,
+        "--gemseo": gemseo,
     }
     ctx.obj["login"] = not dry_run or json
     if json:
@@ -200,14 +203,27 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
     default=False,
     help="update discipline test scripts",
 )
+@click.option(
+    "--gemseo/--openmdao",
+    default=False,
+    help="update analysis as GEMSEO source code (otherwise OpenMDAO)",
+)
+@click.option(
+    "--openmdao",
+    is_flag=True,
+    help="update analysis as OpenMDAO source code (to be used when GEMSEO code has been pulled)",
+)
 @click.pass_context
-def update(ctx, analysis_id, force, server, run_ops, test_units):
+def update(ctx, analysis_id, force, server, run_ops, test_units, gemseo, openmdao):
     """Update analysis connections"""
+    print(gemseo)
     options = {
         "--force": force,
         "--server": server,
         "--run-ops": run_ops,
         "--test-units": test_units,
+        "--gemseo": gemseo,
+        "--openmdao": openmdao,
     }
     WhatsOpt(**ctx.obj).update_mda(analysis_id, options)
 

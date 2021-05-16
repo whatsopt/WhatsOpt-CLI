@@ -65,3 +65,19 @@ def get_whatsopt_url(directory="."):
         return _get_key(WHATSOPT_URL_KEY, directory)
     except ValueError:
         return False
+
+
+def has_gemseo_import(directory="."):
+    files = find_analysis_base_files(directory)
+    return all(_detect_from_import(os.path.join(directory, f), "gemseo") for f in files)
+
+
+def _detect_from_import(file, module):
+    detected = False
+    with open(file, "r") as f:
+        for line in f:
+            match = re.match(rf"^from {module}\.(.*)", line)
+            if match:
+                detected = True
+                break
+    return detected
