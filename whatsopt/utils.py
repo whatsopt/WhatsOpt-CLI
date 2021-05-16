@@ -69,7 +69,7 @@ def get_whatsopt_url(directory="."):
 
 def has_gemseo_import(directory="."):
     files = find_analysis_base_files(directory)
-    return all(_detect_from_import(f, "gemseo") for f in files)
+    return all(_detect_from_import(os.path.join(directory, f), "gemseo") for f in files)
 
 
 def _detect_from_import(file, module):
