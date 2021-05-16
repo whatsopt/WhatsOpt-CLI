@@ -26,14 +26,14 @@ def cli(ctx, credentials, url):
 @click.argument("url")
 @click.pass_context
 def login(ctx, url):
-    """ Authenticate to the specified WhatsOpt server given its URL """
+    """Authenticate to the specified WhatsOpt server given its URL"""
     ctx.obj["url"] = url
     WhatsOpt(**ctx.obj).login(echo=True)
 
 
 @cli.command()
 def logout():
-    """ Deconnect from WhatsOpt server """
+    """Deconnect from WhatsOpt server"""
     WhatsOpt(login=False).logout()
 
 
@@ -49,14 +49,14 @@ def logout():
 )
 @click.pass_context
 def list(ctx, all, project_query):
-    """ List analyses owned by the user """
+    """List analyses owned by the user"""
     WhatsOpt(**ctx.obj).list_analyses(all, project_query)
 
 
 @cli.command()
 @click.pass_context
 def status(ctx):
-    """ List server connection and current pulled analysis status """
+    """List server connection and current pulled analysis status"""
     WhatsOpt(login=False).get_status()
 
 
@@ -104,7 +104,7 @@ def status(ctx):
 def push(
     ctx, dry_run, scalar_format, experimental, name, component, depth, json, filename
 ):
-    """ Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME """
+    """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME"""
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
@@ -163,7 +163,7 @@ def push(
 @click.argument("analysis_id")
 @click.pass_context
 def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
-    """ Pull analysis given its identifier """
+    """Pull analysis given its identifier"""
     options = {
         "--dry-run": dry_run,
         "--force": force,
@@ -202,7 +202,7 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, analysis_id):
 )
 @click.pass_context
 def update(ctx, analysis_id, force, server, run_ops, test_units):
-    """ Update analysis connections """
+    """Update analysis connections"""
     options = {
         "--force": force,
         "--server": server,
@@ -264,7 +264,7 @@ def upload(
     only_success,
     parallel,
 ):
-    """ Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file"""
+    """Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file"""
     ctx.obj["login"] = not dry_run
     WhatsOpt(**ctx.obj).upload(
         filename,
@@ -315,7 +315,7 @@ def upload(
 )
 @click.pass_context
 def show(ctx, analysis_id, pbfile, experimental, name, outfile, batch, depth):
-    """ Show current analysis from pulled code or given its identifier (-a) on remote server
+    """Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
     WhatsOpt(**ctx.obj).show_mda(
         analysis_id, pbfile, experimental, name, outfile, batch, depth
@@ -325,7 +325,7 @@ def show(ctx, analysis_id, pbfile, experimental, name, outfile, batch, depth):
 @cli.command()
 @click.pass_context
 def version(ctx):
-    """ Show versions of WhatsOpt app and recommended wop command line """
+    """Show versions of WhatsOpt app and recommended wop command line"""
     WhatsOpt(**ctx.obj).check_versions()
 
 
@@ -338,7 +338,7 @@ def version(ctx):
     help="specify the listening port number of the analysis server",
 )
 def serve(port):
-    """ Launch analysis server """
+    """Launch analysis server"""
     WhatsOpt(login=False).serve(port)
 
 

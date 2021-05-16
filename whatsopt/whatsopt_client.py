@@ -614,4 +614,3 @@ class WhatsOpt(object):
                 return False
         else:
             return False
-
