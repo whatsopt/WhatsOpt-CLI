@@ -10,10 +10,7 @@ from whatsopt.push_utils import (
 from .logging import debug, log
 from openmdao.api import IndepVarComp
 
-try:  # openmdao < 2.9
-    from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
-except ImportError:  # openmdao >= 2.9
-    from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
+from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 # Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
 NULL_DRIVER_NAME = "__DRIVER__"
