@@ -406,7 +406,14 @@ class WhatsOpt(object):
             )
             sys.exit(-1)
         opts = copy.deepcopy(options)
-        opts.update({"--base": True, "--update": True, "--gemseo": has_gemseo_import()})
+        opts.update(
+            {
+                "--base": True,
+                "--update": True,
+                "--gemseo": opts["--gemseo"]
+                or (not opts["--openmdao"] and has_gemseo_import()),
+            }
+        )
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
 
     def show_mda(self, analysis_id, pbfile, experimental, name, outfile, batch, depth):
