@@ -2,11 +2,12 @@ import os
 import unittest
 
 from whatsopt.utils import (
+    is_analysis_user_file,
+    is_based_on,
     is_user_file,
     find_analysis_base_files,
     get_analysis_id,
     get_whatsopt_url,
-    has_gemseo_import,
 )
 
 
@@ -42,8 +43,13 @@ class TestUtils(unittest.TestCase):
             "https://ether.onera.fr/whatsopt", get_whatsopt_url(TestUtils.DATA_PATH)
         )
 
-    def test_has_gemseo_import(self):
-        self.assertEqual(False, has_gemseo_import(TestUtils.DATA_PATH))
+    def test_based_on_openmdao(self):
+        self.assertEqual(False, is_based_on("gemseo", TestUtils.DATA_PATH))
+        self.assertEqual(True, is_based_on("openmdao", TestUtils.DATA_PATH))
+
+    def test_is_analysis_user_file(self):
+        self.assertEqual(True, is_analysis_user_file("sellar", "sellar.py"))
+        self.assertEqual(False, is_analysis_user_file("sellar", "sellar_base.py"))
 
 
 if __name__ == "__main__":

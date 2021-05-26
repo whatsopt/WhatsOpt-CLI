@@ -21,7 +21,9 @@ from openmdao.api import IndepVarComp
 
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
-    has_gemseo_import,
+    is_analysis_user_file,
+    is_based_on,
+    is_framework_switch,
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
@@ -229,9 +231,7 @@ class WhatsOpt(object):
             info("No local analysis found")
             if connected:
                 log(
-                    "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)"
-                )
-                log(
+                    "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)\n"
                     "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
                 )
         log("")
@@ -344,6 +344,15 @@ class WhatsOpt(object):
         filenames = zipf.namelist()
         zipf.close()
         file_to_move = {}
+        if options.get("--dry-run"):
+            cmd = "Pull"
+            if options.get("--update"):
+                cmd = "Update"
+            info(
+                "*******************************************************************\n"
+                f"* {cmd} is run in DRY RUN mode (actions are listed but not done) *\n"
+                "*******************************************************************"
+            )
         for f in filenames:
             file_to = f
             file_to_move[file_to] = True
@@ -358,25 +367,36 @@ class WhatsOpt(object):
                     if re.match(r"^run_.*\.py$", f) and not options.get("--run-ops"):
                         # keep current run scripts if any
                         info(
-                            "Keep existing %s (remove it or use --run-ops to override)"
-                            % file_to
+                            f"Keep existing {file_to} (remove it or use --run-ops to override)"
                         )
                         file_to_move[file_to] = False
                         continue
                     if is_user_file(f):
                         file_to_move[file_to] = False
-                        continue
-                    log("Update %s" % file_to)
+
+                        # Have to update user analysis main file when switching frameworks
+                        url = self.endpoint(
+                            f"/api/v1/analyses/{mda_id}/exports/new.mdajson"
+                        )
+                        resp = self.session.get(url, headers=self.headers, stream=True)
+                        resp.raise_for_status()
+                        mda_name = resp.json()["name"].lower()
+                        if is_analysis_user_file(mda_name, f) and is_framework_switch(
+                            format
+                        ):
+                            file_to_move[file_to] = True
+                        else:
+                            continue
+                    log(f"Update {file_to}")
                     if not options.get("--dry-run"):
                         os.remove(file_to)
                 else:
                     warn(
-                        "File %s in the way: remove it or use --force to override"
-                        % file_to
+                        f"File {file_to} in the way: remove it or use --force to override"
                     )
                     file_to_move[file_to] = False
             else:
-                log("Pull %s" % file_to)
+                log(f"Pull {file_to}")
         if not options.get("--dry-run"):
             for f in file_to_move.keys():
                 file_from = os.path.join(tempdir, f)
@@ -391,7 +411,7 @@ class WhatsOpt(object):
             log(msg)
 
     def pull_mda_json(self, mda_id):
-        url = self.endpoint(("/api/v1/analyses/%s/exports/new.mdajson") % mda_id)
+        url = self.endpoint(f"/api/v1/analyses/{mda_id}/exports/new.mdajson")
         resp = self.session.get(url, headers=self.headers, stream=True)
         resp.raise_for_status()
         print(json.dumps(resp.json()))
@@ -400,18 +420,28 @@ class WhatsOpt(object):
         mda_id = analysis_id or get_analysis_id()
         if mda_id is None:
             error(
-                "Unknown analysis with id=#{} (maybe use wop pull <analysis-id>)".format(
-                    mda_id
-                )
+                f"Unknown analysis with id=#{mda_id} (maybe use wop pull <analysis-id>)"
             )
             sys.exit(-1)
+        # keep options unchanged, work on a copy
         opts = copy.deepcopy(options)
+        # sanity checks
+        if not (is_based_on("openmdao") or is_based_on("gemseo")):
+            error(
+                "Cannot update as mixed framework usage detected. Check your *_base.py files."
+            )
+            sys.exit(-1)
+        if opts["--openmdao"] and opts["--gemseo"]:
+            error("Please choose either --openmdao or --gemseo.")
+            sys.exit(-1)
         opts.update(
             {
                 "--base": True,
                 "--update": True,
                 "--gemseo": opts["--gemseo"]
-                or (not opts["--openmdao"] and has_gemseo_import()),
+                or (not opts["--openmdao"] and is_based_on("gemseo")),
+                "--openmdao": opts["--openmdao"]
+                or (not opts["--gemseo"] and is_based_on("openmdao")),
             }
         )
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))

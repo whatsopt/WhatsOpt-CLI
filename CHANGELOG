@@ -1,6 +1,10 @@
-* 1.13.0 (25/05/2020)
-  - wop pull --gemseo <analysis_id>: to generate GEMSEO code instead of OpenMDAO
+* 1.13.1 (??/06/2020)
+  - wop pull -n/dry-run <analysis_id>: list pull actions but do not execute
   - wop update --gemseo/--openmdao: to switch between the two frameworks
+  - wop serve -p <port_number>: to run analysis server on port port_number
+
+* 1.13.0 (25/05/2020)
+  - wop pull --gemseo <analysis_id>: to generate GEMSEO code instead of OpenMDAO one (default)
   - wop serve -p <port_number>: to run analysis server on port port_number
 
 * 1.12.0 (05/10/2020)

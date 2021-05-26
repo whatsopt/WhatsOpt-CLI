@@ -6,10 +6,14 @@ WHATSOPT_URL_KEY = "whatsopt_url"
 
 def is_user_file(f):
     return (
-        not re.match(r".*_base\.py$", f)
+        not re.match(r"\w+_base\.py$", f)
         and not re.match(r"^run_.*\.py$", f)
         and not re.match(r"^server/", f)
     )
+
+
+def is_analysis_user_file(name, f):
+    return bool(re.match(rf"^{name}\.py$", f))
 
 
 def find_analysis_base_files(directory="."):
@@ -67,9 +71,15 @@ def get_whatsopt_url(directory="."):
         return False
 
 
-def has_gemseo_import(directory="."):
+def is_based_on(module, directory="."):
     files = find_analysis_base_files(directory)
-    return all(_detect_from_import(os.path.join(directory, f), "gemseo") for f in files)
+    return all(_detect_from_import(os.path.join(directory, f), module) for f in files)
+
+
+def is_framework_switch(format, directory="."):
+    return (format == "gemseo" and is_based_on("openmdao", directory)) or (
+        format == "openmdao" and is_based_on("gemseo", directory)
+    )
 
 
 def _detect_from_import(file, module):

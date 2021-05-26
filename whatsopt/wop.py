@@ -158,13 +158,31 @@ def push(ctx, dry_run, scalar, experimental, name, component, depth, json, filen
     help="export analysis in json format on stdout (disable other options)",
 )
 @click.option(
-    "--gemseo/--openmdao",
+    "--gemseo",
+    is_flag=True,
+    default=False,
+    help="pull analysis as GEMSEO source code (default OpenMDAO)",
+)
+@click.option(
+    "--openmdao",
+    is_flag=True,
     default=False,
     help="pull analysis as GEMSEO source code (default OpenMDAO)",
 )
 @click.argument("analysis_id")
 @click.pass_context
-def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysis_id):
+def pull(
+    ctx,
+    dry_run,
+    force,
+    server,
+    run_ops,
+    test_units,
+    json,
+    gemseo,
+    openmdao,
+    analysis_id,
+):
     """Pull analysis given its identifier"""
     options = {
         "--dry-run": dry_run,
@@ -173,8 +191,8 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysi
         "--run-ops": run_ops,
         "--test-units": test_units,
         "--gemseo": gemseo,
+        "--openmdao": openmdao,
     }
-    ctx.obj["login"] = not dry_run or json
     if json:
         WhatsOpt(**ctx.obj).pull_mda_json(analysis_id)
     else:
@@ -182,6 +200,13 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysi
 
 
 @cli.command()
+@click.option(
+    "-n",
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="print analysis update infos without actually updating",
+)
 @click.option(
     "-a",
     "--analysis-id",
@@ -204,19 +229,24 @@ def pull(ctx, dry_run, force, server, run_ops, test_units, json, gemseo, analysi
     help="update discipline test scripts",
 )
 @click.option(
-    "--gemseo/--openmdao",
+    "--gemseo",
+    is_flag=True,
     default=False,
     help="update analysis as GEMSEO source code (otherwise OpenMDAO)",
 )
 @click.option(
     "--openmdao",
     is_flag=True,
+    default=False,
     help="update analysis as OpenMDAO source code (to be used when GEMSEO code has been pulled)",
 )
 @click.pass_context
-def update(ctx, analysis_id, force, server, run_ops, test_units, gemseo, openmdao):
+def update(
+    ctx, dry_run, analysis_id, force, server, run_ops, test_units, gemseo, openmdao
+):
     """Update analysis connections"""
     options = {
+        "--dry-run": dry_run,
         "--force": force,
         "--server": server,
         "--run-ops": run_ops,
