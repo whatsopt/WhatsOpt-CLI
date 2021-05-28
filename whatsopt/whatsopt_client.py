@@ -21,6 +21,8 @@ from openmdao.api import IndepVarComp
 
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
+    GEMSEO,
+    OPENMDAO,
     is_analysis_user_file,
     is_based_on,
     is_framework_switch,
@@ -309,27 +311,29 @@ class WhatsOpt(object):
         if not msg:
             msg = "Analysis %s pulled" % mda_id
 
-        format = "openmdao"
+        framework = OPENMDAO
         if options.get("--gemseo"):
-            format = "gemseo"
+            framework = GEMSEO
 
         param = ""
         if options.get("--run-ops"):
             param += "&with_runops=true"
         if options.get("--server"):
-            if format == "openmdao":
+            if framework == OPENMDAO:
                 param += "&with_server=true"
             else:
-                warn("Can not generate server in GEMSEO format. --server is ignored")
+                warn("Can not generate server in GEMSEO framework. --server is ignored")
         if options.get("--test-units"):
-            if format == "openmdao":
+            if framework == OPENMDAO:
                 param += "&with_unittests=true"
             else:
-                warn("Can not generate tests in GEMSEO format. --test-units is ignored")
+                warn(
+                    "Can not generate tests in GEMSEO framework. --test-units is ignored"
+                )
         if param:
             param = "?" + param[1:]
         url = self.endpoint(
-            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format, param))
+            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, framework, param))
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
         resp.raise_for_status()
@@ -382,7 +386,7 @@ class WhatsOpt(object):
                         resp.raise_for_status()
                         mda_name = resp.json()["name"].lower()
                         if is_analysis_user_file(mda_name, f) and is_framework_switch(
-                            format
+                            framework
                         ):
                             file_to_move[file_to] = True
                         else:
@@ -630,9 +634,7 @@ class WhatsOpt(object):
                 mda_id = get_analysis_id()
                 if mda_id:
                     log(
-                        "  (use 'wop update -s' to generate server for current analysis #{})".format(
-                            mda_id
-                        )
+                        f"  (use 'wop update -s' to generate server for current analysis #{mda_id})"
                     )
                 else:
                     warn("No local analysis found")

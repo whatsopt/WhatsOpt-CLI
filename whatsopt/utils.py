@@ -2,7 +2,8 @@ import os, re
 
 ANALYSIS_ID_KEY = "analysis_id"
 WHATSOPT_URL_KEY = "whatsopt_url"
-
+OPENMDAO = "openmdao"
+GEMSEO = "gemseo"
 
 def is_user_file(f):
     return (
@@ -76,11 +77,10 @@ def is_based_on(module, directory="."):
     return all(_detect_from_import(os.path.join(directory, f), module) for f in files)
 
 
-def is_framework_switch(format, directory="."):
-    return (format == "gemseo" and is_based_on("openmdao", directory)) or (
-        format == "openmdao" and is_based_on("gemseo", directory)
+def is_framework_switch(framework, directory="."):
+    return (framework == GEMSEO and is_based_on(OPENMDAO, directory)) or (
+        framework == OPENMDAO and is_based_on(GEMSEO, directory)
     )
-
 
 def _detect_from_import(file, module):
     detected = False
