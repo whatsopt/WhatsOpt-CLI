@@ -1,5 +1,5 @@
 * 1.13.1 (28/05/2020)
-  - wop pull -n/dry-run <analysis_id>: list pull actions but do not execute
+  - wop pull --dry-run <analysis_id>: list pull actions but do not execute
   - wop update --gemseo/--openmdao: to switch between the two frameworks
   - wop status: display detected framework, remove notes
 
