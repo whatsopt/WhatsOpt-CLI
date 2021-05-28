@@ -5,6 +5,7 @@ WHATSOPT_URL_KEY = "whatsopt_url"
 OPENMDAO = "openmdao"
 GEMSEO = "gemseo"
 
+
 def is_user_file(f):
     return (
         not re.match(r"\w+_base\.py$", f)
@@ -81,6 +82,7 @@ def is_framework_switch(framework, directory="."):
     return (framework == GEMSEO and is_based_on(OPENMDAO, directory)) or (
         framework == OPENMDAO and is_based_on(GEMSEO, directory)
     )
+
 
 def _detect_from_import(file, module):
     detected = False
