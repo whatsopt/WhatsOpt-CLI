@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import getpass
+from click.core import V
 import requests
 import copy
 import re
@@ -203,7 +204,15 @@ class WhatsOpt(object):
 
                 if resp.ok:
                     mda = resp.json()
-                    headers = ["id", "name", "created_at", "owner_email", "notes"]
+                    if is_based_on(GEMSEO):
+                        mda["framework"] = "GEMSEO"
+                    elif is_based_on(OPENMDAO):
+                        mda["framework"] = "OpenMDAO"
+                    else:  # should not happen
+                        raise ValueError(
+                            "No framework detected. Check your *_base.py files."
+                        )
+                    headers = ["id", "name", "created_at", "owner_email", "framework"]
                     data = [[mda[k] for k in headers]]
                     log(tabulate(data, headers))
                 else:
@@ -430,10 +439,8 @@ class WhatsOpt(object):
         # keep options unchanged, work on a copy
         opts = copy.deepcopy(options)
         # sanity checks
-        if not (is_based_on("openmdao") or is_based_on("gemseo")):
-            error(
-                "Cannot update as mixed framework usage detected. Check your *_base.py files."
-            )
+        if not (is_based_on(OPENMDAO) or is_based_on(GEMSEO)):
+            error("No framework detected. Check your *_base.py files.")
             sys.exit(-1)
         if opts["--openmdao"] and opts["--gemseo"]:
             error("Please choose either --openmdao or --gemseo.")
