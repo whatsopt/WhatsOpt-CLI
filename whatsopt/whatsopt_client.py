@@ -597,7 +597,12 @@ class WhatsOpt(object):
         for s in problem.model._subsystems_myproc:
             if isinstance(s, IndepVarComp):
                 for absname in s._var_abs2meta["output"]:
-                    name = s._var_abs2prom["output"][absname]
+                    target = None
+                    for tgt, src in problem.model._conn_global_abs_in2out.items():
+                        if src == absname:
+                            target = tgt
+                            break
+                    name = problem.model._var_abs2prom["input"][target]
                     value = s._outputs._views[absname][:]
                     if isinstance(value, np.ndarray):
                         value = str(value.tolist())
@@ -606,7 +611,7 @@ class WhatsOpt(object):
         params = {"parameterization": {"parameters": parameters}}
         log(tabulate(data, headers))
         if not options["--dry-run"]:
-            url = self.endpoint(("/api/v1/analyses/%s/parameterization") % mda_id)
+            url = self.endpoint(f"/api/v1/analyses/{mda_id}/parameterization")
             resp = self.session.put(url, headers=self.headers, json=params)
             resp.raise_for_status()
             log("Parameters uploaded")
@@ -617,7 +622,7 @@ class WhatsOpt(object):
         resp.raise_for_status()
         version = resp.json()
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
-        log("You are using wop {}".format(__version__))
+        log(f"You are using wop {__version__}")
 
     def serve(self, port):
         try:
