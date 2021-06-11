@@ -74,11 +74,7 @@ def status(ctx):
     help="manage (1,) shape variables as scalar variables",
 )
 @click.option(
-    "-x",
-    "--experimental",
-    is_flag=True,
-    default=False,
-    help="use experimental push dealing with connect calls and unpromoted variables",
+    "--old", is_flag=True, default=False, help="use old push",
 )
 @click.option("--name", help="find analysis with given name")
 @click.option(
@@ -100,14 +96,14 @@ def status(ctx):
 )
 @click.argument("filename")
 @click.pass_context
-def push(ctx, dry_run, scalar, experimental, name, component, depth, json, filename):
+def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME"""
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
         "--dry-run": dry_run,
         "--scalar": scalar,
-        "--experimental": experimental,
+        "--old": old,
         "--name": name,
         "--depth": depth,
     }

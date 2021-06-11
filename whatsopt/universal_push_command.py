@@ -2,18 +2,15 @@ import re
 from itertools import chain
 from whatsopt.push_utils import (
     cut,
+    find_indep_var_name,
     simple_value,
-    extract_disc_var,
     extract_mda_var,
     format_shape,
 )
 from whatsopt.logging import debug
 from openmdao.api import IndepVarComp
 
-try:  # openmdao < 2.9
-    from openmdao.devtools.problem_viewer.problem_viewer import _get_viewer_data
-except ImportError:  # openmdao >= 2.9
-    from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
+from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
 # Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
 DRIVER_NAME = "__DRIVER__"
@@ -41,7 +38,7 @@ class UniversalPushCommand(object):
 
     def get_mda_attributes(self, group, tree, use_depth=False):
         self._collect_disc_infos(self.problem.model, self.tree)
-        self._collect_var_infos(self.problem.model)
+        self._collect_var_infos(self.problem)
 
         mda_attrs = self._get_mda_hierarchy(group, tree)
 
@@ -90,6 +87,7 @@ class UniversalPushCommand(object):
                                 "variables_attributes": [],
                             }
                             mda_attrs["disciplines_attributes"].append(discattrs)
+
         return mda_attrs
 
     def _populate_varattrs_from_connections(self, mda_attrs):
@@ -155,7 +153,7 @@ class UniversalPushCommand(object):
                     scope = discattrs["name"]
                     if mda_prefix:
                         scope = mda_prefix + scope
-                    if ".".join(mda) == scope:
+                    if ".".join(mda).startswith(scope):
                         vattr = {
                             "name": varattrs["name"],
                             "desc": self.vardescs.get(absname, ""),
@@ -304,7 +302,8 @@ class UniversalPushCommand(object):
 
     # see _get_tree_dict at
     # https://github.com/OpenMDAO/OpenMDAO/blob/master/openmdao/visualization/n2_viewer/n2_viewer.py
-    def _collect_var_infos(self, system):
+    def _collect_var_infos(self, problem):
+        system = problem.model
         for io in ("input", "output"):
             for abs_name in system._var_abs2meta[io]:
                 if io == "input":
@@ -322,6 +321,8 @@ class UniversalPushCommand(object):
                 shape = format_shape(self.scalar, shape)
                 name = system._var_abs2prom[io][abs_name]
                 # name = abs_name
+                if abs_name.startswith(AUTO_IVC):
+                    name = find_indep_var_name(problem, abs_name)
                 self.vars[io_mode][abs_name] = {
                     "name": name,
                     "type": vtype,
