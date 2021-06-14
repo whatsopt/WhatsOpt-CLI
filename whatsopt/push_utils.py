@@ -164,3 +164,12 @@ pb.final_setup()
         yield pbfile
     finally:
         os.unlink(pbfile)
+
+
+def find_indep_var_name(pb, absname):
+    target = None
+    for tgt, src in pb.model._conn_global_abs_in2out.items():
+        if src == absname:
+            target = tgt
+            break
+    return pb.model._var_abs2prom["input"].get(target)
