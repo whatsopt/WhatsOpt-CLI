@@ -74,7 +74,10 @@ def status(ctx):
     help="manage (1,) shape variables as scalar variables",
 )
 @click.option(
-    "--old", is_flag=True, default=False, help="use old push",
+    "--old",
+    is_flag=True,
+    default=False,
+    help="use old push",
 )
 @click.option("--name", help="find analysis with given name")
 @click.option(
