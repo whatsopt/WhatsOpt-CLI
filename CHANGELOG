@@ -1,9 +1,14 @@
-* 1.13.1 (28/05/2020)
+* 1.14.0 (15/06/2021)
+  - Refactor push command:
+    - default becomes old: wop push --old <openmdao_problem.py>
+    - experimental becomes default: -x/--experimental removed
+
+* 1.13.1 (28/05/2021)
   - wop pull --dry-run <analysis_id>: list pull actions but do not execute
   - wop update --gemseo/--openmdao: to switch between the two frameworks
   - wop status: display detected framework, remove notes
 
-* 1.13.0 (25/05/2020)
+* 1.13.0 (25/05/2021)
   - wop pull --gemseo <analysis_id>: to generate GEMSEO code instead of OpenMDAO one (default)
   - wop serve -p <port_number>: to run analysis server on port port_number
 
