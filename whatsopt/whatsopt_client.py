@@ -142,7 +142,10 @@ class WhatsOpt(object):
             # try to propose re-login
             self.logout(
                 echo=False
-            )  # log out silently, suppose one was logged on another server
+            )  # log out silently, one may be logged on another server
+            # save url again
+            with open(URL_FILENAME, "w") as f:
+                f.write(self._url)
             ok = self.login(api_key, echo=False)
 
         if not ok and echo:
