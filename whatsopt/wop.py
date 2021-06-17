@@ -77,7 +77,7 @@ def status(ctx):
     "--old",
     is_flag=True,
     default=False,
-    help="use old push",
+    help="use old push implementation",
 )
 @click.option("--name", help="find analysis with given name")
 @click.option(
@@ -332,11 +332,10 @@ def upload(
     "-f", "--pbfile", help="specify the analysis given an OpenMDAO problem python file"
 )
 @click.option(
-    "-x",
-    "--experimental",
+    "--old",
     is_flag=True,
     default=False,
-    help="use experimental push dealing with connect calls and unpromoted variables",
+    help="use old push implementation",
 )
 @click.option(
     "--name", help="find analysis with given name (only used with pbfile option)"
@@ -358,12 +357,10 @@ def upload(
     help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
 @click.pass_context
-def show(ctx, analysis_id, pbfile, experimental, name, outfile, batch, depth):
+def show(ctx, analysis_id, pbfile, old, name, outfile, batch, depth):
     """Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
-    WhatsOpt(**ctx.obj).show_mda(
-        analysis_id, pbfile, experimental, name, outfile, batch, depth
-    )
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, old, name, outfile, batch, depth)
 
 
 @cli.command()

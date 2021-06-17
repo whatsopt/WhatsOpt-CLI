@@ -460,10 +460,10 @@ class WhatsOpt(object):
         )
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
 
-    def show_mda(self, analysis_id, pbfile, experimental, name, outfile, batch, depth):
+    def show_mda(self, analysis_id, pbfile, old, name, outfile, batch, depth):
         options = {
             "--xdsm": True,
-            "--experimental": experimental,
+            "--old": old,
             "--name": name,
             "--dry-run": False,
             "--depth": depth,
