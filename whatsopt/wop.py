@@ -1,6 +1,6 @@
 import click
 from whatsopt import __version__
-from .whatsopt_client import WhatsOpt
+from .whatsopt_client import WhatsOpt, EXTRANET_SERVER_URL
 from logging import error
 
 DEFAULT_PUSH_DEPTH = 2
@@ -360,6 +360,11 @@ def upload(
 def show(ctx, analysis_id, pbfile, old, name, outfile, batch, depth):
     """Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)"""
+    if pbfile is None:
+        ctx.obj["login"] = True
+    else:
+        ctx.obj["login"] = False
+        ctx.obj["url"] = EXTRANET_SERVER_URL
     WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, old, name, outfile, batch, depth)
 
 
