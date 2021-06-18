@@ -61,6 +61,8 @@ def generate_xdsm_html(pbfile, xdsm, outfilename="xdsm.html"):
 
 def _generate_html(pbfile, xdsm):
     filename = path.basename(pbfile)
-    footer = "XDSM generated from {}, {}, ONERA WhatsOpt".format(filename, date.today().strftime('%b %d, %Y'))
+    footer = "XDSM generated from {}, {}, ONERA WhatsOpt".format(
+        filename, date.today().strftime("%b %d, %Y")
+    )
     html = HTML_TEMPLATE.format(css(), bundlejs(), xdsm, footer)
     return html
