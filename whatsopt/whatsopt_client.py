@@ -9,6 +9,7 @@ import re
 import zipfile
 import tempfile
 import numpy as np
+import time
 from tabulate import tabulate
 from urllib.parse import urlparse
 
@@ -46,7 +47,8 @@ WHATSOPT_DIRNAME = os.path.join(os.path.expanduser("~"), ".whatsopt")
 API_KEY_FILENAME = os.path.join(WHATSOPT_DIRNAME, "api_key")
 URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
 
-PROD_URL = "https://selene.onecert.fr/whatsopt"
+INTRANET_SERVER_URL = "https://selene.onecert.fr/whatsopt"
+EXTRANET_SERVER_URL = "https://ether.onera.fr/whatsopt"
 
 
 class WhatsOptImportMdaError(Exception):
@@ -103,7 +105,7 @@ class WhatsOpt(object):
 
     @property
     def default_url(self):
-        self._default_url = PROD_URL
+        self._default_url = INTRANET_SERVER_URL
         return self._default_url
 
     def _ask_and_write_api_key(self):
@@ -189,8 +191,11 @@ class WhatsOpt(object):
         else:
             resp.raise_for_status()
 
+    def is_connected(self):
+        return self._test_connection()
+
     def get_status(self):
-        connected = self._test_connection()
+        connected = self.is_connected()
         whatsopt_url = get_whatsopt_url() or self.url
         if connected:
             info("You are logged in {}".format(self.url))
@@ -473,11 +478,16 @@ class WhatsOpt(object):
         }
         xdsm = None
         if pbfile:
+            start = time.time()
             try:
+                info("XDSM info retrieval...")
                 self.push_mda_cmd(pbfile, options)
             except AnalysisPushedException as pushed:
                 xdsm = pushed.xdsm
+            end = time.time()
+            log("Retrieved in {:.2f}s".format(end - start))
 
+        info("XDSM building...")
         if not xdsm:
             mda_id = analysis_id or get_analysis_id()
             if mda_id is None:
@@ -492,7 +502,7 @@ class WhatsOpt(object):
             resp.raise_for_status()
             xdsm = resp.json()
 
-        generate_xdsm_html(xdsm, outfile)
+        generate_xdsm_html(pbfile, xdsm, outfile)
         if pbfile:
             log("XDSM of analysis from {} generated in {}".format(pbfile, outfile))
         else:

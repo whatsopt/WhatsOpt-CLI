@@ -1,3 +1,7 @@
+
+* 1.15.0 (18/06/2021)
+  - wop show -f <openmdao_problem.py> works without logging in WhatsOpt server
+
 * 1.14.0 (15/06/2021)
   - Refactor push command:
     - default becomes old: wop push --old <openmdao_problem.py>
