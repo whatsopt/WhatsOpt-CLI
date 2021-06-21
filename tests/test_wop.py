@@ -16,6 +16,10 @@ COMMANDS = [
     "wop upload -n -a 1 {}".format(file("run_parameters_init.py")),
     "wop upload -n {}".format(file("test_doe.csv")),
     "wop upload -n {}".format(file("test_doe.sqlite")),
+    "wop show -b -f {}".format(file("multipoint_beam/multipoint_beam_group.py")),
+    "wop show -b --depth 3 -f {}".format(
+        file("multipoint_beam/multipoint_beam_group.py")
+    ),
     "wop status",
 ]
 

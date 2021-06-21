@@ -486,9 +486,9 @@ class WhatsOpt(object):
                 xdsm = pushed.xdsm
             end = time.time()
             log("Retrieved in {:.2f}s".format(end - start))
+            origin = os.path.basename(pbfile)
 
-        info("XDSM building...")
-        if not xdsm:
+        else:
             mda_id = analysis_id or get_analysis_id()
             if mda_id is None:
                 error(
@@ -501,8 +501,10 @@ class WhatsOpt(object):
             resp = self.session.get(url, headers=self.headers)
             resp.raise_for_status()
             xdsm = resp.json()
+            origin = f"{mda_id}@{self._url}"
 
-        generate_xdsm_html(pbfile, xdsm, outfile)
+        info("XDSM building...")
+        generate_xdsm_html(origin, xdsm, outfile)
         if pbfile:
             log("XDSM of analysis from {} generated in {}".format(pbfile, outfile))
         else:

@@ -1,6 +1,5 @@
 from xdsmjs import bundlejs, css
 from datetime import date
-from os import path
 
 HTML_TEMPLATE = """
 <!doctype html>
@@ -52,17 +51,16 @@ HTML_TEMPLATE = """
 """
 
 
-def generate_xdsm_html(pbfile, xdsm, outfilename="xdsm.html"):
-    html = _generate_html(pbfile, xdsm)
+def generate_xdsm_html(source, xdsm, outfilename="xdsm.html"):
+    html = _generate_html(source, xdsm)
 
     with open(outfilename, "w") as f:
         f.write(html)
 
 
-def _generate_html(pbfile, xdsm):
-    filename = path.basename(pbfile)
+def _generate_html(source, xdsm):
     footer = "XDSM generated from {}, {}, ONERA WhatsOpt".format(
-        filename, date.today().strftime("%b %d, %Y")
+        source, date.today().strftime("%b %d, %Y")
     )
     html = HTML_TEMPLATE.format(css(), bundlejs(), xdsm, footer)
     return html
