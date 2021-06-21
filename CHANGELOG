@@ -1,4 +1,9 @@
 
+* 1.15.1 (21/06/2021)
+  - Fix `wop show [-a]` bug related to new source parameter used to be displayed in HTML footer
+  - deprecate PROD_URL constant, replaced by INTRANET_SERVER_URL (selene)
+  - add EXTRANET_SERVER_URL constant (ether)
+
 * 1.15.0 (18/06/2021)
   - wop show -f <openmdao_problem.py> works without logging in WhatsOpt server
 
