@@ -47,7 +47,8 @@ WHATSOPT_DIRNAME = os.path.join(os.path.expanduser("~"), ".whatsopt")
 API_KEY_FILENAME = os.path.join(WHATSOPT_DIRNAME, "api_key")
 URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
 
-INTRANET_SERVER_URL = "https://selene.onecert.fr/whatsopt"
+PROD_URL = "https://selene.onecert.fr/whatsopt"
+INTRANET_SERVER_URL = PROD_URL
 EXTRANET_SERVER_URL = "https://ether.onera.fr/whatsopt"
 
 
