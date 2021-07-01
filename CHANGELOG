@@ -1,4 +1,7 @@
 
+* 1.15.2 (01/07/2021)
+  - Fix `wop update` bug when the analysis is nested
+
 * 1.15.1 (21/06/2021)
   - Fix `wop show [-a]` bug related to new source parameter used to be displayed in HTML footer
   - deprecate PROD_URL constant, replaced by INTRANET_SERVER_URL (selene)
