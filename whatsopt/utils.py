@@ -8,7 +8,7 @@ GEMSEO = "gemseo"
 
 def is_user_file(f):
     return (
-        not re.match(r"\w+_base\.py$", f)
+        not re.match(r".*_base\.py$", f)
         and not re.match(r"^run_.*\.py$", f)
         and not re.match(r"^server/", f)
     )
