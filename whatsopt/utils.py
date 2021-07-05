@@ -88,7 +88,9 @@ def _detect_from_import(file, module):
     detected = False
     with open(file, "r") as f:
         for line in f:
-            match = re.match(rf"^from {module}\.(.*)", line)
+            # TODO: Maybe would need more robust detection... We'll see!
+            # first from/import detected gives the framework.
+            match = re.match(rf"^(from|import) {module}\..*", line)
             if match:
                 detected = True
                 break
