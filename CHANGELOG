@@ -1,4 +1,7 @@
 
+* 1.15.4 (05/07/2021)
+  - Fix regexp using `import` keyword to detect execution framework 
+
 * 1.15.3 (01/07/2021)
   - Fix `wop update` bug when the analysis is nested: server subdirectories were not updated
 
