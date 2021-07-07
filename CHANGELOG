@@ -1,4 +1,8 @@
 
+* 1.16.0 (07/07/2021)
+  - Change `wop upload` by using case outputs (instead of objective and constraints)
+  to get all recorded responses. 
+
 * 1.15.4 (05/07/2021)
   - Fix regexp using `import` keyword to detect execution framework 
 
