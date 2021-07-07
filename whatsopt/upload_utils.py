@@ -118,8 +118,7 @@ def _format_upload_cases(reader):
     for case_id in cases:
         case = reader.get_case(case_id)
         _insert_data(case.get_design_vars(), inputs)
-        _insert_data(case.get_objectives(), outputs)
-        _insert_data(case.get_constraints(), outputs)
+        _insert_data(case.outputs, outputs)
         statuses.append(case.success)
 
     cases = inputs.copy()
