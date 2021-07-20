@@ -1,3 +1,5 @@
+* 1.16.1 (20/07/2021)
+  - Fix `push` command to take into account value-to-val renaming in `meta` dict in OpenMDAO 3.10
 
 * 1.16.0 (07/07/2021)
   - Change `wop upload` by using case outputs (instead of objective and constraints)
