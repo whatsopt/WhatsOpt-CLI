@@ -132,7 +132,7 @@ inputs = comp.list_inputs(out_stream=None)
 indeps = IndepVarComp()
 for name, meta in inputs:
     args = {{
-        "val": meta.get("value"),
+        "val": meta.get("value", meta.get("val")),   # fix OpenMDAO < 3.10
         "shape": meta.get("shape"),
         "desc": meta.get("desc", ""),
         "units": meta.get("units", None)

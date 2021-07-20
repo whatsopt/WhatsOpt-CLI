@@ -286,7 +286,8 @@ class PushCommand(object):
                 meta = system._var_abs2meta[io][abs_name]
 
                 vtype = "Float"
-                if re.match("int", type(meta["value"]).__name__):
+                val = meta.get("value", meta.get("val"))  # fix OpenMDAO < 3.10
+                if re.match("int", type(val).__name__):
                     vtype = "Integer"
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar, shape)
@@ -300,7 +301,7 @@ class PushCommand(object):
                     "shape": shape,
                     "units": meta["units"],
                     #'desc': meta['desc'],
-                    "value": meta["value"],
+                    "value": val,
                 }
 
                 # retrieve initial conditions
