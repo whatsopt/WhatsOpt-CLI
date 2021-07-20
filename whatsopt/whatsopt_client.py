@@ -31,7 +31,12 @@ from whatsopt.utils import (
     get_analysis_id,
     get_whatsopt_url,
 )
-from whatsopt.upload_utils import load_from_csv, load_from_sqlite, print_cases
+from whatsopt.upload_utils import (
+    load_from_csv,
+    load_from_sqlite,
+    load_from_hdf5,
+    print_cases,
+)
 from whatsopt.push_utils import (
     find_indep_var_name,
     problem_pyfile,
@@ -534,8 +539,16 @@ class WhatsOpt(object):
             )
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
-        else:
+        elif filename.endswith(".sqlite"):
             name, cases, statuses = load_from_sqlite(filename, parallel)
+        elif filename.endswith(".hdf5"):
+            name, cases, statuses = load_from_hdf5(filename)
+        else:
+            error(
+                f"Can not upload file {filename}: extension not recognized"
+                " (should be either .csv, .sqlite or .hdf5)"
+            )
+            exit(-1)
 
         if only_success:
             for c in cases:
@@ -566,20 +579,13 @@ class WhatsOpt(object):
             if driver_kind:
                 driver = "user_{}_algo".format(driver_kind)
             else:
-                if name == "LHS":
-                    driver = "smt_doe_lhs"
-                elif name == "Morris":
-                    driver = "salib_doe_morris"
-                elif name == "SLSQP":
-                    driver = "scipy_optimizer_slsqp"
+                # suppose name well-formed <lib>-<doe|optimizer|screening>-<algoname>
+                # otherwise it will default to doe
+                m = re.match(r"(\w+)_(doe|optimizer|screening)_(\w+)", name.lower())
+                if m:
+                    driver = name.lower()
                 else:
-                    # suppose name well-formed <lib>-<doe|optimizer|screening>-<algoname>
-                    # otherwise it will default to doe
-                    m = re.match(r"(\w+)_(doe|optimizer|screening)_(\w+)", name.lower())
-                    if m:
-                        driver = name.lower()
-                    else:
-                        driver = "user_data_uploading"
+                    driver = "user_data_uploading"
             operation_params = {
                 "name": name,
                 "driver": driver,

@@ -14,7 +14,7 @@ def load_from_csv(filename):
 
     with open(filename) as csvfile:
         reader = csv.reader(csvfile, delimiter=";")
-        cases = []
+        cases = []  # [{"varname": varname, "coord_index": idx, "values": []}]
         statuses = []
         success_idx = -1
         for line, row in enumerate(reader):
@@ -77,6 +77,40 @@ def load_from_sqlite(filename, parallel=False):
         return _load_sqlite_file(filename)
 
 
+def load_from_hdf5(filename):
+    try:
+        from gemseo.algos.opt_problem import OptimizationProblem
+    except ImportError:
+        error("GEMSEO module not found: cannot upload hdf5")
+        exit(-1)
+
+    opt_pb = OptimizationProblem.import_hdf(filename)
+    ds = opt_pb.export_to_dataset("OptimizationProblem")
+
+    name = os.path.splitext(os.path.basename(filename))[0]
+    driver_kind = "DOE"
+    m = re.match(r"\w+_(doe|optim)", name)
+    if m and m.group(1) == "optim":
+        driver_kind = "optimizer"
+
+    name = f"GEMSEO_{driver_kind}_ALGO"
+    cases = []
+    statuses = []
+
+    for varname, data in ds.get_all_data(by_group=False, as_dict=True).items():
+        for j in range(data.shape[1]):
+            coord_index = -1
+            if data.shape[1] > 1:
+                coord_index = j
+            values = data[:, j].tolist()
+            cases.append(
+                {"varname": varname, "coord_index": coord_index, "values": values}
+            )
+
+    statuses = len(cases[0]["values"]) * [1]
+    return name, cases, statuses
+
+
 def print_cases(cases, statuses):
     headers = ["success"]
     n = len(cases[0]["values"]) if cases else 0
@@ -106,6 +140,7 @@ def _load_sqlite_file(filename):
         name = m.group(1)
 
     # format cases and statuses
+    # cases : [{"varname": varname, "coord_index": idx, "values": [...]}*]
     cases, statuses = _format_upload_cases(reader)
     return name, cases, statuses
 

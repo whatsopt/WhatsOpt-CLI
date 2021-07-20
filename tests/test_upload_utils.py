@@ -5,9 +5,16 @@ from openmdao.api import CaseReader
 from whatsopt.upload_utils import (
     load_from_csv,
     load_from_sqlite,
+    load_from_hdf5,
     _format_upload_cases,
     _check_count,
 )
+
+GEMSEO_INSTALLED = True
+try:
+    import gemseo
+except ImportError:
+    GEMSEO_INSTALLED = False
 
 
 class TestUploadUtils(unittest.TestCase):
@@ -26,11 +33,21 @@ class TestUploadUtils(unittest.TestCase):
     def test_load_from_sqlite(self):
         filepath = os.path.join(TestUploadUtils.DATA_PATH, "test_doe.sqlite")
         name, cases, statuses = load_from_sqlite(filepath)
-
         self.assertEqual("SMT_DOE_LHS", name)
         self.assertEqual(1.44753, round(cases[0]["values"][2], 5))
-        self.assertEqual(1, cases[1]["coord_index"])
         self.assertEqual("z", cases[1]["varname"])
+        self.assertEqual(1, cases[1]["coord_index"])
+        for i in statuses:
+            self.assertEqual(1, i)
+
+    @unittest.skipUnless(GEMSEO_INSTALLED, "GEMSEO not installed")
+    def test_load_from_hdf5(self):
+        filepath = os.path.join(TestUploadUtils.DATA_PATH, "test_doe.hdf5")
+        name, cases, statuses = load_from_hdf5(filepath)
+        self.assertEqual("GEMSEO_DOE_ALGO", name)
+        self.assertEqual(9.94343, round(cases[0]["values"][2], 5))
+        self.assertEqual("z", cases[2]["varname"])
+        self.assertEqual(1, cases[2]["coord_index"])
         for i in statuses:
             self.assertEqual(1, i)
 
