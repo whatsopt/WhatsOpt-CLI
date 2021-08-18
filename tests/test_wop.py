@@ -24,6 +24,15 @@ COMMANDS = [
 ]
 
 
+def ordered(obj):
+    if isinstance(obj, dict):
+        return sorted((k, ordered(v)) for k, v in obj.items())
+    if isinstance(obj, list):
+        return sorted(ordered(x) for x in obj)
+    else:
+        return obj
+
+
 class TestWopCommand(unittest.TestCase):
     def _test_wop_cmd(self, cmd):
         try:
@@ -47,9 +56,9 @@ class TestWopCommand(unittest.TestCase):
                 )
             )
             with open(file("multipoint_beam_group_d{}.json".format(d))) as f:
-                expected = json.dumps(json.loads(f.read()), sort_keys=True, indent=2)
-                actual = json.dumps(json.loads(out), sort_keys=True, indent=2)
-                self.assertEqual(expected, actual)
+                expected = ordered(json.loads(f.read()))
+                actual = ordered(json.loads(out))
+                self.assertTrue(expected, actual)
 
 
 if __name__ == "__main__":
