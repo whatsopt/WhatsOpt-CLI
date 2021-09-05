@@ -113,7 +113,7 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     if component:
         wop.push_component_cmd(filename, component, options)
     elif json:
-        wop.push_mda_json(filename)
+        wop.push_json(filename)
         exit()
     else:
         wop.push_mda_cmd(filename, options)

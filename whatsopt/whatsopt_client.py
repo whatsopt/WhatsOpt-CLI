@@ -323,15 +323,20 @@ class WhatsOpt(object):
             log("Analysis %s pushed" % mda_attrs["name"])
             return resp.json()
 
-    def push_mda_json(self, filename):
+    def push_json(self, filename):
         with open(filename, "rb") as f:
-            mda_attrs = json.load(f)
-        url = self.endpoint("/api/v1/analyses")
-        resp = self.session.post(
-            url, headers=self.headers, json={"analysis": mda_attrs}
-        )
+            attrs = json.load(f)
+        if "analyses_attributes" in attrs:  # project detection
+            url = self.endpoint("/api/v1/design_projects")
+            key = "Project"
+        else:
+            url = self.endpoint("/api/v1/analyses")
+            key = "Analysis"
+        params = {}
+        params[key.lower()] = attrs
+        resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
-        log("Analysis %s pushed" % mda_attrs["name"])
+        log("{} {} pushed".format(key, attrs["name"]))
 
     def pull_mda(self, mda_id, options={}, msg=None):
         if not msg:
