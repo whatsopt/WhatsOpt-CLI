@@ -1,3 +1,7 @@
+* 1.18.0 (06/08/2021)
+  - `wop pull --json --project <project id>`: pull project given its id as json on stdout
+  - `wop push --json <project.json>`: create project from project json file  
+
 * 1.17.0 (18/08/2021)
   - `wop upload <datafile.hdf5>`: upload data generated from GEMSEO scenario execution. 
 
