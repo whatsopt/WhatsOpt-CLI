@@ -157,6 +157,13 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     help="export analysis in json format on stdout (disable other options)",
 )
 @click.option(
+    "-p",
+    "--project-id",
+    is_flag=True,
+    default=False,
+    help="export project in json format on stdout (works only with --json)",
+)
+@click.option(
     "--gemseo",
     is_flag=True,
     default=False,
@@ -168,7 +175,7 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     default=False,
     help="pull analysis as GEMSEO source code (default OpenMDAO)",
 )
-@click.argument("analysis_id")
+@click.argument("id")
 @click.pass_context
 def pull(
     ctx,
@@ -178,9 +185,10 @@ def pull(
     run_ops,
     test_units,
     json,
+    project_id,
     gemseo,
     openmdao,
-    analysis_id,
+    id,
 ):
     """Pull analysis given its identifier"""
     options = {
@@ -193,9 +201,15 @@ def pull(
         "--openmdao": openmdao,
     }
     if json:
-        WhatsOpt(**ctx.obj).pull_mda_json(analysis_id)
+        if project_id:
+            WhatsOpt(**ctx.obj).pull_project_json(id)
+        else:
+            WhatsOpt(**ctx.obj).pull_mda_json(id)
     else:
-        WhatsOpt(**ctx.obj).pull_mda(analysis_id, options)
+        if project_id:
+            error("Bad option --project-id which works only with option --json enabled")
+            exit(-1)
+        WhatsOpt(**ctx.obj).pull_mda(id, options)
 
 
 @cli.command()
