@@ -175,7 +175,7 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     default=False,
     help="pull analysis as GEMSEO source code (default OpenMDAO)",
 )
-@click.argument("id")
+@click.argument("ident")
 @click.pass_context
 def pull(
     ctx,
@@ -188,7 +188,7 @@ def pull(
     project_id,
     gemseo,
     openmdao,
-    id,
+    ident,
 ):
     """Pull analysis given its identifier"""
     options = {
@@ -202,14 +202,14 @@ def pull(
     }
     if json:
         if project_id:
-            WhatsOpt(**ctx.obj).pull_project_json(id)
+            WhatsOpt(**ctx.obj).pull_project_json(ident)
         else:
-            WhatsOpt(**ctx.obj).pull_mda_json(id)
+            WhatsOpt(**ctx.obj).pull_mda_json(ident)
     else:
         if project_id:
             error("Bad option --project-id which works only with option --json enabled")
             exit(-1)
-        WhatsOpt(**ctx.obj).pull_mda(id, options)
+        WhatsOpt(**ctx.obj).pull_mda(ident, options)
 
 
 @cli.command()
