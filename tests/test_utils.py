@@ -8,12 +8,18 @@ from whatsopt.utils import (
     find_analysis_base_files,
     get_analysis_id,
     get_whatsopt_url,
+    snakize,
 )
 
 
 class TestUtils(unittest.TestCase):
 
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "multipoint_beam")
+
+    def test_snakize(self):
+        self.assertEqual(
+            "hyp_air_liner_1_1_v1_genetic", snakize("HypAir_Liner 1.1__v1-genetic")
+        )
 
     def test_is_user_file(self):
         self.assertEqual(True, is_user_file("test.py"))

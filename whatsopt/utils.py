@@ -6,6 +6,19 @@ OPENMDAO = "openmdao"
 GEMSEO = "gemseo"
 
 
+def snakize(name):
+    snaked = re.sub(
+        r"(^|([a-z])\W?)([A-Z])",
+        lambda m: m.group(2) + "_" + m.group(3).lower()
+        if m.group(1)
+        else m.group(3).lower(),
+        name,
+    )
+    snaked = re.sub("[-\.\s]", "_", snaked)
+    snaked = re.sub("__+", "_", snaked).lower()
+    return snaked
+
+
 def is_user_file(f):
     return (
         not re.match(r".*_base\.py$", f)

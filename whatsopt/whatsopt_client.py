@@ -30,6 +30,7 @@ from whatsopt.utils import (
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
+    snakize,
 )
 from whatsopt.upload_utils import (
     load_from_csv,
@@ -413,7 +414,7 @@ class WhatsOpt(object):
                         url = self.endpoint(f"/api/v1/analyses/{mda_id}")
                         resp = self.session.get(url, headers=self.headers, stream=True)
                         resp.raise_for_status()
-                        mda_name = resp.json()["name"].lower()
+                        mda_name = snakize(resp.json()["name"])
                         if is_analysis_user_file(mda_name, f) and is_framework_switch(
                             framework
                         ):
