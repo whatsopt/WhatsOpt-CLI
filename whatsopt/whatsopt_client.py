@@ -410,9 +410,7 @@ class WhatsOpt(object):
                         file_to_move[file_to] = False
 
                         # Have to update user analysis main file when switching frameworks
-                        url = self.endpoint(
-                            f"/api/v1/analyses/{mda_id}/exports/new.mdajson"
-                        )
+                        url = self.endpoint(f"/api/v1/analyses/{mda_id}")
                         resp = self.session.get(url, headers=self.headers, stream=True)
                         resp.raise_for_status()
                         mda_name = resp.json()["name"].lower()
