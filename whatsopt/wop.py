@@ -169,12 +169,6 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
     default=False,
     help="pull analysis as GEMSEO source code (default OpenMDAO)",
 )
-@click.option(
-    "--openmdao",
-    is_flag=True,
-    default=False,
-    help="pull analysis as GEMSEO source code (default OpenMDAO)",
-)
 @click.argument("ident")
 @click.pass_context
 def pull(
@@ -187,7 +181,6 @@ def pull(
     json,
     project_id,
     gemseo,
-    openmdao,
     ident,
 ):
     """Pull analysis given its identifier"""
@@ -198,7 +191,6 @@ def pull(
         "--run-ops": run_ops,
         "--test-units": test_units,
         "--gemseo": gemseo,
-        "--openmdao": openmdao,
     }
     if json:
         if project_id:
