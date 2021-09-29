@@ -354,13 +354,20 @@ class WhatsOpt(object):
             if framework == OPENMDAO:
                 param += "&with_server=true"
             else:
-                warn("Can not generate server in GEMSEO framework. --server is ignored")
+                warn(
+                    "Can not generate server with GEMSEO framework. --server is ignored"
+                )
+        if options.get("--egmdo"):
+            if framework == OPENMDAO:
+                param += "&with_egmdo=true"
+            else:
+                warn("Can not generate EGMDO with GEMSEO framework. --egmdo is ignored")
         if options.get("--test-units"):
             if framework == OPENMDAO:
                 param += "&with_unittests=true"
             else:
                 warn(
-                    "Can not generate tests in GEMSEO framework. --test-units is ignored"
+                    "Can not generate tests with GEMSEO framework. --test-units is ignored"
                 )
         if param:
             param = "?" + param[1:]

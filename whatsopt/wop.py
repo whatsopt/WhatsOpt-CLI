@@ -140,6 +140,7 @@ def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
 @click.option(
     "-s", "--server", is_flag=True, default=False, help="generate Thrift server as well"
 )
+@click.option("--egmdo", is_flag=True, default=False, help="generate EGMDO method code")
 @click.option(
     "-r", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
 )
@@ -176,6 +177,7 @@ def pull(
     dry_run,
     force,
     server,
+    egmdo,
     run_ops,
     test_units,
     json,
@@ -188,9 +190,11 @@ def pull(
         "--dry-run": dry_run,
         "--force": force,
         "--server": server,
+        "--egmdo": egmdo,
         "--run-ops": run_ops,
         "--test-units": test_units,
         "--gemseo": gemseo,
+        "--egmdo": egmdo,
     }
     if json:
         if project_id:
@@ -223,6 +227,7 @@ def pull(
 @click.option(
     "-s", "--server", is_flag=True, default=False, help="update Thrift server as well"
 )
+@click.option("--egmdo", is_flag=True, default=False, help="update EGMDO code as well")
 @click.option(
     "-r", "--run-ops", is_flag=True, default=False, help="update operation run scripts"
 )
@@ -247,13 +252,23 @@ def pull(
 )
 @click.pass_context
 def update(
-    ctx, dry_run, analysis_id, force, server, run_ops, test_units, gemseo, openmdao
+    ctx,
+    dry_run,
+    analysis_id,
+    force,
+    server,
+    egmdo,
+    run_ops,
+    test_units,
+    gemseo,
+    openmdao,
 ):
     """Update analysis connections"""
     options = {
         "--dry-run": dry_run,
         "--force": force,
         "--server": server,
+        "--egmdo": egmdo,
         "--run-ops": run_ops,
         "--test-units": test_units,
         "--gemseo": gemseo,
