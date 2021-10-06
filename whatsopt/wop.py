@@ -409,5 +409,14 @@ def serve(port):
     WhatsOpt(login=False).serve(port)
 
 
+@cli.command()
+@click.argument("sqlite_filename")
+def convert(
+    sqlite_filename,
+):
+    """Convert given sqlite file from OpenMDAO to csv file format"""
+    WhatsOpt(login=False).convert(sqlite_filename)
+
+
 if __name__ == "__main__":
     cli()
