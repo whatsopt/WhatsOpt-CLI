@@ -19,6 +19,7 @@ from openmdao.utils.file_utils import _load_and_exec
 
 from openmdao.utils.webview import webview
 from openmdao.api import IndepVarComp
+from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
@@ -661,7 +662,8 @@ class WhatsOpt(object):
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
         log(f"You are using wop {__version__}")
 
-    def serve(self, port):
+    @staticmethod
+    def serve(port):
         try:
             import thrift
         except ImportError:
@@ -693,6 +695,16 @@ class WhatsOpt(object):
                 warn(str(err))
             sys.exit(-1)
         run_server(port)
+
+    @staticmethod
+    def convert(filename):
+        if not os.path.exists(filename):
+            error(f"File {filename} not found.")
+        pathname, extension = os.path.splitext(filename)
+        if not extension == ".sqlite":
+            error(f"File {filename} should have '.sqlite' extension, got '{extension}'")
+        basename = os.path.basename(pathname)
+        convert_sqlite_to_csv(filename, basename)
 
     def _test_connection(self, api_key=None):
         test_api_key = api_key

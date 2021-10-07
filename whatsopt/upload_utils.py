@@ -57,10 +57,10 @@ def load_from_sqlite(filename, parallel=False):
         if m:
             file_prefix = m.group(1)
             file_count = int(m.group(2)) + 1
-            name, cases, statuses = _load_sqlite_file(filename)
+            name, cases, statuses = load_sqlite_file(filename)
             next_filename = file_prefix + str(file_count)
             while os.path.exists(next_filename):
-                _, tmp_cases, tmp_statuses = _load_sqlite_file(next_filename)
+                _, tmp_cases, tmp_statuses = load_sqlite_file(next_filename)
                 for i, tmp_case in enumerate(tmp_cases):
                     cases[i]["values"].extend(tmp_case["values"])
                 statuses.extend(tmp_statuses)
@@ -74,7 +74,7 @@ def load_from_sqlite(filename, parallel=False):
             )
             exit(-1)
     else:
-        return _load_sqlite_file(filename)
+        return load_sqlite_file(filename)
 
 
 def load_from_hdf5(filename):
@@ -125,10 +125,10 @@ def print_cases(cases, statuses):
     log(tabulate(data, headers))
 
 
-def _load_sqlite_file(filename):
+def load_sqlite_file(filename):
     log("Load {}...".format(filename))
     reader = CaseReader(filename)
-    cases = reader.list_cases("driver")
+    cases = reader.list_cases("driver", out_stream=None)
     if len(cases) == 0:
         raise Exception("No case found in {}".format(filename))
 
@@ -146,7 +146,7 @@ def _load_sqlite_file(filename):
 
 
 def _format_upload_cases(reader):
-    cases = reader.list_cases("driver", recurse=False)
+    cases = reader.list_cases("driver", out_stream=None, recurse=False)
     inputs = {}
     outputs = {}
     statuses = []

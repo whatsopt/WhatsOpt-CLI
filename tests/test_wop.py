@@ -21,6 +21,7 @@ COMMANDS = [
         file("multipoint_beam/multipoint_beam_group.py")
     ),
     "wop status",
+    "wop convert {}".format(file("test_doe.sqlite")),
 ]
 
 
@@ -45,6 +46,8 @@ class TestWopCommand(unittest.TestCase):
     def test_commands(self):
         for cmd in COMMANDS:
             self._test_wop_cmd(cmd)
+        if os.path.exists("test_doe.csv"):
+            os.remove("test_doe.csv")
 
     def test_push_depth(self):
         self.maxDiff = None
