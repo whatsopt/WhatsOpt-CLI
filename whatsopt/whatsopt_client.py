@@ -662,7 +662,8 @@ class WhatsOpt(object):
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
         log(f"You are using wop {__version__}")
 
-    def serve(self, port):
+    @staticmethod
+    def serve(port):
         try:
             import thrift
         except ImportError:
@@ -695,7 +696,8 @@ class WhatsOpt(object):
             sys.exit(-1)
         run_server(port)
 
-    def convert(self, filename):
+    @staticmethod
+    def convert(filename):
         if not os.path.exists(filename):
             error(f"File {filename} not found.")
         pathname, extension = os.path.splitext(filename)

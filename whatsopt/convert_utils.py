@@ -1,5 +1,3 @@
-import os
-import numpy as np
 import csv
 import openmdao.api as om
 from whatsopt.logging import log
@@ -39,4 +37,4 @@ def convert_sqlite_to_csv(sqlite_filename, basename):
             for var in fieldnames:
                 data.append(values[var][i])
             writer.writerow(data)
-    log(f"Convert to {outfile}")
+    log(f"Convert {nb_cases} cases ({driver_name}) to {outfile}")
