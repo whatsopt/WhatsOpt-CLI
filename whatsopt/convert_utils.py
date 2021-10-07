@@ -29,7 +29,7 @@ def convert_sqlite_to_csv(sqlite_filename, basename):
 
     outfile = f"{basename}.csv"
     with open(outfile, "w") as f:
-        writer = csv.writer(f, delimiter=",")
+        writer = csv.writer(f, delimiter=";", lineterminator="\n")
         writer.writerow(["success"] + fieldnames)
 
         for i in range(nb_cases):
