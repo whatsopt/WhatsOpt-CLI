@@ -1,5 +1,6 @@
 import os
 import unittest
+import tempfile
 
 from whatsopt.utils import (
     is_analysis_user_file,
@@ -52,6 +53,11 @@ class TestUtils(unittest.TestCase):
     def test_based_on_openmdao(self):
         self.assertEqual(False, is_based_on("gemseo", TestUtils.DATA_PATH))
         self.assertEqual(True, is_based_on("openmdao", TestUtils.DATA_PATH))
+
+    def test_based_on_framework_on_empty_dir(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.assertEqual(False, is_based_on("openmdao", tmpdir))
+            self.assertEqual(False, is_based_on("gemseo", tmpdir))
 
     def test_is_analysis_user_file(self):
         self.assertEqual(True, is_analysis_user_file("sellar", "sellar.py"))

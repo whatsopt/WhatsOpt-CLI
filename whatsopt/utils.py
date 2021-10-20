@@ -89,7 +89,9 @@ def get_whatsopt_url(directory="."):
 
 def is_based_on(module, directory="."):
     files = find_analysis_base_files(directory)
-    return all(_detect_from_import(os.path.join(directory, f), module) for f in files)
+    return len(files) > 0 and all(
+        _detect_from_import(os.path.join(directory, f), module) for f in files
+    )
 
 
 def is_framework_switch(framework, directory="."):
