@@ -405,10 +405,12 @@ class WhatsOpt:
                     else:
                         os.remove(file_to)
                 elif options.get("--update"):
-                    if re.match(r"^run_.*\.py$", f) and not options.get("--run-ops"):
+                    if (
+                        f == "mda_init.py" or re.match(r"^run_.*\.py$", f)
+                    ) and not options.get("--run-ops"):
                         # keep current run scripts if any
                         info(
-                            f"Keep existing {file_to} (remove it or use --run-ops to override)"
+                            f"Keep existing {file_to} (remove it or use -r to override)"
                         )
                         file_to_move[file_to] = False
                         continue
@@ -547,8 +549,11 @@ class WhatsOpt:
         mda_id = get_analysis_id() if not analysis_id else analysis_id
 
         name = cases = statuses = None
-        if filename.endswith("run_parameters_init.py"):
-            self.upload_parameters_cmd(
+        if (
+            os.path.basename(filename) == "run_parameters_init.py"
+            or os.path.basename(filename) == "mda_init.py"
+        ):
+            self.upload_params_init_cmd(
                 filename, {"--dry-run": dry_run, "--analysis-id": mda_id}
             )
         elif filename.endswith(".csv"):
@@ -614,18 +619,22 @@ class WhatsOpt:
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
 
-    def upload_parameters_cmd(self, py_filename, options):
-        def upload_parameters(prob):
-            self.upload_parameters(prob, options)
+    def upload_params_init_cmd(self, py_filename, options):
+        def upload_params_init(prob):
+            self.upload_params_init(prob, options)
             sys.exit()
 
         d = os.path.dirname(py_filename)
         run_analysis_filename = os.path.join(d, "run_analysis.py")
+        if not os.path.exists(run_analysis_filename):
+            error(
+                f"Can not get analysis init: script {run_analysis_filename} not found."
+            )
         hooks.use_hooks = True
-        hooks._register_hook("final_setup", "Problem", post=upload_parameters)
+        hooks._register_hook("final_setup", "Problem", post=upload_params_init)
         _load_and_exec(run_analysis_filename, [])
 
-    def upload_parameters(self, problem, options):
+    def upload_params_init(self, problem, options):
         mda_id = get_analysis_id() if get_analysis_id() else options["--analysis-id"]
         if mda_id is None:
             error("Unknown analysis with id={}".format(mda_id))
