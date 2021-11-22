@@ -4,9 +4,9 @@ import numpy as np
 
 from whatsopt.push_utils import (
     simple_value,
-    extract_disc_var,
     format_shape,
     to_camelcase,
+    extract_mda_var,
     problem_pyfile,
 )
 
@@ -31,13 +31,12 @@ class TestPushUtils(unittest.TestCase):
         self.assertEqual("1.2", simple_value(dict2))
         self.assertEqual("[1.2, 2.3]", simple_value(dict3))
 
-    def test_extract_disc_var(self):
-        val1, val2, val3 = extract_disc_var("a.b.c.d")
-        self.assertEqual("a.b", val1)
-        self.assertEqual("a.b.c", val2)
-        self.assertEqual("d", val3)
+    def test_extract_mda_var(self):
+        val1, val2 = extract_mda_var("a.b.c.d")
+        self.assertEqual(["a", "b", "c"], val1)
+        self.assertEqual("d", val2)
         # raise Exception
-        self.assertRaises(Exception, extract_disc_var, "a")
+        self.assertRaises(Exception, extract_mda_var, "a")
 
     def test_generate_problem_pyfile(self):
         with problem_pyfile(

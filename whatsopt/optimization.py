@@ -14,7 +14,7 @@ class ValidOptimumNotFoundError(Exception):
     pass
 
 
-class Optimization(object):
+class Optimization:
 
     VALID_POINT = 0
     INVALID_POINT = 1

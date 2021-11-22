@@ -12,7 +12,6 @@ def file(name):
 
 COMMANDS = [
     "wop push -n {}".format(file("sellar.py")),
-    "wop push --old -n {}".format(file("sellar.py")),
     "wop upload -n -a 1 {}".format(file("run_parameters_init.py")),
     "wop upload -n {}".format(file("test_doe.csv")),
     "wop upload -n {}".format(file("test_doe.sqlite")),
@@ -54,7 +53,7 @@ class TestWopCommand(unittest.TestCase):
         for d in range(3):
             print(f"DEPTH={d}")
             out = self._test_wop_cmd(
-                "wop push --old -d {} -n {}".format(
+                "wop push -d {} -n {}".format(
                     d, file("multipoint_beam/multipoint_beam_group.py")
                 )
             )

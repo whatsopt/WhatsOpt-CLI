@@ -44,7 +44,6 @@ from whatsopt.push_utils import (
     problem_pyfile,
     to_camelcase,
 )
-from whatsopt.push_command import PushCommand
 from whatsopt.universal_push_command import UniversalPushCommand
 from whatsopt.show_utils import generate_xdsm_html
 
@@ -68,7 +67,7 @@ class AnalysisPushedException(Exception):
         self.xdsm = xdsm
 
 
-class WhatsOpt(object):
+class WhatsOpt:
     def __init__(self, url=None, api_key=None, login=True):
         if url:
             self._url = url.strip("/")
@@ -299,8 +298,6 @@ class WhatsOpt(object):
         scalar = options.get("--scalar")
         depth = options.get("--depth")
         push_cmd = UniversalPushCommand(problem, depth, scalar)
-        if options.get("--old"):
-            push_cmd = PushCommand(problem, depth, scalar)
 
         mda_attrs = push_cmd.get_mda_attributes(
             problem.model, push_cmd.tree, use_depth=True
@@ -492,10 +489,9 @@ class WhatsOpt(object):
         )
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
 
-    def show_mda(self, analysis_id, pbfile, old, name, outfile, batch, depth):
+    def show_mda(self, analysis_id, pbfile, name, outfile, batch, depth):
         options = {
             "--xdsm": True,
-            "--old": old,
             "--name": name,
             "--dry-run": False,
             "--depth": depth,
