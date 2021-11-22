@@ -73,12 +73,6 @@ def status(ctx):
     default=True,
     help="manage (1,) shape variables as scalar variables",
 )
-@click.option(
-    "--old",
-    is_flag=True,
-    default=False,
-    help="use old push implementation",
-)
 @click.option("--name", help="find analysis with given name")
 @click.option(
     "-c",
@@ -99,14 +93,13 @@ def status(ctx):
 )
 @click.argument("filename")
 @click.pass_context
-def push(ctx, dry_run, scalar, old, name, component, depth, json, filename):
+def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME."""
     ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
     options = {
         "--dry-run": dry_run,
         "--scalar": scalar,
-        "--old": old,
         "--name": name,
         "--depth": depth,
     }
@@ -353,12 +346,6 @@ def upload(
     "-f", "--pbfile", help="specify the analysis given an OpenMDAO problem python file"
 )
 @click.option(
-    "--old",
-    is_flag=True,
-    default=False,
-    help="use old push implementation",
-)
-@click.option(
     "--name", help="find analysis with given name (only used with pbfile option)"
 )
 @click.option(
@@ -378,7 +365,7 @@ def upload(
     help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
 )
 @click.pass_context
-def show(ctx, analysis_id, pbfile, old, name, outfile, batch, depth):
+def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
     """Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)."""
     if pbfile is None:
@@ -386,7 +373,7 @@ def show(ctx, analysis_id, pbfile, old, name, outfile, batch, depth):
     else:
         ctx.obj["login"] = False
         ctx.obj["url"] = EXTRANET_SERVER_URL
-    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, old, name, outfile, batch, depth)
+    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch, depth)
 
 
 @cli.command()

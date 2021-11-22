@@ -73,23 +73,6 @@ def simple_value(var):
 
 
 # push_command _get_varattr_from_connection
-def extract_disc_var(fullname):
-    name_elts = fullname.split(".")
-    if len(name_elts) > 1:
-        mda, disc, var = (
-            ".".join(name_elts[:-2]),
-            ".".join(name_elts[:-1]),
-            name_elts[-1],
-        )
-    else:
-        raise Exception(
-            "Connection qualified name should contain"
-            + " at least one dot, but got %s" % fullname
-        )
-    return mda, disc, var
-
-
-# push_command _get_varattr_from_connection
 def extract_mda_var(fullname):
     name_elts = fullname.split(".")
     if len(name_elts) > 1:

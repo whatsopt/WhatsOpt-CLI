@@ -18,7 +18,7 @@ DRIVER_NAME = "__DRIVER__"
 AUTO_IVC = "_auto_ivc"
 
 
-class UniversalPushCommand(object):
+class UniversalPushCommand:
     """
     This push command allows to push any OpenMDAO problem
     (as opposed to regular push command which works with "all vars promoted/no connect" assumption)
