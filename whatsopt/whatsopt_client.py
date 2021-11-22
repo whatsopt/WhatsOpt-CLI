@@ -553,7 +553,7 @@ class WhatsOpt:
             os.path.basename(filename) == "run_parameters_init.py"
             or os.path.basename(filename) == "mda_init.py"
         ):
-            self.upload_params_init_cmd(
+            self.upload_vars_init_cmd(
                 filename, {"--dry-run": dry_run, "--analysis-id": mda_id}
             )
         elif filename.endswith(".csv"):
@@ -619,9 +619,9 @@ class WhatsOpt:
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
 
-    def upload_params_init_cmd(self, py_filename, options):
-        def upload_params_init(prob):
-            self.upload_params_init(prob, options)
+    def upload_vars_init_cmd(self, py_filename, options):
+        def upload_vars_init(prob):
+            self.upload_vars_init(prob, options)
             sys.exit()
 
         d = os.path.dirname(py_filename)
@@ -631,16 +631,16 @@ class WhatsOpt:
                 f"Can not get analysis init: script {run_analysis_filename} not found."
             )
         hooks.use_hooks = True
-        hooks._register_hook("final_setup", "Problem", post=upload_params_init)
+        hooks._register_hook("final_setup", "Problem", post=upload_vars_init)
         _load_and_exec(run_analysis_filename, [])
 
-    def upload_params_init(self, problem, options):
+    def upload_vars_init(self, problem, options):
         mda_id = get_analysis_id() if get_analysis_id() else options["--analysis-id"]
         if mda_id is None:
             error("Unknown analysis with id={}".format(mda_id))
             sys.exit(-1)
         parameters = []
-        headers = ["parameter", "value"]
+        headers = ["variable", "init value"]
         data = []
         for s in problem.model._subsystems_myproc:
             if isinstance(s, IndepVarComp):
@@ -657,7 +657,7 @@ class WhatsOpt:
             url = self.endpoint(f"/api/v1/analyses/{mda_id}/parameterization")
             resp = self.session.put(url, headers=self.headers, json=params)
             resp.raise_for_status()
-            log("Parameters uploaded")
+            log("Variables init values uploaded")
 
     def check_versions(self):
         url = self.endpoint("/api/v1/versioning")

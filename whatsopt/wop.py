@@ -322,7 +322,7 @@ def upload(
     only_success,
     parallel,
 ):
-    """Upload data stored in given FILENAME being in results in sqlite or csv format or run parameters file."""
+    """Upload data stored in given FILENAME results (sqlite, csv or hdf5 format) or mda init python file."""
     ctx.obj["login"] = not dry_run
     WhatsOpt(**ctx.obj).upload(
         filename,
