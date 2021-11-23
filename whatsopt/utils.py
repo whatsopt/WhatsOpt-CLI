@@ -22,6 +22,7 @@ def snakize(name):
 def is_user_file(f):
     return (
         not re.match(r".*_base\.py$", f)
+        and not re.match(r"^mda_init.*\.py$", f)
         and not re.match(r"^run_.*\.py$", f)
         and not re.match(r"^.*server/", f)
         and not re.match(r"^.*egmdo/", f)

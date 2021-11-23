@@ -1,3 +1,10 @@
+* 1.20.0 (22/11/2021)
+  - `wop push`: `--old` option triggering old deprecated implementation is removed  
+  - `wop pull / wop update -r`: with WhatsOpt > 1.18.0 will pull / update 
+    `run_mda.py`, `run_mdo.py`, `mda_init.py` 
+    (`run_analysis.py`, `run_optimization.py`, `run_parameters_init.py` are deprecated). 
+  - `wop upload mda_init.py`: upload analysis variables initialization.
+
 * 1.19.0 (07/10/2021)
   - `wop update --egmdo`: generate code and scripts related to EGMDO method.
   - `wop convert <sqlite_filename>`: convert given OpenMDAO sqlite to csv file format  
@@ -35,7 +42,7 @@
 
 * 1.14.0 (15/06/2021)
   - Refactor push command:
-    - default becomes old: wop push --old <openmdao_problem.py>
+    - default becomes old: wop push --old <openmdao_problem.py> (--old is temporary and will be removed in a future release)
     - experimental becomes default: -x/--experimental removed
 
 * 1.13.1 (28/05/2021)
