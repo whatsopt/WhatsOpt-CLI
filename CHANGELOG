@@ -1,3 +1,7 @@
+* 1.20.1 (22/11/2021)
+  - Creation of dedicated file `.woprc` which contains wop runtime configuration
+  (eg. whatsopt url, analysis id, etc.)  
+
 * 1.20.0 (22/11/2021)
   - `wop push`: `--old` option triggering old deprecated implementation is removed  
   - `wop pull / wop update -r`: with WhatsOpt > 1.18.0 will pull / update 
