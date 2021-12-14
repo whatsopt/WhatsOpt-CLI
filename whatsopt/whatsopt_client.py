@@ -23,8 +23,9 @@ from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
-    GEMSEO,
-    OPENMDAO,
+    FRAMEWORK_GEMSEO,
+    FRAMEWORK_OPENMDAO,
+    MODE_PLAIN,
     is_analysis_user_file,
     is_based_on,
     is_framework_switch,
@@ -32,6 +33,7 @@ from whatsopt.utils import (
     get_analysis_id,
     get_whatsopt_url,
     snakize,
+    save_state,
 )
 from whatsopt.upload_utils import (
     load_from_csv,
@@ -222,9 +224,9 @@ class WhatsOpt:
 
                 if resp.ok:
                     mda = resp.json()
-                    if is_based_on(GEMSEO):
+                    if is_based_on(FRAMEWORK_GEMSEO):
                         mda["framework"] = "GEMSEO"
-                    elif is_based_on(OPENMDAO):
+                    elif is_based_on(FRAMEWORK_OPENMDAO):
                         mda["framework"] = "OpenMDAO"
                     else:  # should not happen
                         raise ValueError(
@@ -341,27 +343,27 @@ class WhatsOpt:
         if not msg:
             msg = "Analysis %s pulled" % mda_id
 
-        framework = OPENMDAO
+        framework = FRAMEWORK_OPENMDAO
         if options.get("--gemseo"):
-            framework = GEMSEO
+            framework = FRAMEWORK_GEMSEO
 
         param = ""
         if options.get("--run-ops"):
             param += "&with_runops=true"
         if options.get("--server"):
-            if framework == OPENMDAO:
+            if framework == FRAMEWORK_OPENMDAO:
                 param += "&with_server=true"
             else:
                 warn(
                     "Can not generate server with GEMSEO framework. --server is ignored"
                 )
         if options.get("--egmdo"):
-            if framework == OPENMDAO:
+            if framework == FRAMEWORK_OPENMDAO:
                 param += "&with_egmdo=true"
             else:
                 warn("Can not generate EGMDO with GEMSEO framework. --egmdo is ignored")
         if options.get("--test-units"):
-            if framework == OPENMDAO:
+            if framework == FRAMEWORK_OPENMDAO:
                 param += "&with_unittests=true"
             else:
                 warn(
@@ -449,6 +451,7 @@ class WhatsOpt:
                     os.makedirs(dir_to)
                 if file_to_move[file_to]:
                     move(file_from, dir_to)
+            save_state(self._url, mda_id, framework, MODE_PLAIN)
             log(msg)
 
     def pull_mda_json(self, mda_id):
@@ -473,7 +476,7 @@ class WhatsOpt:
         # keep options unchanged, work on a copy
         opts = copy.deepcopy(options)
         # sanity checks
-        if not (is_based_on(OPENMDAO) or is_based_on(GEMSEO)):
+        if not (is_based_on(FRAMEWORK_OPENMDAO) or is_based_on(FRAMEWORK_GEMSEO)):
             error("No framework detected. Check your *_base.py files.")
             sys.exit(-1)
         if opts["--openmdao"] and opts["--gemseo"]:

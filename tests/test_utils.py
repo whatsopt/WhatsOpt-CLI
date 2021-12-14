@@ -3,12 +3,15 @@ import unittest
 import tempfile
 
 from whatsopt.utils import (
+    WOP_CONF_FILENAME,
     is_analysis_user_file,
     is_based_on,
     is_user_file,
     find_analysis_base_files,
     get_analysis_id,
     get_whatsopt_url,
+    load_state,
+    save_state,
     snakize,
 )
 
@@ -16,6 +19,25 @@ from whatsopt.utils import (
 class TestUtils(unittest.TestCase):
 
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "multipoint_beam")
+
+    def setupt(self):
+        if os.path.exists(WOP_CONF_FILENAME):
+            os.remove(WOP_CONF_FILENAME)
+
+    def tearDown(self):
+        if os.path.exists(WOP_CONF_FILENAME):
+            os.remove(WOP_CONF_FILENAME)
+
+    def test_save_load_state(self):
+        state = {
+            "whatsopt_url": "http://exemple.com",
+            "analysis_id": "666",
+            "framework": "OpenMDAO",
+            "pull_mode": "plain",
+        }
+        save_state(*(state.values()))
+        retrieved = load_state()
+        self.assertEqual(state, retrieved)
 
     def test_snakize(self):
         self.assertEqual(
