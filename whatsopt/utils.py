@@ -38,7 +38,7 @@ def load_state():
     with open(WOP_CONF_FILENAME, "r") as f:
         for line in f.readlines():
             line = line.strip()
-            if line is "" or line.startswith("#"):
+            if line == "" or line.startswith("#"):
                 continue
             m = re.search(r"(\S+): (\S+)", line)
             if m:
