@@ -1,9 +1,54 @@
 import os, re
+from whatsopt.logging import error
 
-ANALYSIS_ID_KEY = "analysis_id"
+WOP_CONF_FILENAME = ".wop"
+
 WHATSOPT_URL_KEY = "whatsopt_url"
-OPENMDAO = "openmdao"
-GEMSEO = "gemseo"
+ANALYSIS_ID_KEY = "analysis_id"
+FRAMEWORK_KEY = "framework"
+PULL_MODE_KEY = "pull_mode"
+
+FRAMEWORK_OPENMDAO = "openmdao"
+FRAMEWORK_GEMSEO = "gemseo"
+
+MODE_PLAIN = "plain"
+MODE_PACKAGE = "package"
+
+
+def save_state(url, mda_id, framework, pull_mode):
+    with open(WOP_CONF_FILENAME, "w") as f:
+        state = {}
+        state[WHATSOPT_URL_KEY] = url
+        state[ANALYSIS_ID_KEY] = mda_id
+        state[FRAMEWORK_KEY] = framework
+        state[PULL_MODE_KEY] = pull_mode
+        content = f"""
+# This file contains recorded state from wop pull/update commands
+# DO NOT EDIT unless you know what you are doing
+{WHATSOPT_URL_KEY}: {state[WHATSOPT_URL_KEY]}
+{ANALYSIS_ID_KEY}: {state[ANALYSIS_ID_KEY]}
+{FRAMEWORK_KEY}: {state[FRAMEWORK_KEY]}
+{PULL_MODE_KEY}: {state[PULL_MODE_KEY]}
+"""
+        f.write(content)
+
+
+def load_state():
+    state = {}
+    with open(WOP_CONF_FILENAME, "r") as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line == "" or line.startswith("#"):
+                continue
+            m = re.search(r"(\S+): (\S+)", line)
+            if m:
+                state[m.group(1)] = m.group(2)
+            else:
+                error(
+                    f"Syntax error in {WOP_CONF_FILENAME} file: line '{line}' invalid"
+                )
+                exit(-1)
+    return state
 
 
 def snakize(name):
@@ -78,27 +123,39 @@ def _get_key(key, directory="."):
 
 
 def get_analysis_id(directory="."):
-    return _get_key(ANALYSIS_ID_KEY, directory)
+    if os.path.exists(WOP_CONF_FILENAME):
+        state = load_state()
+        return state[ANALYSIS_ID_KEY]
+    else:
+        return _get_key(ANALYSIS_ID_KEY, directory)
 
 
 def get_whatsopt_url(directory="."):
-    try:
-        return _get_key(WHATSOPT_URL_KEY, directory)
-    except ValueError:
-        return False
+    if os.path.exists(WOP_CONF_FILENAME):
+        state = load_state()
+        return state[WHATSOPT_URL_KEY]
+    else:
+        try:
+            return _get_key(WHATSOPT_URL_KEY, directory)
+        except ValueError:
+            return False
 
 
 def is_based_on(module, directory="."):
-    files = find_analysis_base_files(directory)
-    return len(files) > 0 and all(
-        _detect_from_import(os.path.join(directory, f), module) for f in files
-    )
+    if os.path.exists(WOP_CONF_FILENAME):
+        state = load_state()
+        return state[FRAMEWORK_KEY] == module
+    else:
+        files = find_analysis_base_files(directory)
+        return len(files) > 0 and all(
+            _detect_from_import(os.path.join(directory, f), module) for f in files
+        )
 
 
 def is_framework_switch(framework, directory="."):
-    return (framework == GEMSEO and is_based_on(OPENMDAO, directory)) or (
-        framework == OPENMDAO and is_based_on(GEMSEO, directory)
-    )
+    return (
+        framework == FRAMEWORK_GEMSEO and is_based_on(FRAMEWORK_OPENMDAO, directory)
+    ) or (framework == FRAMEWORK_OPENMDAO and is_based_on(FRAMEWORK_GEMSEO, directory))
 
 
 def _detect_from_import(file, module):
