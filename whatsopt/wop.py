@@ -158,10 +158,14 @@ def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     help="export project in json format on stdout (works only with --json)",
 )
 @click.option(
-    "--gemseo",
-    is_flag=True,
+    "--gemseo/--openmdao",
     default=False,
     help="pull analysis as GEMSEO source code (default OpenMDAO)",
+)
+@click.option(
+    "--package/--plain",
+    default=False,
+    help="pull analysis as Python package (default plain)",
 )
 @click.argument("ident")
 @click.pass_context
@@ -176,6 +180,7 @@ def pull(
     json,
     project_id,
     gemseo,
+    package,
     ident,
 ):
     """Pull analysis given its identifier."""
@@ -188,6 +193,7 @@ def pull(
         "--test-units": test_units,
         "--gemseo": gemseo,
         "--egmdo": egmdo,
+        "--package": package,
     }
     if json:
         if project_id:

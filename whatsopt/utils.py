@@ -123,16 +123,16 @@ def _get_key(key, directory="."):
 
 
 def get_analysis_id(directory="."):
-    if os.path.exists(WOP_CONF_FILENAME):
-        state = load_state()
+    state = load_state()
+    if state:
         return state[ANALYSIS_ID_KEY]
     else:
         return _get_key(ANALYSIS_ID_KEY, directory)
 
 
 def get_whatsopt_url(directory="."):
-    if os.path.exists(WOP_CONF_FILENAME):
-        state = load_state()
+    state = load_state()
+    if state:
         return state[WHATSOPT_URL_KEY]
     else:
         try:
@@ -142,8 +142,8 @@ def get_whatsopt_url(directory="."):
 
 
 def is_based_on(module, directory="."):
-    if os.path.exists(WOP_CONF_FILENAME):
-        state = load_state()
+    state = load_state()
+    if state:
         return state[FRAMEWORK_KEY] == module
     else:
         files = find_analysis_base_files(directory)
@@ -169,3 +169,8 @@ def _detect_from_import(file, module):
                 detected = True
                 break
     return detected
+
+
+def is_package_mode():
+    state = load_state()
+    return state and state[PULL_MODE_KEY] == MODE_PACKAGE
