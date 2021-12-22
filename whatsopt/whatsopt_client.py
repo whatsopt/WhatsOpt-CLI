@@ -31,6 +31,7 @@ from whatsopt.utils import (
     is_based_on,
     is_framework_switch,
     is_package_mode,
+    is_run_script_file,
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
@@ -414,9 +415,7 @@ class WhatsOpt:
                     else:
                         os.remove(file_to)
                 elif options.get("--update"):
-                    if (
-                        f == "mda_init.py" or re.match(r"^run_.*\.py$", f)
-                    ) and not options.get("--run-ops"):
+                    if is_run_script_file(f) and not options.get("--run-ops"):
                         # keep current run scripts if any
                         info(
                             f"Keep existing {file_to} (remove it or use -r to override)"

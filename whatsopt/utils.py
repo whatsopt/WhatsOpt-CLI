@@ -35,6 +35,8 @@ def save_state(url, mda_id, framework, pull_mode):
 
 def load_state():
     state = {}
+    if not os.path.exists(WOP_CONF_FILENAME):
+        return state
     with open(WOP_CONF_FILENAME, "r") as f:
         for line in f.readlines():
             line = line.strip()
@@ -72,6 +74,10 @@ def is_user_file(f):
         and not re.match(r"^.*server/", f)
         and not re.match(r"^.*egmdo/", f)
     )
+
+
+def is_run_script_file(f):
+    return f == "mda_init.py" or re.match(r"^run_.*\.py$", f)
 
 
 def is_analysis_user_file(name, f):
