@@ -376,12 +376,12 @@ class WhatsOpt:
         if param:
             param = "?" + param[1:]
 
-        format = framework
+        format_query = framework
         if options.get("--package"):
-            format += "_pkg"
+            format_query += "_pkg"
 
         url = self.endpoint(
-            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format, param))
+            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format_query, param))
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
         resp.raise_for_status()
