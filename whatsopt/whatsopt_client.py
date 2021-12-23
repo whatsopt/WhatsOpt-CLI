@@ -25,10 +25,14 @@ from whatsopt.logging import log, info, warn, error, debug
 from whatsopt.utils import (
     FRAMEWORK_GEMSEO,
     FRAMEWORK_OPENMDAO,
+    MODE_PACKAGE,
     MODE_PLAIN,
     is_analysis_user_file,
     is_based_on,
     is_framework_switch,
+    is_package_mode,
+    is_run_script_file,
+    is_test_file,
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
@@ -371,8 +375,13 @@ class WhatsOpt:
                 )
         if param:
             param = "?" + param[1:]
+
+        format_query = framework
+        if options.get("--package"):
+            format_query += "_pkg"
+
         url = self.endpoint(
-            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, framework, param))
+            ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format_query, param))
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
         resp.raise_for_status()
@@ -407,13 +416,13 @@ class WhatsOpt:
                     else:
                         os.remove(file_to)
                 elif options.get("--update"):
-                    if (
-                        f == "mda_init.py" or re.match(r"^run_.*\.py$", f)
-                    ) and not options.get("--run-ops"):
-                        # keep current run scripts if any
+                    if is_run_script_file(f) and not options.get("--run-ops"):
                         info(
                             f"Keep existing {file_to} (remove it or use -r to override)"
                         )
+                        file_to_move[file_to] = False
+                        continue
+                    if is_test_file(f) and not options.get("--test-units"):
                         file_to_move[file_to] = False
                         continue
                     if is_user_file(f):
@@ -451,7 +460,12 @@ class WhatsOpt:
                     os.makedirs(dir_to)
                 if file_to_move[file_to]:
                     move(file_from, dir_to)
-            save_state(self._url, mda_id, framework, MODE_PLAIN)
+            save_state(
+                self._url,
+                mda_id,
+                framework,
+                MODE_PACKAGE if options.get("--package") else MODE_PLAIN,
+            )
             log(msg)
 
     def pull_mda_json(self, mda_id):
@@ -490,6 +504,7 @@ class WhatsOpt:
                 or (not opts["--openmdao"] and is_based_on("gemseo")),
                 "--openmdao": opts["--openmdao"]
                 or (not opts["--gemseo"] and is_based_on("openmdao")),
+                "--package": is_package_mode(),
             }
         )
         self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))

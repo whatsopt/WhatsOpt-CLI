@@ -1,12 +1,16 @@
-* 1.20.1 (22/11/2021)
-  - Creation of dedicated file `.woprc` which contains wop runtime configuration
+* 1.20.2 (23/12/2021)
+  - `wop pull --package <id>`: allows to generate code in _package mode_ meaning 
+  generate proper directory structure and `setup.py` to allow code distribution as a Python package
+  (only available with OpenMDAO framework at the moment). 
+
+* 1.20.1 (15/12/2021)
+  - Creation of dedicated file `.wop` which contains wop pull/update state
   (eg. whatsopt url, analysis id, etc.)  
 
 * 1.20.0 (22/11/2021)
   - `wop push`: `--old` option triggering old deprecated implementation is removed  
-  - `wop pull / wop update -r`: with WhatsOpt > 1.18.0 will pull / update 
-    `run_mda.py`, `run_mdo.py`, `mda_init.py` 
-    (`run_analysis.py`, `run_optimization.py`, `run_parameters_init.py` are deprecated). 
+  - `wop pull / wop update -r`: with WhatsOpt > 1.18.0, pull / update `run_mda.py`, `run_mdo.py`, `mda_init.py` 
+    (`run_analysis.py`, `run_optimization.py`, `run_parameters_init.py` are removed). 
   - `wop upload mda_init.py`: upload analysis variables initialization.
 
 * 1.19.0 (07/10/2021)
