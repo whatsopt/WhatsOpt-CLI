@@ -69,8 +69,8 @@ def snakize(name):
 def is_user_file(f):
     return (
         not re.match(r".*_base\.py$", f)
-        and not re.match(r"^mda_init.*\.py$", f)
-        and not re.match(r"^run_.*\.py$", f)
+        and not is_run_script_file(f)
+        and not is_test_file(f)
         and not re.match(r"^.*server/", f)
         and not re.match(r"^.*egmdo/", f)
     )
@@ -78,6 +78,10 @@ def is_user_file(f):
 
 def is_run_script_file(f):
     return f == "mda_init.py" or re.match(r"^run_.*\.py$", f)
+
+
+def is_test_file(f):
+    return re.match(r"^.*tests/test_.*\.py$", f)
 
 
 def is_analysis_user_file(name, f):

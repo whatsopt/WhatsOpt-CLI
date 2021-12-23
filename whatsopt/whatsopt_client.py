@@ -32,6 +32,7 @@ from whatsopt.utils import (
     is_framework_switch,
     is_package_mode,
     is_run_script_file,
+    is_test_file,
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
@@ -416,10 +417,12 @@ class WhatsOpt:
                         os.remove(file_to)
                 elif options.get("--update"):
                     if is_run_script_file(f) and not options.get("--run-ops"):
-                        # keep current run scripts if any
                         info(
                             f"Keep existing {file_to} (remove it or use -r to override)"
                         )
+                        file_to_move[file_to] = False
+                        continue
+                    if is_test_file(f) and not options.get("--test-units"):
                         file_to_move[file_to] = False
                         continue
                     if is_user_file(f):
