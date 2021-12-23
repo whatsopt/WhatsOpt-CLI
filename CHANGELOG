@@ -1,3 +1,8 @@
+* 1.20.2 (23/12/2021)
+  - `wop pull --package <id>`: allows to generate code in _package mode_ meaning 
+  generate proper directory structure and `setup.py` to allow code distribution as a Python package
+  (only available with OpenMDAO framework at the moment). 
+
 * 1.20.1 (15/12/2021)
   - Creation of dedicated file `.wop` which contains wop pull/update state
   (eg. whatsopt url, analysis id, etc.)  
