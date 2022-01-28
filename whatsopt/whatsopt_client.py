@@ -417,9 +417,7 @@ class WhatsOpt:
                         os.remove(file_to)
                 elif options.get("--update"):
                     if is_run_script_file(f) and not options.get("--run-ops"):
-                        info(
-                            f"Keep existing {file_to} (remove it or use -r to override)"
-                        )
+                        info(f"Keep existing {file_to} (use -r to override)")
                         file_to_move[file_to] = False
                         continue
                     if is_test_file(f) and not options.get("--test-units"):
@@ -452,13 +450,12 @@ class WhatsOpt:
                     log(f"Pull {file_to}")
                     if options.get("--dry-run"):
                         file_to_move[file_to] = False
-                elif options.get("--update"):
-                    if (
-                        (is_run_script_file(f) and not options.get("--run-ops"))
-                        or (is_test_file(f) and not options.get("--test-units"))
-                        or is_user_file(f)
-                    ):
-                        file_to_move[file_to] = False
+                elif options.get("--update") and (
+                    (is_run_script_file(f) and not options.get("--run-ops"))
+                    or (is_test_file(f) and not options.get("--test-units"))
+                    or is_user_file(f)
+                ):
+                    file_to_move[file_to] = False
                 else:
                     log(f"Pull {file_to}")
 
