@@ -11,30 +11,14 @@ import numpy as np
 from numpy import nan
 from os import path
 from importlib import import_module
-from yaml import load, FullLoader
 from openmdao.api import ExplicitComponent
 
-class ObjSumBase(ExplicitComponent):
-    """ An OpenMDAO base component to encapsulate ObjSum discipline """
 
-    def __init__(self, **kwargs):
-        super(ObjSumBase, self).__init__(**kwargs)
-        self._impl = None
-        dockconf = path.join(path.dirname(__file__), ".whatsopt_dock.yml")
-        if path.exists(dockconf):
-            with open(dockconf) as dockfile:
-                dock = load(dockfile, Loader=FullLoader)
-                impl = dock.get("obj_sum")
-                if impl:
-                    module = import_module(impl['module'])
-                    self._impl = getattr(module, impl['class'])()
+class ObjSumBase(ExplicitComponent):
+    """An OpenMDAO base component to encapsulate ObjSum discipline"""
 
     def setup(self):
-        self.add_input('compliance_0', val=np.ones((1,)), desc='')
-        self.add_input('compliance_1', val=np.ones((1,)), desc='')
+        self.add_input("compliance_0", val=np.ones((1,)), desc="")
+        self.add_input("compliance_1", val=np.ones((1,)), desc="")
 
-        self.add_output('obj', val=np.ones((1,)), desc='')
-
-
-
-        
+        self.add_output("obj", val=np.ones((1,)), desc="")

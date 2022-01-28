@@ -10,24 +10,11 @@
 # import numpy as np
 from os import path
 from importlib import import_module
-from yaml import load, FullLoader
 from openmdao.api import ExplicitComponent
 
 
 class Disc1Base(ExplicitComponent):
-    """ An OpenMDAO base component to encapsulate Disc1 discipline """
-
-    def __init__(self, **kwargs):
-        super(Disc1Base, self).__init__(**kwargs)
-        self._impl = None
-        dockconf = path.join(path.dirname(__file__), ".whatsopt_dock.yml")
-        if path.exists(dockconf):
-            with open(dockconf) as dockfile:
-                dock = load(dockfile, Loader=FullLoader)
-                impl = dock.get("disc1")
-                if impl:
-                    module = import_module(impl["module"])
-                    self._impl = getattr(module, impl["class"])()
+    """An OpenMDAO base component to encapsulate Disc1 discipline"""
 
     def setup(self):
         self.add_input("x", val=2, desc="")

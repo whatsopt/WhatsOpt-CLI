@@ -36,12 +36,11 @@ metadata = dict(
         "Click>=6.7",
         "tabulate>=0.8.2",
         "requests",
-        "pyyaml",
     ],
     python_requires=">=3.6",
     entry_points="""
         [console_scripts]
-        wop=whatsopt.wop:cli
+        wop=whatsopt.wop:wop
     """,
     zip_safe=True,
     url="https://github.com/OneraHub/WhatsOpt-CLI",

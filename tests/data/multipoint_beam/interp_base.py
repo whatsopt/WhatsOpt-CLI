@@ -11,29 +11,13 @@ import numpy as np
 from numpy import nan
 from os import path
 from importlib import import_module
-from yaml import load, FullLoader
 from openmdao.api import ExplicitComponent
 
-class InterpBase(ExplicitComponent):
-    """ An OpenMDAO base component to encapsulate Interp discipline """
 
-    def __init__(self, **kwargs):
-        super(InterpBase, self).__init__(**kwargs)
-        self._impl = None
-        dockconf = path.join(path.dirname(__file__), ".whatsopt_dock.yml")
-        if path.exists(dockconf):
-            with open(dockconf) as dockfile:
-                dock = load(dockfile, Loader=FullLoader)
-                impl = dock.get("interp")
-                if impl:
-                    module = import_module(impl['module'])
-                    self._impl = getattr(module, impl['class'])()
+class InterpBase(ExplicitComponent):
+    """An OpenMDAO base component to encapsulate Interp discipline"""
 
     def setup(self):
-        self.add_input('h_cp', val=[1.0, 1.0, 1.0, 1.0, 1.0], desc='')
+        self.add_input("h_cp", val=[1.0, 1.0, 1.0, 1.0, 1.0], desc="")
 
-        self.add_output('h', val=np.ones((1, 50)), desc='')
-
-
-
-        
+        self.add_output("h", val=np.ones((1, 50)), desc="")
