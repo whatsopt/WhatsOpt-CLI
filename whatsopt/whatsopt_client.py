@@ -410,7 +410,7 @@ class WhatsOpt:
             file_to_move[file_to] = True
             if os.path.exists(file_to):
                 if options.get("--force"):
-                    log("Update %s" % file_to)
+                    log(f"Update {file_to}")
                     if options.get("--dry-run"):
                         file_to_move[file_to] = False
                     else:
@@ -429,10 +429,10 @@ class WhatsOpt:
                         file_to_move[file_to] = False
 
                         # Have to update user analysis main file when switching frameworks
-                        url = self.endpoint(f"/api/v1/analyses/{mda_id}")
+                        url = self.endpoint(f"/api/v1/analyses/{mda_id}/openmdao_impl")
                         resp = self.session.get(url, headers=self.headers, stream=True)
                         resp.raise_for_status()
-                        mda_name = snakize(resp.json()["name"])
+                        mda_name = resp.json()["packaging"]["package_name"]
                         if is_analysis_user_file(mda_name, f) and is_framework_switch(
                             framework
                         ):
@@ -448,7 +448,20 @@ class WhatsOpt:
                     )
                     file_to_move[file_to] = False
             else:
-                log(f"Pull {file_to}")
+                if options.get("--force"):
+                    log(f"Pull {file_to}")
+                    if options.get("--dry-run"):
+                        file_to_move[file_to] = False
+                elif options.get("--update"):
+                    if (
+                        (is_run_script_file(f) and not options.get("--run-ops"))
+                        or (is_test_file(f) and not options.get("--test-units"))
+                        or is_user_file(f)
+                    ):
+                        file_to_move[file_to] = False
+                else:
+                    log(f"Pull {file_to}")
+
         if not options.get("--dry-run"):
             for f in file_to_move.keys():
                 file_from = os.path.join(tempdir, f)
