@@ -6,8 +6,8 @@ from logging import error
 DEFAULT_PUSH_DEPTH = 2
 
 
-@click.group()
-@click.version_option(__version__)
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.version_option(__version__, "-v", "--version")
 @click.option("--credentials", help="specify authentication information (API key)")
 @click.option(
     "--url",
@@ -16,13 +16,13 @@ DEFAULT_PUSH_DEPTH = 2
     ),
 )
 @click.pass_context
-def cli(ctx, credentials, url):
+def wop(ctx, credentials, url):
     ctx.ensure_object(dict)  # create context dictionary ctx.obj ={}
     ctx.obj["api_key"] = credentials
     ctx.obj["url"] = url
 
 
-@cli.command()
+@wop.command()
 @click.argument("url")
 @click.pass_context
 def login(ctx, url):
@@ -31,13 +31,13 @@ def login(ctx, url):
     WhatsOpt(**ctx.obj).login(echo=True)
 
 
-@cli.command()
+@wop.command()
 def logout():
     """Deconnect from WhatsOpt server."""
     WhatsOpt(login=False).logout()
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-a", "--all", is_flag=True, default=False, help="list all analyses available"
 )
@@ -53,14 +53,14 @@ def list(ctx, all, project_query):
     WhatsOpt(**ctx.obj).list_analyses(all, project_query)
 
 
-@cli.command()
+@wop.command()
 @click.pass_context
 def status(ctx):
     """List server connection and current pulled analysis status."""
     WhatsOpt(login=False).get_status()
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-n",
     "--dry-run",
@@ -119,7 +119,7 @@ def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     exit(-1)
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-n",
     "--dry-run",
@@ -207,7 +207,7 @@ def pull(
         WhatsOpt(**ctx.obj).pull_mda(ident, options)
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-n",
     "--dry-run",
@@ -276,7 +276,7 @@ def update(
     WhatsOpt(**ctx.obj).update_mda(analysis_id, options)
 
 
-@cli.command()
+@wop.command()
 @click.argument("filename")
 @click.option(
     "-k",
@@ -342,7 +342,7 @@ def upload(
     )
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-a",
     "--analysis-id",
@@ -382,14 +382,14 @@ def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
     WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch, depth)
 
 
-@cli.command()
+@wop.command()
 @click.pass_context
 def version(ctx):
     """Show versions of WhatsOpt app and recommended wop command line."""
     WhatsOpt(**ctx.obj).check_versions()
 
 
-@cli.command()
+@wop.command()
 @click.option(
     "-p",
     "--port",
@@ -402,7 +402,7 @@ def serve(port):
     WhatsOpt(login=False).serve(port)
 
 
-@cli.command()
+@wop.command()
 @click.argument("sqlite_filename")
 def convert(
     sqlite_filename,
@@ -412,4 +412,4 @@ def convert(
 
 
 if __name__ == "__main__":
-    cli()
+    wop()
