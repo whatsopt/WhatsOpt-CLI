@@ -11,29 +11,13 @@ import numpy as np
 from numpy import nan
 from os import path
 from importlib import import_module
-from yaml import load, FullLoader
 from openmdao.api import ExplicitComponent
 
-class ICompBase(ExplicitComponent):
-    """ An OpenMDAO base component to encapsulate IComp discipline """
 
-    def __init__(self, **kwargs):
-        super(ICompBase, self).__init__(**kwargs)
-        self._impl = None
-        dockconf = path.join(path.dirname(__file__), ".whatsopt_dock.yml")
-        if path.exists(dockconf):
-            with open(dockconf) as dockfile:
-                dock = load(dockfile, Loader=FullLoader)
-                impl = dock.get("i_comp")
-                if impl:
-                    module = import_module(impl['module'])
-                    self._impl = getattr(module, impl['class'])()
+class ICompBase(ExplicitComponent):
+    """An OpenMDAO base component to encapsulate IComp discipline"""
 
     def setup(self):
-        self.add_input('h', val=np.ones((1, 50)), desc='')
+        self.add_input("h", val=np.ones((1, 50)), desc="")
 
-        self.add_output('I', val=np.ones((50,)), desc='')
-
-
-
-        
+        self.add_output("I", val=np.ones((50,)), desc="")
