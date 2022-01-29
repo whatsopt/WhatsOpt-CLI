@@ -1,3 +1,10 @@
+* 1.21.1 (28/01/2022)
+  * Add short options `-h` and `-v` for respectively `--help` and `--version`
+  * Fixes:
+    - On update, when removed do not regenerate scripts and discipline unit tests 
+    unless relevant option (respectively `-r` or `-t`) is present. 
+    - On update, when removed do not regenerate user files: setup.py, README, .gitignore 
+
 * 1.21.0 (04/01/2022)
   - `wop pull --package <id>`: allows to generate code in _package mode_ meaning 
   generate proper directory structure and `setup.py` to allow code distribution as a Python package
