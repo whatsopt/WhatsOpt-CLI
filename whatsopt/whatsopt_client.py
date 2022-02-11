@@ -405,6 +405,16 @@ class WhatsOpt:
                 f"* {cmd} is run in DRY RUN mode (actions are listed but not done) *\n"
                 "*******************************************************************"
             )
+
+        # Special case: When framework switch we have to update
+        # user analysis main file which name depends on package name
+        framework_switch = is_framework_switch(framework)
+        if framework_switch:
+            url = self.endpoint(f"/api/v1/analyses/{mda_id}/openmdao_impl")
+            resp = self.session.get(url, headers=self.headers, stream=True)
+            resp.raise_for_status()
+            mda_name = resp.json()["packaging"]["package_name"]
+
         for f in filenames:
             file_to = f
             file_to_move[file_to] = True
@@ -425,15 +435,8 @@ class WhatsOpt:
                         continue
                     if is_user_file(f):
                         file_to_move[file_to] = False
-
                         # Have to update user analysis main file when switching frameworks
-                        url = self.endpoint(f"/api/v1/analyses/{mda_id}/openmdao_impl")
-                        resp = self.session.get(url, headers=self.headers, stream=True)
-                        resp.raise_for_status()
-                        mda_name = resp.json()["packaging"]["package_name"]
-                        if is_analysis_user_file(mda_name, f) and is_framework_switch(
-                            framework
-                        ):
+                        if is_framework_switch and is_analysis_user_file(mda_name, f):
                             file_to_move[file_to] = True
                         else:
                             continue
