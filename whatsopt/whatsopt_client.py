@@ -414,6 +414,8 @@ class WhatsOpt:
             resp = self.session.get(url, headers=self.headers, stream=True)
             resp.raise_for_status()
             mda_name = resp.json()["packaging"]["package_name"]
+        else:
+            mda_name = ""
 
         for f in filenames:
             file_to = f
