@@ -1,3 +1,7 @@
+* 1.21.2 (12/02/2022)
+  * Fix `wop update` performance issue: avoid requesting package name when not required
+  * **wop versions < 1.21 are deprecated**, support will be removed with WhatsOpt 1.22
+
 * 1.21.1 (28/01/2022)
   * Add short options `-h` and `-v` for respectively `--help` and `--version`
   * Fixes:
