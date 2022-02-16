@@ -18,9 +18,10 @@ from whatsopt.utils import (
 
 class TestUtils(unittest.TestCase):
 
-    DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "multipoint_beam")
+    DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
+    MBEAM_PATH = os.path.join(DATA_PATH, "multipoint_beam")
 
-    def setupt(self):
+    def setup(self):
         if os.path.exists(WOP_CONF_FILENAME):
             os.remove(WOP_CONF_FILENAME)
 
@@ -30,13 +31,45 @@ class TestUtils(unittest.TestCase):
 
     def test_save_load_state(self):
         state = {
-            "whatsopt_url": "http://exemple.com",
-            "analysis_id": "666",
-            "framework": "OpenMDAO",
+            "wop_format_version": 2,
+            "whatsopt_url": "https://example.com",
+            "analysis_id": 666,
+            "framework": "openmdao",
+            "pull_mode": "package",
+        }
+        save_state(state)
+        with open(WOP_CONF_FILENAME, "r") as file:
+            data = file.read()
+            with open(os.path.join(TestUtils.DATA_PATH, "wop_ref"), "r") as file:
+                ref = file.read()
+                self.assertEqual(ref, data)
+        retrieved = load_state()
+        self.assertEqual(state, retrieved)
+
+    def test_load_state_old_format(self):
+        state = {
+            "wop_format_version": 1,
+            "whatsopt_url": "https://erebe.onecert.fr/whatsopt",
+            "analysis_id": 67,
+            "framework": "gemseo",
             "pull_mode": "plain",
         }
-        save_state(*(state.values()))
-        retrieved = load_state()
+        retrieved = load_state(
+            filename=os.path.join(TestUtils.DATA_PATH, "wop_format_v1")
+        )
+        self.assertEqual(state, retrieved)
+
+    def test_load_state_toml(self):
+        state = {
+            "wop_format_version": 2,
+            "whatsopt_url": "https://erebe.onecert.fr/whatsopt",
+            "analysis_id": 67,
+            "framework": "gemseo",
+            "pull_mode": "plain",
+        }
+        retrieved = load_state(
+            filename=os.path.join(TestUtils.DATA_PATH, "wop_format_v2")
+        )
         self.assertEqual(state, retrieved)
 
     def test_snakize(self):
@@ -61,20 +94,20 @@ class TestUtils(unittest.TestCase):
                     "local_stiffness_matrix_comp_base.py",
                 ]
             ),
-            set(find_analysis_base_files(TestUtils.DATA_PATH)),
+            set(find_analysis_base_files(TestUtils.MBEAM_PATH)),
         )
 
     def test_get_analysis_id(self):
-        self.assertEqual("4", get_analysis_id(TestUtils.DATA_PATH))
+        self.assertEqual("4", get_analysis_id(TestUtils.MBEAM_PATH))
 
     def test_get_whatsopt_url(self):
         self.assertEqual(
-            "https://ether.onera.fr/whatsopt", get_whatsopt_url(TestUtils.DATA_PATH)
+            "https://ether.onera.fr/whatsopt", get_whatsopt_url(TestUtils.MBEAM_PATH)
         )
 
     def test_based_on_openmdao(self):
-        self.assertEqual(False, is_based_on("gemseo", TestUtils.DATA_PATH))
-        self.assertEqual(True, is_based_on("openmdao", TestUtils.DATA_PATH))
+        self.assertEqual(False, is_based_on("gemseo", TestUtils.MBEAM_PATH))
+        self.assertEqual(True, is_based_on("openmdao", TestUtils.MBEAM_PATH))
 
     def test_based_on_framework_on_empty_dir(self):
         with tempfile.TemporaryDirectory() as tmpdir:

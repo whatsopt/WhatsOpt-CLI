@@ -58,6 +58,7 @@ from whatsopt import __version__
 WHATSOPT_DIRNAME = os.path.join(os.path.expanduser("~"), ".whatsopt")
 API_KEY_FILENAME = os.path.join(WHATSOPT_DIRNAME, "api_key")
 URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
+REMOTES_FILENAME = os.path.join(WHATSOPT_DIRNAME, "remotes")
 
 INTRANET_SERVER_URL = "https://selene.onecert.fr/whatsopt"
 EXTRANET_SERVER_URL = "https://ether.onera.fr/whatsopt"
