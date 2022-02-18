@@ -1,4 +1,5 @@
 import os, re
+import tomli_w
 from whatsopt.logging import error
 
 WOP_CONF_FILENAME = ".wop"
@@ -20,18 +21,24 @@ def save_state(
     state,
     filename=WOP_CONF_FILENAME,
 ):
-    with open(filename, "w") as f:
-        content = f"""# This file contains recorded state from wop pull/update commands
+    comment = f"""# This file contains recorded state from wop pull/update commands
 # DO NOT EDIT unless you know what you are doing
-# version 2: use toml format, add wop_format_version
-# version 1: initial format "key: val"
-# version 0: no wop file
-wop_format_version = 2
-{WHATSOPT_URL_KEY} = "{state[WHATSOPT_URL_KEY]}"
-{ANALYSIS_ID_KEY} = {state[ANALYSIS_ID_KEY]}
-{FRAMEWORK_KEY} = "{state[FRAMEWORK_KEY]}"
-{PULL_MODE_KEY} = "{state[PULL_MODE_KEY]}"
+# Version history:
+# * version 2: use toml format, add wop_format_version
+# * version 1: initial format "key: val"
+# * version 0: no wop file
+#
 """
+    _state = {}
+    _state[WOP_FORMAT_VERSION_KEY] = 2
+    _state[WHATSOPT_URL_KEY] = state[WHATSOPT_URL_KEY]
+    _state[ANALYSIS_ID_KEY] = int(state[ANALYSIS_ID_KEY])
+    _state[FRAMEWORK_KEY] = state[FRAMEWORK_KEY]
+    _state[PULL_MODE_KEY] = state[PULL_MODE_KEY]
+    content = tomli_w.dumps(_state)
+
+    with open(filename, "w") as f:
+        f.write(comment)
         f.write(content)
 
 
@@ -109,8 +116,9 @@ def find_analysis_base_files(directory="."):
 def _extract_key(file, key):
     ident = None
     with open(file, "r") as f:
+        pattern = re.compile(rf"^# {key}: (.*)")
         for line in f:
-            match = re.match(rf"^# {key}: (.*)", line)
+            match = pattern.match(line)
             if match:
                 ident = match.group(1)
                 break
@@ -123,6 +131,17 @@ def extract_mda_id(file):
 
 def extract_origin_url(file):
     return _extract_key(file, WHATSOPT_URL_KEY)
+
+
+def extract_remote_name(url_or_name):
+    m = re.match(r"https?:\/\/(\w+)", url_or_name)
+    if m:  # url
+        return m.group(1)
+    elif re.match(r"^\w+$", url_or_name):  # name
+        return url_or_name
+    else:
+        print(f"Warning: Can not find remote name out of {url_or_name}")
+        return None
 
 
 def _get_key(key, directory="."):

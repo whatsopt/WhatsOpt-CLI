@@ -36,6 +36,8 @@ metadata = dict(
         "Click>=6.7",
         "tabulate>=0.8.2",
         "requests",
+        "tomli",
+        "tomli-w",
     ],
     python_requires=">=3.6",
     entry_points="""

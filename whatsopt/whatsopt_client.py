@@ -10,6 +10,8 @@ import zipfile
 import tempfile
 import numpy as np
 import time
+import tomli
+import tomli_w
 from tabulate import tabulate
 from urllib.parse import urlparse
 
@@ -27,6 +29,7 @@ from whatsopt.utils import (
     FRAMEWORK_OPENMDAO,
     MODE_PACKAGE,
     MODE_PLAIN,
+    extract_remote_name,
     is_analysis_user_file,
     is_based_on,
     is_framework_switch,
@@ -36,7 +39,6 @@ from whatsopt.utils import (
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
-    snakize,
     save_state,
 )
 from whatsopt.upload_utils import (
@@ -60,7 +62,6 @@ API_KEY_FILENAME = os.path.join(WHATSOPT_DIRNAME, "api_key")
 URL_FILENAME = os.path.join(WHATSOPT_DIRNAME, "url")
 REMOTES_FILENAME = os.path.join(WHATSOPT_DIRNAME, "remotes")
 
-INTRANET_SERVER_URL = "https://selene.onecert.fr/whatsopt"
 EXTRANET_SERVER_URL = "https://ether.onera.fr/whatsopt"
 
 
@@ -74,14 +75,28 @@ class AnalysisPushedException(Exception):
 
 
 class WhatsOpt:
-    def __init__(self, url=None, api_key=None, login=True):
-        if url:
-            self._url = url.strip("/")
-        elif os.path.exists(URL_FILENAME):
-            with open(URL_FILENAME, "r") as f:
-                self._url = f.read()
+    def __init__(self, url=None, api_key=None):
+        self._remotes = self._read_remotes()
+
+        remote = self._remotes.get(url)
+        debug(remote)
+        if remote:
+            self._url = remote["url"]
+            self._api_key = api_key if api_key else remote["api_key"]
         else:
-            self._url = self.default_url
+            if url:
+                self._url = url.strip("/")
+            elif os.path.exists(URL_FILENAME):
+                with open(URL_FILENAME, "r") as f:
+                    self._url = f.read()
+            else:
+                self._url = EXTRANET_SERVER_URL
+            if api_key:
+                self._api_key = api_key
+            else:
+                self._api_key = None
+                with open(API_KEY_FILENAME, "r") as f:
+                    self._api_key = f.read()
 
         # config session object
         self.session = requests.Session()
@@ -89,19 +104,13 @@ class WhatsOpt:
         self.session.trust_env = re.match(r"\w+.onera\.fr", urlinfos.netloc)
         self.headers = {}
 
-        # login by default
-        if login:
-            self.login(api_key)
-
-        # save url
-        if not os.path.exists(WHATSOPT_DIRNAME):
-            os.makedirs(WHATSOPT_DIRNAME)
-        with open(URL_FILENAME, "w") as f:
-            f.write(self._url)
-
     @property
     def url(self):
         return self._url
+
+    @property
+    def api_key(self):
+        return self._api_key
 
     def endpoint(self, path):
         return self._url + path
@@ -116,22 +125,26 @@ class WhatsOpt:
             )
         )
 
-    @property
-    def default_url(self):
-        self._default_url = INTRANET_SERVER_URL
-        return self._default_url
+    @staticmethod
+    def _read_remotes():
+        remotes = {}
+        if os.path.exists(REMOTES_FILENAME):
+            with open(REMOTES_FILENAME, "rb") as f:
+                remotes = tomli.load(f)
+        return remotes
 
-    def _ask_and_write_api_key(self):
+    @staticmethod
+    def _write_remotes(remotes):
+        with open(REMOTES_FILENAME, "wb") as f:
+            tomli_w.dump(remotes, f)
+
+    def _ask_api_key(self):
         log("You have to set your API key.")
         log("You can get it in your profile page on WhatsOpt (%s)." % self.url)
         info(
             "Please, copy/paste your API key below then hit return (characters are hidden)."
         )
         api_key = getpass.getpass(prompt="Your API key: ")
-        if not os.path.exists(WHATSOPT_DIRNAME):
-            os.makedirs(WHATSOPT_DIRNAME)
-        with open(API_KEY_FILENAME, "w") as f:
-            f.write(api_key)
         return api_key
 
     @staticmethod
@@ -140,20 +153,29 @@ class WhatsOpt:
             api_key = f.read()
             return api_key
 
-    def login(self, api_key=None, echo=None):
-        debug("login()")
-        already_logged = False
-        if api_key:
-            self.api_key = api_key
+    def _write_login_infos(self):
+        if not os.path.exists(WHATSOPT_DIRNAME):
+            os.makedirs(WHATSOPT_DIRNAME)
+        with open(API_KEY_FILENAME, "w") as f:
+            f.write(self.api_key)
+        with open(URL_FILENAME, "w") as f:
+            f.write(self.url)
+
+    def login(self, echo=None):
+        debug(f"login(api_key={self.api_key}, echo={echo})")
+
+        if self._api_key:
+            pass
         elif os.path.exists(API_KEY_FILENAME):
-            already_logged = True
-            self.api_key = self._read_api_key()
+            self._api_key = self._read_api_key()
         else:
             debug("Ask for API key")
-            self.api_key = self._ask_and_write_api_key()
-        ok = self._test_connection(api_key)
+            self._api_key = self._ask_api_key()
 
-        if not api_key and already_logged and not ok:
+        debug(f"url={self.url}, api_key={self.api_key}")
+        ok = self._test_connection()
+        debug(f"ok={ok}")
+        if not self.api_key and not ok:
             # try to propose re-login
             self.logout(
                 echo=False
@@ -161,7 +183,20 @@ class WhatsOpt:
             # save url again
             with open(URL_FILENAME, "w") as f:
                 f.write(self._url)
-            ok = self.login(api_key, echo=False)
+            ok = self.login(echo=False)
+            if ok:
+                self._write_login_infos()
+            elif self._remotes.get(self.url):
+                del self._remotes[self.url]
+        else:
+            self._write_login_infos()
+        # save remote
+        if ok:
+            remote_name = extract_remote_name(self.url)
+            if remote_name:
+                self._remotes[remote_name] = {"url": self.url, "api_key": self.api_key}
+        debug(self._remotes)
+        self._write_remotes(self._remotes)
 
         if not ok and echo:
             error("Login to WhatsOpt ({}) failed.".format(self.url))
@@ -171,17 +206,44 @@ class WhatsOpt:
         if echo:
             log("Successfully logged into WhatsOpt (%s)" % self.url)
             log("")
-        return ok
+        return self
 
     @staticmethod
-    def logout(echo=True):
-        if os.path.exists(API_KEY_FILENAME):
-            os.remove(API_KEY_FILENAME)
-        if os.path.exists(URL_FILENAME):
-            os.remove(URL_FILENAME)
+    def logout(list=None, all=None, remote=None, echo=True):
+        if list:
+            WhatsOpt.list_remotes()
+        elif all:
+            WhatsOpt._write_remotes({})
+            if echo:
+                log(f"Sucessfully logged out from all WhatsOpt remotes")
+        elif remote:
+            remotes = WhatsOpt._read_remotes()
+            if remotes.get(remote):
+                del remotes[remote]
+                WhatsOpt._write_remotes(remotes)
+                if echo:
+                    log(f"Sucessfully logged out from WhatsOpt {remote}")
+        else:
+            if os.path.exists(API_KEY_FILENAME):
+                os.remove(API_KEY_FILENAME)
+            if os.path.exists(URL_FILENAME):
+                os.remove(URL_FILENAME)
+            if echo:
+                log("Sucessfully logged out from WhatsOpt")
         if echo:
-            log("Sucessfully logged out from WhatsOpt")
             log("")
+
+    @staticmethod
+    def list_remotes():
+        remotes = WhatsOpt._read_remotes()
+        print(remotes)
+        headers = ["name", "url"]
+        data = []
+        for name, rem in remotes.items():
+            data.append([name, rem["url"]])
+        print(data)
+        info("Known remote servers")
+        log(tabulate(data, headers))
 
     def list_analyses(self, all=False, project_query=None):
         param = ""
@@ -198,7 +260,6 @@ class WhatsOpt:
             for mda in mdas:
                 date = mda.get("created_at", None)
                 data.append([mda["id"], mda["name"], date])
-            info("Server: {}".format(self._url))
             log(tabulate(data, headers))
             log("")
         else:
@@ -475,12 +536,13 @@ class WhatsOpt:
                     os.makedirs(dir_to)
                 if file_to_move[file_to]:
                     move(file_from, dir_to)
-            save_state(
-                self._url,
-                mda_id,
-                framework,
-                MODE_PACKAGE if options.get("--package") else MODE_PLAIN,
-            )
+            state = {
+                "whatsopt_url": self._url,
+                "analysis_id": mda_id,
+                "framework": framework,
+                "pull_mode": MODE_PACKAGE if options.get("--package") else MODE_PLAIN,
+            }
+            save_state(state)
             log(msg)
 
     def pull_mda_json(self, mda_id):
@@ -744,17 +806,14 @@ class WhatsOpt:
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
 
-    def _test_connection(self, api_key=None):
-        test_api_key = api_key
-        if test_api_key is None and os.path.exists(API_KEY_FILENAME):
-            test_api_key = self._read_api_key()
-
-        if test_api_key:
+    def _test_connection(self):
+        if self.api_key:
             self.headers = {
-                "Authorization": "Token token=" + test_api_key,
+                "Authorization": "Token token=" + self.api_key,
                 "User-Agent": "wop/{}".format(__version__),
             }
             url = self.endpoint("/api/v1/versioning")
+            debug(f"Test connect: {url}, {self.api_key}")
             try:
                 resp = self.session.get(url, headers=self.headers)
                 # special case: bad wop version < minimal required version
