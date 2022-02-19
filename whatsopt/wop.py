@@ -198,7 +198,7 @@ def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     default=False,
     help="pull analysis as Python package (default plain)",
 )
-@click.argument("ident")
+@click.argument("analysis_id")
 @click.pass_context
 def pull(
     ctx,
@@ -212,7 +212,7 @@ def pull(
     project_id,
     gemseo,
     package,
-    ident,
+    analysis_id,
 ):
     """Pull analysis given its identifier."""
     options = {
@@ -229,14 +229,14 @@ def pull(
     wop = WhatsOpt(**ctx.obj).login()
     if json:
         if project_id:
-            wop.pull_project_json(ident)
+            wop.pull_project_json(analysis_id)
         else:
-            wop.pull_mda_json(ident)
+            wop.pull_mda_json(analysis_id)
     else:
         if project_id:
             error("Bad option --project-id which works only with option --json enabled")
             exit(-1)
-        wop.pull_mda(ident, options)
+        wop.pull_mda(analysis_id, options)
 
 
 @wop.command()

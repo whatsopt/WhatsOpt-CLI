@@ -14,12 +14,12 @@ def info(msg, **kwargs):
 
 def warn(msg, **kwargs):
     kwargs.update(fg="yellow")
-    log(msg, **kwargs)
+    log(f"Warning: {msg}", **kwargs)
 
 
 def error(msg, **kwargs):
     kwargs.update(fg="red")
-    log("Error: {}".format(msg), **kwargs)
+    log(f"Error: {msg}", **kwargs)
 
 
 def debug(msg):
