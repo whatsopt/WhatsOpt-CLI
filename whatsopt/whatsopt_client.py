@@ -559,6 +559,19 @@ class WhatsOpt:
 
     def update_mda(self, analysis_id=None, options={}):
         mda_id = analysis_id or get_analysis_id()
+        if mda_id and not analysis_id:
+            url = get_whatsopt_url()
+            if url != self.url:
+                warn(
+                    f"You want to update code pulled from {url} while you are logged in {self.url}."
+                )
+                info(
+                    f"  use 'wop login {url}' and retry to update using the original remote."
+                )
+                info(
+                    f"  use 'wop update -a <id>' to update using analysis #<id> from {self.url}."
+                )
+                sys.exit(-1)
         if mda_id is None:
             error(
                 f"Unknown analysis with id=#{mda_id} (maybe use wop pull <analysis-id>)"
