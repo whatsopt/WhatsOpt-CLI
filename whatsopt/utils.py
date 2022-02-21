@@ -1,8 +1,10 @@
 import os, re
+import tomli_w
 from whatsopt.logging import error
 
 WOP_CONF_FILENAME = ".wop"
 
+WOP_FORMAT_VERSION_KEY = "wop_format_version"
 WHATSOPT_URL_KEY = "whatsopt_url"
 ANALYSIS_ID_KEY = "analysis_id"
 FRAMEWORK_KEY = "framework"
@@ -15,55 +17,57 @@ MODE_PLAIN = "plain"
 MODE_PACKAGE = "package"
 
 
-def save_state(url, mda_id, framework, pull_mode):
-    with open(WOP_CONF_FILENAME, "w") as f:
-        state = {}
-        state[WHATSOPT_URL_KEY] = url
-        state[ANALYSIS_ID_KEY] = mda_id
-        state[FRAMEWORK_KEY] = framework
-        state[PULL_MODE_KEY] = pull_mode
-        content = f"""
-# This file contains recorded state from wop pull/update commands
+def save_state(
+    state,
+    filename=WOP_CONF_FILENAME,
+):
+    comment = """# This file contains recorded state from wop pull/update commands
 # DO NOT EDIT unless you know what you are doing
-{WHATSOPT_URL_KEY}: {state[WHATSOPT_URL_KEY]}
-{ANALYSIS_ID_KEY}: {state[ANALYSIS_ID_KEY]}
-{FRAMEWORK_KEY}: {state[FRAMEWORK_KEY]}
-{PULL_MODE_KEY}: {state[PULL_MODE_KEY]}
+# Version history:
+# * version 2: use toml format, add wop_format_version
+# * version 1: initial format "key: val"
+# * version 0: no wop file
+#
 """
+    _state = {}
+    _state[WOP_FORMAT_VERSION_KEY] = 2
+    _state[WHATSOPT_URL_KEY] = state[WHATSOPT_URL_KEY]
+    _state[ANALYSIS_ID_KEY] = int(state[ANALYSIS_ID_KEY])
+    _state[FRAMEWORK_KEY] = state[FRAMEWORK_KEY]
+    _state[PULL_MODE_KEY] = state[PULL_MODE_KEY]
+    content = tomli_w.dumps(_state)
+
+    with open(filename, "w") as f:
+        f.write(comment)
         f.write(content)
 
 
-def load_state():
-    state = {}
-    if not os.path.exists(WOP_CONF_FILENAME):
+def load_state(filename=WOP_CONF_FILENAME):
+    # Should be able to load version 0, version 1 and version 2 format
+    state = {"wop_format_version": 0}
+    if not os.path.exists(filename):
         return state
-    with open(WOP_CONF_FILENAME, "r") as f:
+    with open(filename, "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line == "" or line.startswith("#"):
                 continue
-            m = re.search(r"(\S+): (\S+)", line)
+            m = re.search(r"(\S+)\s*[:=]\s*(\S+)", line)
             if m:
-                state[m.group(1)] = m.group(2)
+                val = m.group(2)
+                if val.startswith('"') or val.startswith("'"):
+                    val = val[1:-1]
+                if re.match(r"\d+", val):
+                    val = int(val)
+
+                state[m.group(1)] = val
             else:
-                error(
-                    f"Syntax error in {WOP_CONF_FILENAME} file: line '{line}' invalid"
-                )
+                error(f"Syntax error in {filename} file: line '{line}' invalid")
                 exit(-1)
+    if not state.get("wop_format_version"):
+        state["wop_format_version"] = 1
+
     return state
-
-
-def snakize(name):
-    snaked = re.sub(
-        r"(^|([a-z])\W?)([A-Z])",
-        lambda m: m.group(2) + "_" + m.group(3).lower()
-        if m.group(1)
-        else m.group(3).lower(),
-        name,
-    )
-    snaked = re.sub("[-\.\s]", "_", snaked)
-    snaked = re.sub("__+", "_", snaked).lower()
-    return snaked
 
 
 def is_user_file(f):
@@ -99,20 +103,24 @@ def find_analysis_base_files(directory="."):
 def _extract_key(file, key):
     ident = None
     with open(file, "r") as f:
+        pattern = re.compile(rf"^# {key}: (.*)")
         for line in f:
-            match = re.match(rf"^# {key}: (.*)", line)
+            match = pattern.match(line)
             if match:
                 ident = match.group(1)
                 break
     return ident
 
 
-def extract_mda_id(file):
-    return _extract_key(file, ANALYSIS_ID_KEY)
-
-
-def extract_origin_url(file):
-    return _extract_key(file, WHATSOPT_URL_KEY)
+def extract_remote_name(url_or_name):
+    m = re.match(r"https?:\/\/(\w+)", url_or_name)
+    if m:  # url
+        return m.group(1)
+    elif re.match(r"^\w+$", url_or_name):  # name
+        return url_or_name
+    else:
+        print(f"Warning: Can not find remote name out of {url_or_name}")
+        return None
 
 
 def _get_key(key, directory="."):
@@ -134,7 +142,7 @@ def _get_key(key, directory="."):
 
 def get_analysis_id(directory="."):
     state = load_state()
-    if state:
+    if state["wop_format_version"] > 0:
         return state[ANALYSIS_ID_KEY]
     else:
         return _get_key(ANALYSIS_ID_KEY, directory)
@@ -142,7 +150,7 @@ def get_analysis_id(directory="."):
 
 def get_whatsopt_url(directory="."):
     state = load_state()
-    if state:
+    if state["wop_format_version"] > 0:
         return state[WHATSOPT_URL_KEY]
     else:
         try:
@@ -153,7 +161,7 @@ def get_whatsopt_url(directory="."):
 
 def is_based_on(module, directory="."):
     state = load_state()
-    if state:
+    if state["wop_format_version"] > 0:
         return state[FRAMEWORK_KEY] == module
     else:
         files = find_analysis_base_files(directory)

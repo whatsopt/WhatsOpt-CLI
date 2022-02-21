@@ -1,0 +1,7 @@
+# This file contains recorded state from wop pull/update commands
+# DO NOT EDIT unless you know what you are doing
+wop_format_version = 2
+whatsopt_url = "https://erebe.onecert.fr/whatsopt"
+analysis_id = 67
+framework = "gemseo"
+pull_mode = "plain"

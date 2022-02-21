@@ -12,7 +12,7 @@ DEFAULT_PUSH_DEPTH = 2
 @click.option(
     "--url",
     help="specify WhatsOpt application server URL (default: {})".format(
-        WhatsOpt(login=False).default_url
+        EXTRANET_SERVER_URL
     ),
 )
 @click.pass_context
@@ -32,9 +32,29 @@ def login(ctx, url):
 
 
 @wop.command()
-def logout():
+@click.option(
+    "-l",
+    "--list",
+    is_flag=True,
+    default=False,
+    help="List login infos of known remote servers",
+)
+@click.option(
+    "-a",
+    "--all",
+    is_flag=True,
+    default=False,
+    help="Remove login infos of known remote servers",
+)
+@click.option(
+    "-r",
+    "--remote",
+    type=str,
+    help="Remove login infos related to given remote server name",
+)
+def logout(list, all, remote):
     """Deconnect from WhatsOpt server."""
-    WhatsOpt(login=False).logout()
+    WhatsOpt().logout(list, all, remote)
 
 
 @wop.command()
@@ -47,17 +67,27 @@ def logout():
     type=str,
     help="list all analyses available whose project name matches the given substring",
 )
+@click.option(
+    "-r",
+    "--remotes",
+    is_flag=True,
+    default=False,
+    help="list all known remote servers",
+)
 @click.pass_context
-def list(ctx, all, project_query):
+def list(ctx, all, project_query, remotes):
     """List analyses owned by the user."""
-    WhatsOpt(**ctx.obj).list_analyses(all, project_query)
+    if remotes:
+        WhatsOpt.list_remotes()
+    else:
+        WhatsOpt(**ctx.obj).login().list_analyses(all, project_query)
 
 
 @wop.command()
 @click.pass_context
 def status(ctx):
     """List server connection and current pulled analysis status."""
-    WhatsOpt(login=False).get_status()
+    WhatsOpt(**ctx.obj).get_status()
 
 
 @wop.command()
@@ -95,8 +125,9 @@ def status(ctx):
 @click.pass_context
 def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     """Push OpenMDAO problem or WhatsOpt analysis json from given FILENAME."""
-    ctx.obj["login"] = not dry_run
     wop = WhatsOpt(**ctx.obj)
+    if not dry_run:
+        wop.login()
     options = {
         "--dry-run": dry_run,
         "--scalar": scalar,
@@ -167,7 +198,7 @@ def push(ctx, dry_run, scalar, name, component, depth, json, filename):
     default=False,
     help="pull analysis as Python package (default plain)",
 )
-@click.argument("ident")
+@click.argument("analysis_id")
 @click.pass_context
 def pull(
     ctx,
@@ -181,7 +212,7 @@ def pull(
     project_id,
     gemseo,
     package,
-    ident,
+    analysis_id,
 ):
     """Pull analysis given its identifier."""
     options = {
@@ -195,16 +226,17 @@ def pull(
         "--egmdo": egmdo,
         "--package": package,
     }
+    wop = WhatsOpt(**ctx.obj).login()
     if json:
         if project_id:
-            WhatsOpt(**ctx.obj).pull_project_json(ident)
+            wop.pull_project_json(analysis_id)
         else:
-            WhatsOpt(**ctx.obj).pull_mda_json(ident)
+            wop.pull_mda_json(analysis_id)
     else:
         if project_id:
             error("Bad option --project-id which works only with option --json enabled")
             exit(-1)
-        WhatsOpt(**ctx.obj).pull_mda(ident, options)
+        wop.pull_mda(analysis_id, options)
 
 
 @wop.command()
@@ -273,7 +305,7 @@ def update(
         "--gemseo": gemseo,
         "--openmdao": openmdao,
     }
-    WhatsOpt(**ctx.obj).update_mda(analysis_id, options)
+    WhatsOpt(**ctx.obj).login().update_mda(analysis_id, options)
 
 
 @wop.command()
@@ -329,8 +361,10 @@ def upload(
     parallel,
 ):
     """Upload data stored in given FILENAME results (sqlite, csv or hdf5 format) or mda init python file."""
-    ctx.obj["login"] = not dry_run
-    WhatsOpt(**ctx.obj).upload(
+    wop = WhatsOpt(**ctx.obj)
+    if not dry_run:
+        wop.login()
+    wop.upload(
         filename,
         driver_kind,
         analysis_id,
@@ -374,19 +408,20 @@ def upload(
 def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
     """Show current analysis from pulled code or given its identifier (-a) on remote server
     or discovered in OpenMDAO problem file (-f)."""
+
     if pbfile is None:
-        ctx.obj["login"] = True
+        wop = WhatsOpt(**ctx.obj).login()
     else:
-        ctx.obj["login"] = False
         ctx.obj["url"] = EXTRANET_SERVER_URL
-    WhatsOpt(**ctx.obj).show_mda(analysis_id, pbfile, name, outfile, batch, depth)
+        wop = WhatsOpt(**ctx.obj)
+    wop.show_mda(analysis_id, pbfile, name, outfile, batch, depth)
 
 
 @wop.command()
 @click.pass_context
 def version(ctx):
     """Show versions of WhatsOpt app and recommended wop command line."""
-    WhatsOpt(**ctx.obj).check_versions()
+    WhatsOpt(**ctx.obj).login().check_versions()
 
 
 @wop.command()
@@ -399,7 +434,7 @@ def version(ctx):
 )
 def serve(port):
     """Launch analysis server."""
-    WhatsOpt(login=False).serve(port)
+    WhatsOpt().serve(port)
 
 
 @wop.command()
@@ -408,7 +443,7 @@ def convert(
     sqlite_filename,
 ):
     """Convert given sqlite file from OpenMDAO to csv file format."""
-    WhatsOpt(login=False).convert(sqlite_filename)
+    WhatsOpt().convert(sqlite_filename)
 
 
 if __name__ == "__main__":
