@@ -3,6 +3,10 @@ import unittest
 import tempfile
 
 from whatsopt.utils import (
+    ANALYSIS_ID_KEY,
+    FRAMEWORK_KEY,
+    PULL_MODE_KEY,
+    WHATSOPT_URL_KEY,
     WOP_CONF_FILENAME,
     is_analysis_user_file,
     is_based_on,
@@ -37,7 +41,8 @@ class TestUtils(unittest.TestCase):
         }
         save_state(*(state.values()))
         retrieved = load_state()
-        self.assertEqual(state, retrieved)
+        for k in [WHATSOPT_URL_KEY, ANALYSIS_ID_KEY, FRAMEWORK_KEY, PULL_MODE_KEY]:
+            self.assertEqual(state[k], str(retrieved[k]), f"Diff on state key {k}")
 
     def test_snakize(self):
         self.assertEqual(

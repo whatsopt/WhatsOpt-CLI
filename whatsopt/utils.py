@@ -33,23 +33,30 @@ def save_state(url, mda_id, framework, pull_mode):
         f.write(content)
 
 
-def load_state():
-    state = {}
-    if not os.path.exists(WOP_CONF_FILENAME):
+def load_state(filename=WOP_CONF_FILENAME):
+    # Should be able to load version 0, version 1 and version 2 format
+    state = {"wop_format_version": 0}
+    if not os.path.exists(filename):
         return state
-    with open(WOP_CONF_FILENAME, "r") as f:
+    with open(filename, "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line == "" or line.startswith("#"):
                 continue
-            m = re.search(r"(\S+): (\S+)", line)
+            m = re.search(r"(\S+)\s*[:=]\s*(\S+)", line)
             if m:
-                state[m.group(1)] = m.group(2)
+                val = m.group(2)
+                if val.startswith('"') or val.startswith("'"):
+                    val = val[1:-1]
+                if re.match(r"\d+", val):
+                    val = int(val)
+
+                state[m.group(1)] = val
             else:
-                error(
-                    f"Syntax error in {WOP_CONF_FILENAME} file: line '{line}' invalid"
-                )
+                error(f"Syntax error in {filename} file: line '{line}' invalid")
                 exit(-1)
+    if not state.get("wop_format_version"):
+        state["wop_format_version"] = 1
     return state
 
 
@@ -134,7 +141,7 @@ def _get_key(key, directory="."):
 
 def get_analysis_id(directory="."):
     state = load_state()
-    if state:
+    if state.get(ANALYSIS_ID_KEY):
         return state[ANALYSIS_ID_KEY]
     else:
         return _get_key(ANALYSIS_ID_KEY, directory)
@@ -142,7 +149,7 @@ def get_analysis_id(directory="."):
 
 def get_whatsopt_url(directory="."):
     state = load_state()
-    if state:
+    if state.get(WHATSOPT_URL_KEY):
         return state[WHATSOPT_URL_KEY]
     else:
         try:
@@ -153,7 +160,7 @@ def get_whatsopt_url(directory="."):
 
 def is_based_on(module, directory="."):
     state = load_state()
-    if state:
+    if state.get(FRAMEWORK_KEY):
         return state[FRAMEWORK_KEY] == module
     else:
         files = find_analysis_base_files(directory)
@@ -183,4 +190,4 @@ def _detect_from_import(file, module):
 
 def is_package_mode():
     state = load_state()
-    return state and state[PULL_MODE_KEY] == MODE_PACKAGE
+    return state.get(PULL_MODE_KEY) and state[PULL_MODE_KEY] == MODE_PACKAGE

@@ -1,3 +1,6 @@
+* 1.21.3 (21/02/2022)
+  * Retrofit `wop_version_format` to allow downgrade from wop 2.0
+
 * 1.21.2 (12/02/2022)
   * Fix `wop update` performance issue: avoid requesting package name when not required
   * **wop versions < 1.21 are deprecated**, support will be removed with WhatsOpt 1.22
