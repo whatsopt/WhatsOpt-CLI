@@ -21,7 +21,7 @@ def save_state(
     state,
     filename=WOP_CONF_FILENAME,
 ):
-    comment = f"""# This file contains recorded state from wop pull/update commands
+    comment = """# This file contains recorded state from wop pull/update commands
 # DO NOT EDIT unless you know what you are doing
 # Version history:
 # * version 2: use toml format, add wop_format_version

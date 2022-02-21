@@ -240,7 +240,7 @@ class WhatsOpt:
         elif all:
             WhatsOpt._write_remotes({})
             if echo:
-                info(f"Sucessfully logged out from all WhatsOpt remotes")
+                info("Sucessfully logged out from all WhatsOpt remotes")
         elif remote:
             remotes = WhatsOpt._read_remotes()
             if remotes.get(remote):
