@@ -75,28 +75,39 @@ class AnalysisPushedException(Exception):
 
 
 class WhatsOpt:
-    def __init__(self, url=None, api_key=None):
+    def __init__(self, url=None, api_key=None, login=None):
         self._remotes = self._read_remotes()
 
         remote = self._remotes.get(url)
-        debug(remote)
+        debug(f"remote={remote}")
         if remote:
             self._url = remote["url"]
             self._api_key = api_key if api_key else remote["api_key"]
         else:
+            debug(f"url={url} logged?={self.is_logged()}")
             if url:
                 self._url = url.strip("/")
-            elif os.path.exists(URL_FILENAME):
-                with open(URL_FILENAME, "r") as f:
-                    self._url = f.read()
+                current_url = self._read_url()
+                if current_url and self._url != current_url:
+                    self.logout(echo=False)
+            elif self.is_logged():
+                self._url = self._read_url()
             else:
-                self._url = EXTRANET_SERVER_URL
+                if self._remotes:
+                    info("You are not connected.")
+                    info(
+                        "  use `wop login <url>` to connect to a remote WhatsOpt server"
+                    )
+                    info("  use `wop login <name>` to connect to a known remote server")
+                    self.list_remotes()
+                    sys.exit(0)
+                else:
+                    self._url = EXTRANET_SERVER_URL
+
             if api_key:
                 self._api_key = api_key
             else:
-                self._api_key = None
-                with open(API_KEY_FILENAME, "r") as f:
-                    self._api_key = f.read()
+                self._api_key = self._read_api_key()
 
         # config session object
         self.session = requests.Session()
@@ -148,10 +159,25 @@ class WhatsOpt:
         return api_key
 
     @staticmethod
+    def is_logged():
+        # Defensive programming: test on api_key should be enough but...
+        return os.path.exists(URL_FILENAME) and os.path.exists(API_KEY_FILENAME)
+
+    @staticmethod
+    def _read_url():
+        if os.path.exists(URL_FILENAME):
+            with open(URL_FILENAME, "r") as f:
+                return f.read()
+        else:
+            return None
+
+    @staticmethod
     def _read_api_key():
-        with open(API_KEY_FILENAME, "r") as f:
-            api_key = f.read()
-            return api_key
+        if os.path.exists(API_KEY_FILENAME):
+            with open(API_KEY_FILENAME, "r") as f:
+                return f.read()
+        else:
+            return None
 
     def _write_login_infos(self):
         if not os.path.exists(WHATSOPT_DIRNAME):
@@ -166,7 +192,7 @@ class WhatsOpt:
 
         if self._api_key:
             pass
-        elif os.path.exists(API_KEY_FILENAME):
+        elif self.is_logged():
             self._api_key = self._read_api_key()
         else:
             debug("Ask for API key")
@@ -175,11 +201,10 @@ class WhatsOpt:
         debug(f"url={self.url}, api_key={self.api_key}")
         ok = self._test_connection()
         debug(f"ok={ok}")
-        if not self.api_key and not ok:
+        if not ok:
             # try to propose re-login
-            self.logout(
-                echo=False
-            )  # log out silently, one may be logged on another server
+            # log out silently, one may be logged on another server
+            self.logout(echo=False)
             # save url again
             with open(URL_FILENAME, "w") as f:
                 f.write(self._url)
@@ -204,7 +229,7 @@ class WhatsOpt:
             sys.exit(-1)
 
         if echo:
-            log("Successfully logged into WhatsOpt (%s)" % self.url)
+            info("Successfully logged into WhatsOpt (%s)" % self.url)
             log("")
         return self
 
@@ -215,33 +240,37 @@ class WhatsOpt:
         elif all:
             WhatsOpt._write_remotes({})
             if echo:
-                log(f"Sucessfully logged out from all WhatsOpt remotes")
+                info(f"Sucessfully logged out from all WhatsOpt remotes")
         elif remote:
             remotes = WhatsOpt._read_remotes()
             if remotes.get(remote):
                 del remotes[remote]
                 WhatsOpt._write_remotes(remotes)
                 if echo:
-                    log(f"Sucessfully logged out from WhatsOpt {remote}")
+                    info(f"Sucessfully logged out from remote WhatsOpt {remote}")
         else:
             if os.path.exists(API_KEY_FILENAME):
                 os.remove(API_KEY_FILENAME)
-            if os.path.exists(URL_FILENAME):
+            url = WhatsOpt._read_url()
+            if url:
                 os.remove(URL_FILENAME)
             if echo:
-                log("Sucessfully logged out from WhatsOpt")
+                if url:
+                    info(f"Sucessfully logged out from remote WhatsOpt {url}")
+                else:
+                    info("Not connected. You may want to connect to:")
+                    WhatsOpt.list_remotes()
+
         if echo:
             log("")
 
     @staticmethod
     def list_remotes():
         remotes = WhatsOpt._read_remotes()
-        print(remotes)
         headers = ["name", "url"]
         data = []
         for name, rem in remotes.items():
             data.append([name, rem["url"]])
-        print(data)
         info("Known remote servers")
         log(tabulate(data, headers))
 
@@ -314,21 +343,21 @@ class WhatsOpt:
                     # connected to another server with a pulled analysis
                     warn("You are connected to a different server")
                     log(
-                        "  (use 'wop push <analysis.py>' to push the local "
-                        "analysis in the current server {})".format(self.url)
+                        "  (use 'wop push <analysis.py>' to push from the local "
+                        f"analysis code to the server {self.url})"
                     )
                     log(
-                        "  (use 'wop logout' and 'wop login {}' "
-                        "to log in to the right server)".format(whatsopt_url)
+                        f"  (use 'wop logout' and 'wop login {whatsopt_url}' "
+                        "to log in to the original server)"
                     )
                 else:
-                    log("  (use 'wop login {}' command to log in)".format(whatsopt_url))
+                    log(f"  (use 'wop login {whatsopt_url}' command to log in)")
         else:
             info("No local analysis found")
             if connected:
                 log(
                     "  (use 'wop list' and 'wop pull <id>' to retrieve an existing analysis)\n"
-                    "  (use 'wop push <analysis.py>' to push from an OpenMDAO code to the server)"
+                    "  (use 'wop push <analysis.py>' to push from the local OpenMDAO code to the server)"
                 )
         log("")
 

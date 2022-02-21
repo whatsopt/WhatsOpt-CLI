@@ -12,7 +12,6 @@ from whatsopt.utils import (
     get_whatsopt_url,
     load_state,
     save_state,
-    snakize,
 )
 
 
@@ -71,11 +70,6 @@ class TestUtils(unittest.TestCase):
             filename=os.path.join(TestUtils.DATA_PATH, "wop_format_v2")
         )
         self.assertEqual(state, retrieved)
-
-    def test_snakize(self):
-        self.assertEqual(
-            "hyp_air_liner_1_1_v1_genetic", snakize("HypAir_Liner 1.1__v1-genetic")
-        )
 
     def test_is_user_file(self):
         self.assertEqual(True, is_user_file("test.py"))

@@ -1,15 +1,17 @@
-* 2.0.0b0 (??/03/2022)
+* 2.0.0b0 (21/02/2022)
   * Now `wop` stores successful remote servers (a.k.a remotes) login infos. For instance, after a successful login sequence with `wop login https://remote.example.com` and API key input, next login to this url will be simply done automatically with `wop login remote`.
-  * `wop list/logout -r`: lists known remotes.
-  * `wop logout -r <name>`: remove remote specified by its name.
-  * `wop logout --all`: remove all remotes infos. 
-  * API change: `whatsopt_client.WhatsOpt()` login argument is deprecated.
-  * Breaking changes: 
-    * Now WhatsOpt() does not log in automatically: 
+  * New command options:
+    * `wop list/logout -r`: lists known remotes.
+    * `wop logout -r <name>`: remove remote info specified by its name.
+    * `wop logout --all`: remove all remotes infos. 
+  * API change: 
+    * `whatsopt_client.WhatsOpt()`: `login` keyword argument is deprecated. 
+      `WhatsOpt(login=False)` should be replaced by `WhatsOpt()` with further wop versions.
+  * **Breaking changes**: 
+    * Now WhatsOpt() does not "log in" automatically: 
       * `WhatsOpt()` or `WhatsOpt(login=True)` has to be replaced by `WhatsOpt.login()`
-      * `WhatsOpt(login=False)` should be replaced by `WhatsOpt()`.
-    * remove from whatsopt_client `PROD_URL`, `INTRANET_SERVER_URL` constants
-    * remove `default_url` property
+    * Remove `PROD_URL`, `INTRANET_SERVER_URL` constants
+    * Remove `default_url` property
 
 * 1.21.2 (12/02/2022)
   * Fix `wop update` performance issue: avoid requesting package name when not required

@@ -70,19 +70,6 @@ def load_state(filename=WOP_CONF_FILENAME):
     return state
 
 
-def snakize(name):
-    snaked = re.sub(
-        r"(^|([a-z])\W?)([A-Z])",
-        lambda m: m.group(2) + "_" + m.group(3).lower()
-        if m.group(1)
-        else m.group(3).lower(),
-        name,
-    )
-    snaked = re.sub("[-\.\s]", "_", snaked)
-    snaked = re.sub("__+", "_", snaked).lower()
-    return snaked
-
-
 def is_user_file(f):
     return (
         not re.match(r".*_base\.py$", f)
@@ -123,14 +110,6 @@ def _extract_key(file, key):
                 ident = match.group(1)
                 break
     return ident
-
-
-def extract_mda_id(file):
-    return _extract_key(file, ANALYSIS_ID_KEY)
-
-
-def extract_origin_url(file):
-    return _extract_key(file, WHATSOPT_URL_KEY)
 
 
 def extract_remote_name(url_or_name):
