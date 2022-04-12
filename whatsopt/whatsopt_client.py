@@ -196,10 +196,11 @@ class WhatsOpt:
             # check if logged in
             self._api_key = self._read_api_key()
         else:
-            # check if knwon remote
-            for k, v in self._remotes.items():
+            # check if known remote
+            for _, v in self._remotes.items():
                 if self.url == v["url"]:
                     self._api_key = v["api_key"]
+                    break
             # ask for API key otherwise
             debug("Ask for API key")
             self._api_key = self._ask_api_key() if not self._api_key else self._api_key
