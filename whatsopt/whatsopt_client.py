@@ -93,16 +93,7 @@ class WhatsOpt:
             elif self.is_logged():
                 self._url = self._read_url()
             else:
-                if self._remotes:
-                    info("You are not connected.")
-                    info(
-                        "  use `wop login <url>` to connect to a remote WhatsOpt server"
-                    )
-                    info("  use `wop login <name>` to connect to a known remote server")
-                    self.list_remotes()
-                    sys.exit(0)
-                else:
-                    self._url = EXTRANET_SERVER_URL
+                self._url = EXTRANET_SERVER_URL
 
             if api_key:
                 self._api_key = api_key
@@ -187,49 +178,71 @@ class WhatsOpt:
         with open(URL_FILENAME, "w") as f:
             f.write(self.url)
 
-    def login(self, echo=None):
+    def login(self, echo=False, retry=True):
         debug(f"login(api_key={self.api_key}, echo={echo})")
 
+        # Check login with remote name
+        if not (
+            self.url.startswith("http://") or self.url.startswith("https://")
+        ) and not self._remotes.get(self.url):
+            error(f"Unknown remote server '{self.url}'")
+            WhatsOpt.list_remotes()
+            exit(-1)
+
         if self._api_key:
+            # api key is provided
             pass
         elif self.is_logged():
+            # check if logged in
             self._api_key = self._read_api_key()
         else:
+            # check if knwon remote
+            for k, v in self._remotes.items():
+                if self.url == v["url"]:
+                    self._api_key = v["api_key"]
+            # ask for API key otherwise
             debug("Ask for API key")
-            self._api_key = self._ask_api_key()
+            self._api_key = self._ask_api_key() if not self._api_key else self._api_key
 
         debug(f"url={self.url}, api_key={self.api_key}")
         ok = self._test_connection()
         debug(f"ok={ok}")
-        if not ok:
-            # try to propose re-login
-            # log out silently, one may be logged on another server
+        if not ok and retry:
+            # try to log again
+            # log out silently as one may be logged on another server
             self.logout(echo=False)
-            # save url again
+            self._remotes = {
+                k: v for k, v in self._remotes.items() if v["url"] != self.url
+            }
+            # save url again as is has been wipe out by logout
             with open(URL_FILENAME, "w") as f:
                 f.write(self._url)
-            ok = self.login(echo=False)
-            if ok:
-                self._write_login_infos()
-            elif self._remotes.get(self.url):
-                del self._remotes[self.url]
-        else:
-            self._write_login_infos()
-        # save remote
+            return self.login(retry=False)
+
+        # make remote info
         if ok:
+            self._write_login_infos()
             remote_name = extract_remote_name(self.url)
             if remote_name:
                 self._remotes[remote_name] = {"url": self.url, "api_key": self.api_key}
+
         debug(self._remotes)
         self._write_remotes(self._remotes)
 
-        if not ok and echo:
+        if not ok:
             error("Login to WhatsOpt ({}) failed.".format(self.url))
             log("")
+            warn("You are not connected.")
+            info("  use `wop login <url>` to connect to a remote WhatsOpt server")
+            info(
+                "  use `wop login <name>` to connect to a known remote WhatsOpt server"
+            )
+            self.list_remotes()
+
             sys.exit(-1)
 
         if echo:
-            info("Successfully logged into WhatsOpt (%s)" % self.url)
+            info(f"Successfully logged in to remote WhatsOpt {self.url}")
             log("")
         return self
 
