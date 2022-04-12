@@ -1,3 +1,6 @@
+* 2.0.1 (12/04/2022)
+  * Fix login edge case logic and remote servers handling
+
 * 2.0.0 (14/03/2022)
   * Now `wop` stores successful remote servers (a.k.a remotes) login infos. For instance, after a successful login sequence with `wop login https://remote.example.com` and API key input, next login to this url will be simply done automatically with `wop login remote`.
   * New command options:
