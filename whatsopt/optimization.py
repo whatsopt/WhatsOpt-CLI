@@ -37,7 +37,7 @@ class Optimization:
 
     def __init__(self, xlimits, cstr_specs=None):
         try:
-            self._wop = WhatsOpt()
+            self._wop = WhatsOpt().login()
             self._cstr_specs = cstr_specs or []
 
             for cstr in self._cstr_specs:
