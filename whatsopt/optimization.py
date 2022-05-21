@@ -6,6 +6,9 @@ from .whatsopt_client import WhatsOpt
 from .logging import error
 
 
+SEGOMOE = "SEGOMOE"
+
+
 class OptimizationError(Exception):
     pass
 
@@ -35,28 +38,33 @@ class Optimization:
     DEFAULT_CSTR = {"type": "<", "bound": 0.0, "tol": 1e-4}
     TIMEOUT = 60
 
-    def __init__(self, xlimits, cstr_specs=None):
+    def __init__(self, xlimits, kind=SEGOMOE, cstr_specs=None, options=None):
         try:
-            self._wop = WhatsOpt().login()
+            self._kind = kind
+            self._xlimits = xlimits or []
             self._cstr_specs = cstr_specs or []
+            self._options = options
+            self._init_optimization()
+        except RequestException as e:
+            raise OptimizationError(f"Connection failed during initialization")
 
+    def _init_optimization(self):
+        try:
             for cstr in self._cstr_specs:
                 for k in ["type", "bound", "tol"]:
                     cstr[k] = cstr.get(k, self.DEFAULT_CSTR[k])
 
-            self._xlimits = np.array(xlimits)
-            optim_config = {
-                "kind": "SEGOMOE",
-                "xlimits": self._xlimits.tolist(),
-                "cstr_specs": self._cstr_specs,
-            }
+            optim_config = self._init_config()
 
+            self._wop = WhatsOpt(url="http://localhost:3000").login()
             url = self._wop.endpoint("/api/v1/optimizations")
             resp = self._wop.session.post(
                 url, headers=self._wop.headers, json={"optimization": optim_config}
             )
             if not resp.ok:
-                raise OptimizationError("{}: {}", resp.status_code, resp.reason)
+                raise OptimizationError(
+                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                )
 
             self._id = resp.json()["id"]
             self._x = np.array([])
@@ -64,9 +72,16 @@ class Optimization:
             self._x_suggested = None
             self._status = self.PENDING
         except RequestException as e:
-            raise OptimizationError(
-                "Connection failed during initialization: {}".format(e)
-            )
+            raise OptimizationError(f"Connection failed during initialization")
+
+    def _init_config(self):
+        return {
+            "kind": "SEGOMOE",
+            "n_obj": 1,
+            "xlimits": self._xlimits.tolist(),
+            "cstr_specs": self._cstr_specs,
+            "options": self._options,
+        }
 
     def tell_doe(self, x, y):
         self._status = self.PENDING
