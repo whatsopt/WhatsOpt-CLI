@@ -38,3 +38,26 @@ class MOOptimization(Optimization):
             "cstr_specs": self._cstr_specs,
             "options": self._options,
         }
+
+    def run(self, f_grouped, n_iter=1):
+        optima = None
+        for i in range(n_iter):
+            with_optima = (i == n_iter-1) 
+            x_suggested, status, optima = self.ask(with_optima)
+            print(
+                "{} x suggested = {} with status: {}".format(
+                    i, x_suggested, Optimization.STATUSES[status]
+                )
+            )
+
+            # compute objective function at the suggested point
+            new_y = f_grouped(np.atleast_2d(x_suggested))
+            print("new y = {}".format(new_y))
+
+            self.tell(x_suggested, new_y)
+
+        print(f"Pareto front {optima}")
+        return optima
+
+    def get_pareto(self):
+        pass
