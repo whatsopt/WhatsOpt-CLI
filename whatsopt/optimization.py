@@ -38,9 +38,9 @@ class Optimization:
     DEFAULT_CSTR = {"type": "<", "bound": 0.0, "tol": 1e-4}
     TIMEOUT = 60
 
-    def __init__(self, xlimits, kind=SEGOMOE, cstr_specs=None, options=None):
+    def __init__(self, xlimits, cstr_specs=None, options=None):
         try:
-            self._kind = kind
+            self._kind = SEGOMOE  # at the moment only one kind of Optimizer
             self._xlimits = xlimits or []
             self._cstr_specs = cstr_specs or []
             self._options = options
@@ -77,7 +77,7 @@ class Optimization:
 
     def _init_config(self):
         return {
-            "kind": "SEGOMOE",
+            "kind": self._kind,
             "n_obj": 1,
             "xlimits": self._xlimits,
             "cstr_specs": self._cstr_specs,
@@ -107,6 +107,7 @@ class Optimization:
             self.tell(x_suggested, new_y)
             if self.is_solution_reached():
                 print("Solution is reached")
+                x_suggested, status, x_optima = self.ask(with_optima=True)
                 break
 
             try:
@@ -142,37 +143,36 @@ class Optimization:
 
     def ask(self, with_optima):
         """ Trigger optimizer iteration to get next location of the optimum """
-        if not self.is_solution_reached():
-            self._status = self.RUNNING
-            self._optimizer_iteration(with_optima)
-            retry = self.TIMEOUT
-            url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
-            resp = None
-            while retry > 0 and self.is_running():
-                resp = self._wop.session.get(url, headers=self._wop.headers)
-                if resp.ok:
-                    result = resp.json()["outputs"]
-                    self._x_suggested = result["x_suggested"]
-                    self._status = result["status"]
-                    if with_optima:
-                        self._x_optima = result["x_optima"]
-                    else:
-                        self._x_optima = None
-                if self.is_running():
-                    if retry + 1 % 10 == 0:
-                        print("Waiting for result...")
-                    time.sleep(1)
-                retry = retry - 1
+        self._status = self.RUNNING
+        self._optimizer_iteration(with_optima)
+        retry = self.TIMEOUT
+        url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
+        resp = None
+        while retry > 0 and self.is_running():
+            resp = self._wop.session.get(url, headers=self._wop.headers)
+            if resp.ok:
+                result = resp.json()["outputs"]
+                self._x_suggested = result["x_suggested"]
+                self._status = result["status"]
+                if with_optima:
+                    self._x_optima = result["x_optima"]
+                else:
+                    self._x_optima = None
+            if self.is_running():
+                if retry + 1 % 10 == 0:
+                    print("Waiting for result...")
+                time.sleep(1)
+            retry = retry - 1
 
-            if retry <= 0:
-                self._x_suggested = None
-                self._status = self.RUNTIME_ERROR
-                self._x_optima = None
-                raise OptimizationError(
-                    "Time out: please check status and history and may be ask again."
-                )
+        if retry <= 0:
+            self._x_suggested = None
+            self._status = self.RUNTIME_ERROR
+            self._x_optima = None
+            raise OptimizationError(
+                "Time out: please check status and history and may be ask again."
+            )
 
-            self.status = self.PENDING
+        self.status = self.PENDING
 
         return self._x_suggested, self._status, self._x_optima
 

@@ -18,9 +18,9 @@ class ValidOptimumNotFoundError(Exception):
 
 
 class MOOptimization(Optimization):
-    def __init__(self, xtypes, kind=SEGMOOMOE, n_obj=2, cstr_specs=None, options=None):
+    def __init__(self, xtypes, n_obj=2, cstr_specs=None, options=None):
         try:
-            self._kind = kind
+            self._kind = SEGMOOMOE  # at the moment only one kind of MOO optimizer
             self._n_obj = n_obj
             self._xtypes = xtypes
             self._cstr_specs = cstr_specs or []
