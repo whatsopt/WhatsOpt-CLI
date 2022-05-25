@@ -3,7 +3,6 @@ import time
 import numpy as np
 from requests.exceptions import RequestException
 from .whatsopt_client import WhatsOpt
-from .logging import error
 
 
 SEGOMOE = "SEGOMOE"
@@ -158,6 +157,11 @@ class Optimization:
                     self._x_optima = result["x_optima"]
                 else:
                     self._x_optima = None
+            elif resp.status_code == 400:
+                raise OptimizationError(
+                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                )
+
             if self.is_running():
                 if retry + 1 % 10 == 0:
                     print("Waiting for result...")
@@ -237,7 +241,8 @@ class Optimization:
             if not resp.ok:
                 self._wop.err_msg(resp)
                 self._status = self.RUNTIME_ERROR
-                error("Optimizer runtime error")
-                sys.exit(-1)
+                raise OptimizationError(
+                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                )
         except RequestException as e:
-            raise OptimizationError("Connection failed during tell: {}".format(e))
+            raise OptimizationError(f"Connection failed: {e}")
