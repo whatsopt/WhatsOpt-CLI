@@ -39,7 +39,7 @@ class MOOptimization(Optimization):
             "options": self._options,
         }
 
-    def run(self, f_grouped, n_iter=1):
+    def run(self, f_grouped, n_iter=1, with_best=False):
         optima = None
         for i in range(n_iter):
             with_best = (i == n_iter-1) 

@@ -104,7 +104,7 @@ class Optimization:
                 print(f"y_best={y_best} at x_best={self._x_best}")
 
             # compute objective function at the suggested point
-            new_y = f_grouped(np.atleast_2d(x_suggested))
+            new_y = f_grouped(x_suggested)
             print("new y = {}".format(new_y))
 
             self.tell(x_suggested, new_y)
@@ -180,7 +180,7 @@ class Optimization:
         """ Retrieve best point among the doe with valid constraints """
         if not self._x_best:
             _, _, self._xbest = self.ask(with_best=True)
-        x_opt = np.array(self._x_best)
+        x_opt = self._x_best[0]
         y_opt = self._get_y(x_opt)
 
         return x_opt, y_opt
@@ -195,8 +195,14 @@ class Optimization:
         return self._status == self.RUNNING
 
     def _get_y(self, x):
-        idx = np.argmin(np.apply_along_axis(lambda x: np.sum(np.abs(x)), 1, self._x - self._x_best))
-        return np.atleast_2d(self._y[idx])
+        idx = None
+        y = None
+        x = np.array(x)
+        for i in range(self._x.shape[0]):
+            if np.equal(x, self._x[i]).all():
+                y = self._y[i].tolist()
+                break
+        return y
 
     def _optimizer_iteration(self, with_best):
         """ Run optimizer iteration """
