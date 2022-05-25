@@ -42,8 +42,8 @@ class MOOptimization(Optimization):
     def run(self, f_grouped, n_iter=1):
         optima = None
         for i in range(n_iter):
-            with_optima = (i == n_iter-1) 
-            x_suggested, status, optima = self.ask(with_optima)
+            with_best = (i == n_iter-1) 
+            x_suggested, status, optima = self.ask(with_best)
             print(
                 "{} x suggested = {} with status: {}".format(
                     i, x_suggested, Optimization.STATUSES[status]

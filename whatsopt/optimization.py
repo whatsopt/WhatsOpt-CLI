@@ -70,7 +70,7 @@ class Optimization:
             self._y = np.array([])
             self._x_suggested = None
             self._status = self.PENDING
-            self._x_optima = None
+            self._x_best = None
         except RequestException as e:
             raise OptimizationError(f"Connection failed during initialization")
 
@@ -84,20 +84,24 @@ class Optimization:
         }
 
     def tell_doe(self, x, y):
-        self._x_optima = None
+        self._x_best = None
         self._status = self.PENDING
         self._x = np.atleast_2d(x)
         self._y = np.atleast_2d(y)
 
-    def run(self, f_grouped, n_iter=1, with_optima=False):
+    def run(self, f_grouped, n_iter=1, with_best=False):
         """ Ask and tell the optimizer to get the optimum in n_iter iteration.
-        When with_optima is set optimum is computed at each iteration by the algorithm
+        When with_best is set optimum is computed at each iteration by the algorithm
         """
-        x_optima = None
+        self._x_best = None
         for i in range(n_iter):
-            with_optima = with_optima or (i == n_iter-1)
-            x_suggested, status, x_optima = self.ask(with_optima)
+            with_best = with_best or (i == n_iter-1)
+            x_suggested, status, self._x_best = self.ask(with_best)
             print(f"{i} x suggested = {x_suggested} with status: {Optimization.STATUSES[status]}")
+
+            if with_best:
+                y_best = self._get_y(self._x_best)
+                print(f"y_best={y_best} at x_best={self._x_best}")
 
             # compute objective function at the suggested point
             new_y = f_grouped(np.atleast_2d(x_suggested))
@@ -106,19 +110,11 @@ class Optimization:
             self.tell(x_suggested, new_y)
             if self.is_solution_reached():
                 print("Solution is reached")
-                x_suggested, status, x_optima = self.ask(with_optima=True)
+                x_suggested, status, self._x_best = self.ask(with_best=True)
                 break
 
-            try:
-                x, y = self.get_result()
-                print(f"x_opt_tmp={x} y_opt_tmp={y}")
-                if with_optima:
-                    print(f"Sego x optimum={x_optima[0]}")
-            except ValidOptimumNotFoundError:  # in case no point in doe respect constraints yet
-                pass
-
         x_opt, y_opt = self.get_result()
-        print(f"Found minimum y_opt = {y_opt} at x_opt = {x_opt} (check with Sego optimum x={x_optima})")
+        print(f"Found minimum y_opt = {y_opt} at x_opt = {x_opt}")
         return x_opt, y_opt
 
     def tell(self, x, y):
@@ -140,10 +136,10 @@ class Optimization:
             self._x = np.vstack((self._x, np.atleast_2d(x)))
             self._y = np.vstack((self._y, np.atleast_2d(y)))
 
-    def ask(self, with_optima):
+    def ask(self, with_best=False):
         """ Trigger optimizer iteration to get next location of the optimum """
         self._status = self.RUNNING
-        self._optimizer_iteration(with_optima)
+        self._optimizer_iteration(with_best)
         retry = self.TIMEOUT
         url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
         resp = None
@@ -153,10 +149,10 @@ class Optimization:
                 result = resp.json()["outputs"]
                 self._x_suggested = result["x_suggested"]
                 self._status = result["status"]
-                if with_optima:
-                    self._x_optima = result["x_optima"]
+                if with_best:
+                    self._x_best = result["x_best"]
                 else:
-                    self._x_optima = None
+                    self._x_best = None
             elif resp.status_code == 400:
                 raise OptimizationError(
                     f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
@@ -171,52 +167,21 @@ class Optimization:
         if retry <= 0:
             self._x_suggested = None
             self._status = self.RUNTIME_ERROR
-            self._x_optima = None
+            self._x_best = None
             raise OptimizationError(
                 "Time out: please check status and history and may be ask again."
             )
 
         self.status = self.PENDING
 
-        return self._x_suggested, self._status, self._x_optima
+        return self._x_suggested, self._status, self._x_best
 
     def get_result(self, valid_constraints=True):
         """ Retrieve best point among the doe with valid constraints """
-        y_opt = self._y[:, 0].min()
-        x_opt = self._x[np.argmin(self._y[:, 0])]
-
-        if valid_constraints and self._cstr_specs:
-            y = np.copy(self._y)
-            x = np.copy(self._x)
-            valid = False
-
-            n_cstrs = len(self._cstr_specs)
-            while y.shape[0] > 0 and not valid:
-                index = np.argmin(y[:, 0])
-                valid = True
-
-                cstrs = y[index, -n_cstrs:]
-                for i, c in enumerate(cstrs):
-                    typ = self._cstr_specs[i]["type"]
-                    bound = self._cstr_specs[i]["bound"]
-                    tol = self._cstr_specs[i]["tol"]
-                    if typ == "<":
-                        valid = valid and ((c - bound) < tol)
-                    elif typ == "=":
-                        valid = valid and (abs(bound - c) < tol)
-                    else:
-                        valid = valid and ((bound - c) < tol)
-                if valid:
-                    y_opt = y[index]
-                    x_opt = x[index]
-                else:
-                    y = np.delete(y, (index), axis=0)
-                    x = np.delete(x, (index), axis=0)
-
-            if not valid:
-                raise ValidOptimumNotFoundError(
-                    "No valid point found in optimization history."
-                )
+        if not self._x_best:
+            _, _, self._xbest = self.ask(with_best=True)
+        x_opt = np.array(self._x_best)
+        y_opt = self._get_y(x_opt)
 
         return x_opt, y_opt
 
@@ -229,14 +194,18 @@ class Optimization:
     def is_running(self):
         return self._status == self.RUNNING
 
-    def _optimizer_iteration(self, with_optima):
+    def _get_y(self, x):
+        idx = np.argmin(np.apply_along_axis(lambda x: np.sum(np.abs(x)), 1, self._x - self._x_best))
+        return np.atleast_2d(self._y[idx])
+
+    def _optimizer_iteration(self, with_best):
         """ Run optimizer iteration """
         try:
             url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
             resp = self._wop.session.put(
                 url,
                 headers=self._wop.headers,
-                json={"optimization": {"x": self._x.tolist(), "y": self._y.tolist(), "with_optima": with_optima}},
+                json={"optimization": {"x": self._x.tolist(), "y": self._y.tolist(), "with_best": with_best}},
             )
             if not resp.ok:
                 self._wop.err_msg(resp)
