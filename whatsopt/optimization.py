@@ -11,11 +11,6 @@ SEGOMOE = "SEGOMOE"
 class OptimizationError(Exception):
     pass
 
-
-class ValidOptimumNotFoundError(Exception):
-    pass
-
-
 class Optimization:
 
     VALID_POINT = 0
@@ -38,14 +33,11 @@ class Optimization:
     TIMEOUT = 60
 
     def __init__(self, xlimits, cstr_specs=None, options=None):
-        try:
-            self._kind = SEGOMOE  # at the moment only one kind of Optimizer
-            self._xlimits = xlimits or []
-            self._cstr_specs = cstr_specs or []
-            self._options = options
-            self._init_optimization()
-        except RequestException as e:
-            raise OptimizationError(f"Connection failed during initialization")
+        self._kind = SEGOMOE  # at the moment only one kind of Optimizer
+        self._xlimits = xlimits or []
+        self._cstr_specs = cstr_specs or []
+        self._options = options
+        self._init_optimization()
 
     def _init_optimization(self):
         try:
@@ -189,8 +181,8 @@ class Optimization:
         """ Retrieve best point among the doe with valid constraints """
         if not self._x_best:
             _, _, self._x_best, self._y_best = self.ask(with_best=True)
-        x_opt = self._x_best
-        y_opt = self._y_best
+        x_opt = np.array(self._x_best)
+        y_opt = np.array(self._y_best)
 
         return x_opt, y_opt
 
