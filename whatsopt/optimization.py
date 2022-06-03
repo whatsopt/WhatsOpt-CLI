@@ -55,7 +55,7 @@ class Optimization:
 
             optim_config = self._init_config()
 
-            self._wop = WhatsOpt(url="http://localhost:3000").login()
+            self._wop = WhatsOpt().login()
             url = self._wop.endpoint("/api/v1/optimizations")
             resp = self._wop.session.post(
                 url, headers=self._wop.headers, json={"optimization": optim_config}
@@ -71,6 +71,7 @@ class Optimization:
             self._x_suggested = None
             self._status = self.PENDING
             self._x_best = None
+            self._y_best = None
         except RequestException as e:
             raise OptimizationError(f"Connection failed during initialization")
 
@@ -88,6 +89,8 @@ class Optimization:
         self._status = self.PENDING
         self._x = np.atleast_2d(x)
         self._y = np.atleast_2d(y)
+        if self._x.shape[0] != self._y.shape[0]:
+            raise OptimizationError(f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}")
 
     def run(self, f_grouped, n_iter=1, with_best=False):
         """ Ask and tell the optimizer to get the optimum in n_iter iteration.
@@ -96,12 +99,12 @@ class Optimization:
         self._x_best = None
         for i in range(n_iter):
             with_best = with_best or (i == n_iter-1)
-            x_suggested, status, self._x_best = self.ask(with_best)
+            x_suggested, status, self._x_best, self._y_best = self.ask(with_best)
             print(f"{i} x suggested = {x_suggested} with status: {Optimization.STATUSES[status]}")
 
             if with_best:
-                y_best = self._get_y(self._x_best)
-                print(f"y_best={y_best} at x_best={self._x_best}")
+                print(f"x_best={self._x_best}")
+                print(f"y_best={self._y_best}")
 
             # compute objective function at the suggested point
             new_y = f_grouped(x_suggested)
@@ -110,7 +113,7 @@ class Optimization:
             self.tell(x_suggested, new_y)
             if self.is_solution_reached():
                 print("Solution is reached")
-                x_suggested, status, self._x_best = self.ask(with_best=True)
+                x_suggested, status, self._x_best, self._y_best = self.ask(with_best=True)
                 break
 
         x_opt, y_opt = self.get_result()
@@ -151,11 +154,16 @@ class Optimization:
                 self._status = result["status"]
                 if with_best:
                     self._x_best = result["x_best"]
+                    self._y_best = result["y_best"]
                 else:
                     self._x_best = None
+                    self._y_best = None
             elif resp.status_code == 400:
+                message = "Unexpected error"
+                if resp.json() and resp.json().get('message'):
+                    message = resp.json()['message']
                 raise OptimizationError(
-                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                    f"Error {resp.reason} ({resp.status_code}): {message}"
                 )
 
             if self.is_running():
@@ -168,20 +176,21 @@ class Optimization:
             self._x_suggested = None
             self._status = self.RUNTIME_ERROR
             self._x_best = None
+            self._y_best = None
             raise OptimizationError(
                 "Time out: please check status and history and may be ask again."
             )
 
         self.status = self.PENDING
 
-        return self._x_suggested, self._status, self._x_best
+        return self._x_suggested, self._status, self._x_best, self._y_best
 
     def get_result(self, valid_constraints=True):
         """ Retrieve best point among the doe with valid constraints """
         if not self._x_best:
-            _, _, self._xbest = self.ask(with_best=True)
-        x_opt = self._x_best[0]
-        y_opt = self._get_y(x_opt)
+            _, _, self._x_best, self._y_best = self.ask(with_best=True)
+        x_opt = self._x_best
+        y_opt = self._y_best
 
         return x_opt, y_opt
 
@@ -194,7 +203,7 @@ class Optimization:
     def is_running(self):
         return self._status == self.RUNNING
 
-    def _get_y(self, x):
+    def _get_best_y(self, x):
         idx = None
         y = None
         x = np.array(x)
@@ -206,6 +215,10 @@ class Optimization:
 
     def _optimizer_iteration(self, with_best):
         """ Run optimizer iteration """
+        if self._x.size == 0 or self._y.size == 0:
+            raise OptimizationError(f"Empty DOE error: DOE should not be empty, got DOE x={self._x} and DOE y={self._y}")
+        if self._x.shape[0] != self._y.shape[0]:
+            raise OptimizationError(f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}")
         try:
             url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
             resp = self._wop.session.put(
