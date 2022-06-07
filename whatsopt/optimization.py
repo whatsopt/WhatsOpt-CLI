@@ -53,8 +53,11 @@ class Optimization:
                 url, headers=self._wop.headers, json={"optimization": optim_config}
             )
             if not resp.ok:
+                message = "Unexpected error"
+                if resp.json() and resp.json().get('message'):
+                    message = resp.json()['message']
                 raise OptimizationError(
-                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                    f"Error {resp.reason} ({resp.status_code}): {message}"
                 )
 
             self._id = resp.json()["id"]
@@ -109,7 +112,7 @@ class Optimization:
                 break
 
         x_opt, y_opt = self.get_result()
-        print(f"Found minimum y_opt = {y_opt} at x_opt = {x_opt}")
+        print(f"Found optimum y_opt = {y_opt} at x_opt = {x_opt}")
         return x_opt, y_opt
 
     def tell(self, x, y):
@@ -188,6 +191,9 @@ class Optimization:
 
     def get_history(self):
         return self._x, self._y
+
+    def get_status(self):
+        return self.STATUSES[self._status]
 
     def is_solution_reached(self):
         return self._status == self.SOLUTION_REACHED
