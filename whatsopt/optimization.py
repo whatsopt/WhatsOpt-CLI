@@ -109,6 +109,7 @@ class Optimization:
             if self.is_solution_reached():
                 print("Solution is reached")
                 x_suggested, status, self._x_best, self._y_best = self.ask(with_best=True)
+                self._status = self.SOLUTION_REACHED
                 break
 
         x_opt, y_opt = self.get_result()
