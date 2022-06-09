@@ -33,6 +33,22 @@ class Optimization:
     TIMEOUT = 60
 
     def __init__(self, xlimits, cstr_specs=None, options=None):
+        """ Creation of a continuous mono objective optimization context
+
+        Parameters
+        ----------
+        xlimits: list of float limits for x inputs eg [[lower bound, upper bound], ...]
+        cstrs_specs: list of inequality constraints specifications (optional)
+            A constraint specification is a dictionary of two items {type: ..., bound: ..., tol: ...}
+            where type is either '<' or '>', bound is a float value specifying a limit and tol the
+            acceptable tolerance before violation (ex if we want cstr_value < bound, we accept cstr_value < bound + tol).
+        options: dictionary containing options to be passed to the remote optimizer
+
+        Returns
+        -------
+        Optimizer handle allowing to trigger remote optimization operations
+
+        """
         self._kind = SEGOMOE  # at the moment only one kind of Optimizer
         self._xlimits = xlimits or []
         self._cstr_specs = cstr_specs or []
@@ -68,7 +84,7 @@ class Optimization:
             self._x_best = None
             self._y_best = None
         except RequestException as e:
-            raise OptimizationError(f"Connection failed during initialization")
+            raise OptimizationError("Connection failed during initialization")
 
     def _init_config(self):
         return {
@@ -80,6 +96,16 @@ class Optimization:
         }
 
     def tell_doe(self, x, y):
+        """ Send the initial DOE to the remote optimizer
+
+        This operation should be executed initially to set the initial data used
+        to model objectives and constraints.
+
+        Parameters
+        ----------
+        x : 2d array-like of inputs  [[x1, x2, ...], ...]
+        y : 2d array-like of outputs [[obj1, obj2, ..., objn, cstr1, cstr2, ... cstrn], ...]
+        """
         self._x_best = None
         self._status = self.PENDING
         self._x = np.atleast_2d(x)
@@ -88,8 +114,22 @@ class Optimization:
             raise OptimizationError(f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}")
 
     def run(self, f_grouped, n_iter=1, with_best=False):
-        """ Ask and tell the optimizer to get the optimum in n_iter iteration.
-        When with_best is set optimum is computed at each iteration by the algorithm
+        """ Ask and tell the optimizer to get the optimum in n_iter iteration
+
+        Parameters
+        ----------
+        f_grouped : function under optimization y = f(x)
+            where y is of the form [obj1, obj2, ..., objn, cstr1, cstr2, ... cstrn]
+
+        n_iter : int, iteration budget
+
+        with_best : when set it compute the best point found at each iteration.
+
+        Returns
+        -------
+        x_opt, y_opt: 2d array, 2d array
+            an optimum in case of mono-objective or a list of optima in case
+            of multi-objective optimization (Pareto front).
         """
         self._x_best = None
         for i in range(n_iter):
@@ -117,7 +157,14 @@ class Optimization:
         return x_opt, y_opt
 
     def tell(self, x, y):
-        """ Gives (x, y) values such that y = f(x) """
+        """ Gives (x, y) values such that y = f(x).
+
+        Parameters
+        ----------
+        x : 2d array-like of inputs  [x1, x2, ...]
+        y : 2d array-like of outputs [obj1, obj2, ..., objn, cstr1, cstr2, ... cstrn]
+        """
+
         # check if already told
         found = False
         for i, v in enumerate(self._x):
@@ -136,7 +183,21 @@ class Optimization:
             self._y = np.vstack((self._y, np.atleast_2d(y)))
 
     def ask(self, with_best=False):
-        """ Trigger optimizer iteration to get next location of the optimum """
+        """ Trigger optimizer iteration to get next promising location of the optimum
+
+        Parameters
+        ----------
+        with_best: if set compute also the best (x_best, y_best) point so far among
+        points already computed.
+        In case of multi-objective the Pareto front is computed.
+
+        Returns
+        -------
+        status, x_suggested, x_best, y_best
+            where status is an status code (int) retuned by the optimizer
+                  x_suggested the next promising optimum location
+                  x_best, y_best the optima so far
+        """
         self._status = self.RUNNING
         self._optimizer_iteration(with_best)
         retry = self.TIMEOUT
@@ -181,8 +242,13 @@ class Optimization:
 
         return self._x_suggested, self._status, self._x_best, self._y_best
 
-    def get_result(self, valid_constraints=True):
-        """ Retrieve best point among the doe with valid constraints """
+    def get_result(self):
+        """ Retrieve optimum (or optima in case of moo) among the DOE with valid constraints
+        
+        Returns
+        -------
+            x, y where x and y are 2d ndarrays
+        """
         if not self._x_best:
             _, _, self._x_best, self._y_best = self.ask(with_best=True)
         x_opt = np.array(self._x_best)
@@ -191,9 +257,16 @@ class Optimization:
         return x_opt, y_opt
 
     def get_history(self):
+        """ Retrieve optimization history (initial doe + (x suggestions, y))
+        
+        Returns
+        -------
+            x, y where x and y are 2d ndarrays
+        """
         return self._x, self._y
 
     def get_status(self):
+        """ Retrieve status string """
         return self.STATUSES[self._status]
 
     def is_solution_reached(self):
@@ -203,7 +276,6 @@ class Optimization:
         return self._status == self.RUNNING
 
     def _get_best_y(self, x):
-        idx = None
         y = None
         x = np.array(x)
         for i in range(self._x.shape[0]):
