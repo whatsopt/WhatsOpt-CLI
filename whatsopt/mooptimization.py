@@ -14,9 +14,12 @@ SEGMOOMOE = "SEGMOOMOE"
 class OptimizationError(Exception):
     pass
 
+
 class MOOptimization(Optimization):
-    def __init__(self, xtypes=None, n_obj=2, cstr_specs=None, options=None, xlimits=None):
-        """ Creation of a mixed-integer multi-objectives optimization context
+    def __init__(
+        self, xtypes=None, n_obj=2, cstr_specs=None, options=None, xlimits=None
+    ):
+        """Creation of a mixed-integer multi-objectives optimization context
 
         Parameters
         ----------
@@ -44,10 +47,14 @@ class MOOptimization(Optimization):
         self._options = options
 
         if xtypes is None and xlimits is None:
-            raise OptimizationError("Configuration Error: you should specify either xtypes or xlimits")
+            raise OptimizationError(
+                "Configuration Error: you should specify either xtypes or xlimits"
+            )
 
         if not (xtypes is None or xlimits is None):
-            raise OptimizationError("Configuration Error: you should specify either xtypes or xlimits exclusively, not both")
+            raise OptimizationError(
+                "Configuration Error: you should specify either xtypes or xlimits exclusively, not both"
+            )
 
         if xtypes is None and xlimits is not None:
             self._xtypes = []
@@ -69,4 +76,3 @@ class MOOptimization(Optimization):
             "cstr_specs": self._cstr_specs,
             "options": self._options,
         }
-

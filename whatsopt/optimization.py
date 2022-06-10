@@ -11,6 +11,7 @@ SEGOMOE = "SEGOMOE"
 class OptimizationError(Exception):
     pass
 
+
 class Optimization:
 
     VALID_POINT = 0
@@ -33,7 +34,7 @@ class Optimization:
     TIMEOUT = 60
 
     def __init__(self, xlimits, cstr_specs=None, options=None):
-        """ Creation of a continuous mono objective optimization context
+        """Creation of a continuous mono objective optimization context
 
         Parameters
         ----------
@@ -70,8 +71,8 @@ class Optimization:
             )
             if not resp.ok:
                 message = "Unexpected error"
-                if resp.json() and resp.json().get('message'):
-                    message = resp.json()['message']
+                if resp.json() and resp.json().get("message"):
+                    message = resp.json()["message"]
                 raise OptimizationError(
                     f"Error {resp.reason} ({resp.status_code}): {message}"
                 )
@@ -96,7 +97,7 @@ class Optimization:
         }
 
     def tell_doe(self, x, y):
-        """ Send the initial DOE to the remote optimizer
+        """Send the initial DOE to the remote optimizer
 
         This operation should be executed initially to set the initial data used
         to model objectives and constraints.
@@ -111,10 +112,12 @@ class Optimization:
         self._x = np.atleast_2d(x)
         self._y = np.atleast_2d(y)
         if self._x.shape[0] != self._y.shape[0]:
-            raise OptimizationError(f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}")
+            raise OptimizationError(
+                f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}"
+            )
 
     def run(self, f_grouped, n_iter=1, with_best=False):
-        """ Ask and tell the optimizer to get the optimum in n_iter iteration
+        """Ask and tell the optimizer to get the optimum in n_iter iteration
 
         Parameters
         ----------
@@ -133,9 +136,11 @@ class Optimization:
         """
         self._x_best = None
         for i in range(n_iter):
-            with_best = with_best or (i == n_iter-1)
+            with_best = with_best or (i == n_iter - 1)
             x_suggested, status, self._x_best, self._y_best = self.ask(with_best)
-            print(f"{i} x suggested = {x_suggested} with status: {Optimization.STATUSES[status]}")
+            print(
+                f"{i} x suggested = {x_suggested} with status: {Optimization.STATUSES[status]}"
+            )
 
             if with_best:
                 print(f"x_best={self._x_best}")
@@ -148,7 +153,9 @@ class Optimization:
             self.tell(x_suggested, new_y)
             if self.is_solution_reached():
                 print("Solution is reached")
-                x_suggested, status, self._x_best, self._y_best = self.ask(with_best=True)
+                x_suggested, status, self._x_best, self._y_best = self.ask(
+                    with_best=True
+                )
                 self._status = self.SOLUTION_REACHED
                 break
 
@@ -157,7 +164,7 @@ class Optimization:
         return x_opt, y_opt
 
     def tell(self, x, y):
-        """ Gives (x, y) values such that y = f(x).
+        """Gives (x, y) values such that y = f(x).
 
         Parameters
         ----------
@@ -183,7 +190,7 @@ class Optimization:
             self._y = np.vstack((self._y, np.atleast_2d(y)))
 
     def ask(self, with_best=False):
-        """ Trigger optimizer iteration to get next promising location of the optimum
+        """Trigger optimizer iteration to get next promising location of the optimum
 
         Parameters
         ----------
@@ -217,8 +224,8 @@ class Optimization:
                     self._y_best = None
             elif resp.status_code == 400:
                 message = "Unexpected error"
-                if resp.json() and resp.json().get('message'):
-                    message = resp.json()['message']
+                if resp.json() and resp.json().get("message"):
+                    message = resp.json()["message"]
                 raise OptimizationError(
                     f"Error {resp.reason} ({resp.status_code}): {message}"
                 )
@@ -243,8 +250,8 @@ class Optimization:
         return self._x_suggested, self._status, self._x_best, self._y_best
 
     def get_result(self):
-        """ Retrieve optimum (or optima in case of moo) among the DOE with valid constraints
-        
+        """Retrieve optimum (or optima in case of moo) among the DOE with valid constraints
+
         Returns
         -------
             x, y where x and y are 2d ndarrays
@@ -257,8 +264,8 @@ class Optimization:
         return x_opt, y_opt
 
     def get_history(self):
-        """ Retrieve optimization history (initial doe + (x suggestions, y))
-        
+        """Retrieve optimization history (initial doe + (x suggestions, y))
+
         Returns
         -------
             x, y where x and y are 2d ndarrays
@@ -266,7 +273,7 @@ class Optimization:
         return self._x, self._y
 
     def get_status(self):
-        """ Retrieve status string """
+        """Retrieve status string"""
         return self.STATUSES[self._status]
 
     def is_solution_reached(self):
@@ -285,17 +292,27 @@ class Optimization:
         return y
 
     def _optimizer_iteration(self, with_best):
-        """ Run optimizer iteration """
+        """Run optimizer iteration"""
         if self._x.size == 0 or self._y.size == 0:
-            raise OptimizationError(f"Empty DOE error: DOE should not be empty, got DOE x={self._x} and DOE y={self._y}")
+            raise OptimizationError(
+                f"Empty DOE error: DOE should not be empty, got DOE x={self._x} and DOE y={self._y}"
+            )
         if self._x.shape[0] != self._y.shape[0]:
-            raise OptimizationError(f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}")
+            raise OptimizationError(
+                f"Bad DOE error: DOE x and y should of the same size, got x size = {self._x.shape[0]} and  x size = {self._y.shape[0]}"
+            )
         try:
             url = self._wop.endpoint("/api/v1/optimizations/{}".format(self._id))
             resp = self._wop.session.put(
                 url,
                 headers=self._wop.headers,
-                json={"optimization": {"x": self._x.tolist(), "y": self._y.tolist(), "with_best": with_best}},
+                json={
+                    "optimization": {
+                        "x": self._x.tolist(),
+                        "y": self._y.tolist(),
+                        "with_best": with_best,
+                    }
+                },
             )
             if not resp.ok:
                 self._wop.err_msg(resp)
