@@ -1,6 +1,5 @@
 import unittest
-from whatsopt.mooptimization import MOOptimization
-from smt.applications.mixed_integer import FLOAT, INT
+from whatsopt.mooptimization import MOOptimization, FLOAT, INT
 
 
 class TestMOOptimization(unittest.TestCase):
