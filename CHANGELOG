@@ -1,3 +1,6 @@
+* 2.1.0 (19/06/2022)
+  * Refactor optimization REST API to use mixed-integer multi-objective ONERA in-house optimizer (WhatsOpt 1.23+)
+  
 * 2.0.2 (14/05/2022)
   * Fix login handling in remote optimization
   
