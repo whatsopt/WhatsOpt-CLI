@@ -699,6 +699,10 @@ class WhatsOpt:
 
         mda_id = get_analysis_id() if not analysis_id else analysis_id
 
+        # Test sqlite files generated with MPI
+        _, extension = os.path.splitext(filename)
+        parallel_sqlite = re.match(r"\.sqlite_\d+$", extension)
+
         name = cases = statuses = None
         if (
             os.path.basename(filename) == "run_parameters_init.py"
@@ -709,7 +713,7 @@ class WhatsOpt:
             )
         elif filename.endswith(".csv"):
             name, cases, statuses = load_from_csv(filename)
-        elif filename.endswith(".sqlite"):
+        elif filename.endswith(".sqlite") or (parallel_sqlite and parallel):
             name, cases, statuses = load_from_sqlite(filename, parallel)
         elif filename.endswith(".hdf5"):
             name, cases, statuses = load_from_hdf5(filename)
@@ -857,8 +861,10 @@ class WhatsOpt:
         if not os.path.exists(filename):
             error(f"File {filename} not found.")
         pathname, extension = os.path.splitext(filename)
-        if not extension == ".sqlite":
-            error(f"File {filename} should have '.sqlite' extension, got '{extension}'")
+        if not (extension == ".sqlite" or re.match(r"\.sqlite_\d+$", extension)):
+            warn(
+                f"File {filename} should have '.sqlite[_n]' extension, got '{extension}'"
+            )
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
 
