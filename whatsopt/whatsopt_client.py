@@ -187,7 +187,7 @@ class WhatsOpt:
         ) and not self._remotes.get(self.url):
             error(f"Unknown remote server '{self.url}'")
             WhatsOpt.list_remotes()
-            exit(-1)
+            sys.exit(-1)
 
         if self._api_key:
             # api key is provided
@@ -704,6 +704,9 @@ class WhatsOpt:
         parallel_sqlite = re.match(r"\.sqlite_\d+$", extension)
 
         name = cases = statuses = None
+        if not os.path.exists(filename):
+            error(f"File not found ({filename})")
+            sys.exit(-1)
         if (
             os.path.basename(filename) == "run_parameters_init.py"
             or os.path.basename(filename) == "mda_init.py"
@@ -722,7 +725,7 @@ class WhatsOpt:
                 f"Can not upload file {filename}: extension not recognized"
                 " (should be either .csv, .sqlite or .hdf5)"
             )
-            exit(-1)
+            sys.exit(-1)
 
         if only_success:
             for c in cases:
