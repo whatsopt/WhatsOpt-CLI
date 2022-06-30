@@ -1,3 +1,7 @@
+* 2.1.2 (23/06/2022)
+  * `wop upload`: Add checking on to-be-uploaded file existence and 
+  file content (have to contain design variables and output records)
+
 * 2.1.1 (23/06/2022)
   * Fix `wop upload --parallel`: bad file extension check which prevents from uploading 
   * Fix `wop convert <.sqlite_\d+>`: bad error message when used with sqlite generated in parallel  
