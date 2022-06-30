@@ -1,6 +1,7 @@
 import os
 import re
 import csv
+import sys
 from openmdao.api import CaseReader
 from tabulate import tabulate
 from whatsopt.logging import log, error
@@ -72,7 +73,7 @@ def load_from_sqlite(filename, parallel=False):
                 "In parallel mode (-p option), "
                 "filename should end with '_<number>', got {}".format(filename)
             )
-            exit(-1)
+            sys.exit(-1)
     else:
         return load_sqlite_file(filename)
 
@@ -82,7 +83,7 @@ def load_from_hdf5(filename):
         from gemseo.algos.opt_problem import OptimizationProblem
     except ImportError:
         error("GEMSEO module not found: cannot upload hdf5")
-        exit(-1)
+        sys.exit(-1)
 
     opt_pb = OptimizationProblem.import_hdf(filename)
     ds = opt_pb.export_to_dataset("OptimizationProblem")
@@ -130,7 +131,8 @@ def load_sqlite_file(filename):
     reader = CaseReader(filename)
     cases = reader.list_cases("driver", out_stream=None)
     if len(cases) == 0:
-        raise Exception("No case found in {}".format(filename))
+        error("No case found in {}".format(filename))
+        sys.exit(-1)
 
     # find driver name
     driver_first_coord = cases[0]
@@ -152,7 +154,13 @@ def _format_upload_cases(reader):
     statuses = []
     for case_id in cases:
         case = reader.get_case(case_id)
+        if not case.get_design_vars():
+            error("No design variable found in recorded cases")
+            sys.exit(-1)
         _insert_data(case.get_design_vars(), inputs)
+        if not case.outputs:
+            error("No output found in recorded cases")
+            sys.exit(-1)
         _insert_data(case.outputs, outputs)
         statuses.append(case.success)
 

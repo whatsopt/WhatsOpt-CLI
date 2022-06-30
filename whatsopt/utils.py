@@ -1,4 +1,5 @@
 import os, re
+import sys
 import tomli_w
 from whatsopt.logging import error
 
@@ -63,7 +64,7 @@ def load_state(filename=WOP_CONF_FILENAME):
                 state[m.group(1)] = val
             else:
                 error(f"Syntax error in {filename} file: line '{line}' invalid")
-                exit(-1)
+                sys.exit(-1)
     if not state.get("wop_format_version"):
         state["wop_format_version"] = 1
 
