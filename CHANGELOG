@@ -1,4 +1,4 @@
-* 2.1.2 (23/06/2022)
+* 2.1.2 (30/06/2022)
   * `wop upload`: Add checking on to-be-uploaded file existence and 
   file content (have to contain design variables and output records)
 
