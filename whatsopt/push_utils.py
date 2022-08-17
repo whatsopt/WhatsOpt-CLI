@@ -156,3 +156,35 @@ def find_indep_var_name(pb, absname):
             target = tgt
             break
     return pb.model._var_abs2prom["input"].get(target)
+
+
+def build_variable_name(varname1, varname2, limit=255):
+    varname_sep = "=="
+    ellipsis_sep = "..."
+
+    name = varname1 + "==" + varname2
+    ellipsed_name = name
+    if len(name) <= limit or limit < len(varname_sep) + 2 * len(ellipsis_sep) + 4:
+        ellipsed_name = name
+    else:
+        half_limit = (limit - len(varname_sep)) // 2
+        ellipsed_name = (
+            _ellipsize(varname1, half_limit)
+            + varname_sep
+            + _ellipsize(varname2, half_limit)
+        )
+
+    if len(ellipsed_name) > limit:
+        ellipsed_name = ellipsis_sep + varname2[-(limit - len(ellipsis_sep)) :]
+
+    return ellipsed_name
+
+
+def _ellipsize(name, limit):
+    ellipsis_sep = "..."
+
+    half_limit = (limit - len(ellipsis_sep)) // 2
+    if len(name) <= half_limit:
+        return name
+    else:
+        return name[:half_limit] + ellipsis_sep + name[-half_limit:]

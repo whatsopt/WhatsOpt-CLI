@@ -1,6 +1,7 @@
 import re
 from itertools import chain
 from whatsopt.push_utils import (
+    build_variable_name,
     cut,
     find_indep_var_name,
     simple_value,
@@ -264,7 +265,7 @@ class PushCommand:
             _, varname = extract_mda_var(conn["tgt"])
             return varname
         else:
-            return conn["src"] + "==" + conn["tgt"]
+            return build_variable_name(conn["src"], conn["tgt"], limit=255)
 
     def _get_sub_analysis_attributes(self, group, child, prefix):
         submda_attrs = self._get_mda_hierarchy(group, child, prefix)
