@@ -31,7 +31,7 @@ metadata = dict(
     packages=["whatsopt"],
     install_requires=[
         "openmdao>=3.4.0",
-        "openmdao_extensions>=1.0.0",
+        "openmdao_extensions>=1.1.0",
         "xdsmjs>=1.0.0",
         "Click>=6.7",
         "tabulate>=0.8.2",
@@ -39,7 +39,7 @@ metadata = dict(
         "tomli",
         "tomli-w",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     entry_points="""
         [console_scripts]
         wop=whatsopt.wop:wop
