@@ -52,7 +52,7 @@ from whatsopt.push_utils import (
     problem_pyfile,
     to_camelcase,
 )
-from whatsopt.universal_push_command import UniversalPushCommand
+from whatsopt.push_command import PushCommand
 from whatsopt.show_utils import generate_xdsm_html
 
 from whatsopt import __version__
@@ -407,7 +407,7 @@ class WhatsOpt:
     def push_mda(self, problem, options):
         scalar = options.get("--scalar")
         depth = options.get("--depth")
-        push_cmd = UniversalPushCommand(problem, depth, scalar)
+        push_cmd = PushCommand(problem, depth, scalar)
 
         mda_attrs = push_cmd.get_mda_attributes(
             problem.model, push_cmd.tree, use_depth=True

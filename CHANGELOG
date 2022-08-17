@@ -1,3 +1,8 @@
+* 2.2.0 (17/08/2022)
+  * requires: Python 3.7+, openmdao_extensions 1.1.0+
+  * `wop push`: When creating pseudo-variables related to connections created with OpenMDAO connect()
+  method, variable name length is now limited to 255.
+
 * 2.1.2 (30/06/2022)
   * `wop upload`: Add checking on to-be-uploaded file existence and 
   file content (have to contain design variables and output records)

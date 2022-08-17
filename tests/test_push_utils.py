@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 
 from whatsopt.push_utils import (
+    build_variable_name,
     simple_value,
     format_shape,
     to_camelcase,
@@ -45,3 +46,27 @@ class TestPushUtils(unittest.TestCase):
             self.assertTrue(os.path.exists(pbfile))
             self.assertTrue(os.system("python {}".format(pbfile)) == 0)
         self.assertFalse(os.path.exists(pbfile))
+
+    def test_build_varname(self):
+        name = build_variable_name("12", "ab", 7)
+        self.assertEqual("12==ab", name)
+        name = build_variable_name("123456789", "abcdefghi", 11)
+        self.assertEqual("...bcdefghi", name)
+        name = build_variable_name("123456789", "abcdefghi", 12)
+        self.assertEqual("1...9==a...i", name)
+        name = build_variable_name("123456789", "abcdefghi", 13)
+        self.assertEqual("1...9==a...i", name)
+        name = build_variable_name("123456789", "abcdefghi", 14)
+        self.assertEqual("1...9==a...i", name)
+        name = build_variable_name("123456789", "abcdefghi", 15)
+        self.assertEqual("1...9==a...i", name)
+        name = build_variable_name("123456789", "abcdefghi", 16)
+        self.assertEqual("12...89==ab...hi", name)
+        name = build_variable_name("123456789", "abcdefghi", 17)
+        self.assertEqual("12...89==ab...hi", name)
+        name = build_variable_name("123456789", "abcdefghi", 18)
+        self.assertEqual("12...89==ab...hi", name)
+        name = build_variable_name("123456789", "abcdefghi", 19)
+        self.assertEqual("12...89==ab...hi", name)
+        name = build_variable_name("123456789", "abcdefghi", 20)
+        self.assertEqual("123456789==abcdefghi", name)
