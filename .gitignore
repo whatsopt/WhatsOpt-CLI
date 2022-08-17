@@ -109,3 +109,6 @@ venv.bak/
 # test output
 xdsm.html
 .wop
+
+# OpenMDAO reports
+**/reports
