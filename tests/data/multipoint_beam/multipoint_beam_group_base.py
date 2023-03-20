@@ -27,7 +27,7 @@ from parallel.sub0.compliance_comp import ComplianceComp
 
 
 class MultipointBeamGroupBase(Group):
-    """ An OpenMDAO base component to encapsulate MultipointBeamGroup MDA """
+    """An OpenMDAO base component to encapsulate MultipointBeamGroup MDA"""
 
     def __init__(self, thrift_client=None, **kwargs):
         super(MultipointBeamGroupBase, self).__init__(**kwargs)

@@ -5,31 +5,32 @@
 import numpy as np
 from parallel.sub0.states_comp_base import StatesCompBase
 
+
 class StatesComp(StatesCompBase):
-    """ An OpenMDAO component to encapsulate StatesComp discipline """
-		
+    """An OpenMDAO component to encapsulate StatesComp discipline"""
+
     def compute(self, inputs, outputs):
-        """ StatesComp computation """
+        """StatesComp computation"""
         if self._impl:
             # Docking mechanism: use implementation if referenced in .whatsopt_dock.yml file
             self._impl.compute(inputs, outputs)
         else:
-                    
-            outputs['d_0'] = np.ones((104,)) 
-            outputs['d_1'] = np.ones((104,))   
+            outputs["d_0"] = np.ones((104,))
+            outputs["d_1"] = np.ones((104,))
+
 
 # Reminder: inputs of compute()
-#   
-#       inputs['K_local'] -> shape: (50, 4, 4), type: Float      
-	
+#
+#       inputs['K_local'] -> shape: (50, 4, 4), type: Float
+
 # To declare partial derivatives computation ...
-# 
+#
 #    def setup(self):
 #        super(StatesComp, self).setup()
-#        self.declare_partials('*', '*')  
-#			
+#        self.declare_partials('*', '*')
+#
 #    def compute_partials(self, inputs, partials):
 #        """ Jacobian for StatesComp """
-#   
+#
 #       	partials['d_0', 'K_local'] = np.zeros((104, 800))
-#       	partials['d_1', 'K_local'] = np.zeros((104, 800))        
+#       	partials['d_1', 'K_local'] = np.zeros((104, 800))

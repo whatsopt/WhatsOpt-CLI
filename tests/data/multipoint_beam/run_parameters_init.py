@@ -5,10 +5,9 @@
 import numpy as np
 from numpy import nan
 
+
 def initialize(mda):
-
-    mda['h_cp'] = [1.0, 1.0, 1.0, 1.0, 1.0]
-
+    mda["h_cp"] = [1.0, 1.0, 1.0, 1.0, 1.0]
 
 
 if __name__ == "__main__":

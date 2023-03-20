@@ -5,7 +5,6 @@
 
 
 def initialize(mda):
-
     mda["x"] = 2
     mda["z"] = [5, 2]
 

@@ -18,7 +18,6 @@ except ImportError:
 
 
 class TestUploadUtils(unittest.TestCase):
-
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
     def test_load_from_csv(self):

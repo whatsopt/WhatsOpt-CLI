@@ -5,29 +5,30 @@
 import numpy as np
 from local_stiffness_matrix_comp_base import LocalStiffnessMatrixCompBase
 
+
 class LocalStiffnessMatrixComp(LocalStiffnessMatrixCompBase):
-    """ An OpenMDAO component to encapsulate LocalStiffnessMatrixComp discipline """
-		
+    """An OpenMDAO component to encapsulate LocalStiffnessMatrixComp discipline"""
+
     def compute(self, inputs, outputs):
-        """ LocalStiffnessMatrixComp computation """
+        """LocalStiffnessMatrixComp computation"""
         if self._impl:
             # Docking mechanism: use implementation if referenced in .whatsopt_dock.yml file
             self._impl.compute(inputs, outputs)
         else:
-                    
-            outputs['K_local'] = np.ones((50, 4, 4))   
+            outputs["K_local"] = np.ones((50, 4, 4))
+
 
 # Reminder: inputs of compute()
-#   
-#       inputs['I'] -> shape: (50,), type: Float      
-	
+#
+#       inputs['I'] -> shape: (50,), type: Float
+
 # To declare partial derivatives computation ...
-# 
+#
 #    def setup(self):
 #        super(LocalStiffnessMatrixComp, self).setup()
-#        self.declare_partials('*', '*')  
-#			
+#        self.declare_partials('*', '*')
+#
 #    def compute_partials(self, inputs, partials):
 #        """ Jacobian for LocalStiffnessMatrixComp """
-#   
-#       	partials['K_local', 'I'] = np.zeros((800, 50))        
+#
+#       	partials['K_local', 'I'] = np.zeros((800, 50))

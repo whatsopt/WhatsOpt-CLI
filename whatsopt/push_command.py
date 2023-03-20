@@ -102,7 +102,6 @@ class PushCommand:
                 mda_tgt = mda_tgt[1:]
             conn_name = self._get_conn_name(conn)
             for discattrs in self.mdas[".".join(hat)]["disciplines_attributes"]:
-
                 # mda hat: src
                 if (
                     mda_src[0] != AUTO_IVC

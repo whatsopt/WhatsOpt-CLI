@@ -5,34 +5,35 @@
 import numpy as np
 from parallel.sub0.displacements_comp_base import DisplacementsCompBase
 
+
 class DisplacementsComp(DisplacementsCompBase):
-    """ An OpenMDAO component to encapsulate DisplacementsComp discipline """
-		
+    """An OpenMDAO component to encapsulate DisplacementsComp discipline"""
+
     def compute(self, inputs, outputs):
-        """ DisplacementsComp computation """
+        """DisplacementsComp computation"""
         if self._impl:
             # Docking mechanism: use implementation if referenced in .whatsopt_dock.yml file
             self._impl.compute(inputs, outputs)
         else:
-                    
-            outputs['displacements_0'] = np.ones((102,)) 
-            outputs['displacements_1'] = np.ones((102,))   
+            outputs["displacements_0"] = np.ones((102,))
+            outputs["displacements_1"] = np.ones((102,))
+
 
 # Reminder: inputs of compute()
-#   
-#       inputs['d_0'] -> shape: (104,), type: Float    
-#       inputs['d_1'] -> shape: (104,), type: Float      
-	
+#
+#       inputs['d_0'] -> shape: (104,), type: Float
+#       inputs['d_1'] -> shape: (104,), type: Float
+
 # To declare partial derivatives computation ...
-# 
+#
 #    def setup(self):
 #        super(DisplacementsComp, self).setup()
-#        self.declare_partials('*', '*')  
-#			
+#        self.declare_partials('*', '*')
+#
 #    def compute_partials(self, inputs, partials):
 #        """ Jacobian for DisplacementsComp """
-#   
+#
 #       	partials['displacements_0', 'd_0'] = np.zeros((102, 104))
 #       	partials['displacements_0', 'd_1'] = np.zeros((102, 104))
 #       	partials['displacements_1', 'd_0'] = np.zeros((102, 104))
-#       	partials['displacements_1', 'd_1'] = np.zeros((102, 104))        
+#       	partials['displacements_1', 'd_1'] = np.zeros((102, 104))

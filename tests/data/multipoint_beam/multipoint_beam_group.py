@@ -14,7 +14,7 @@ from multipoint_beam_group_base import (
 
 
 class MultipointBeamGroup(MultipointBeamGroupBase):
-    """ An OpenMDAO component to encapsulate MultipointBeamGroup analysis """
+    """An OpenMDAO component to encapsulate MultipointBeamGroup analysis"""
 
     def __init__(self, **kwargs):
         super(MultipointBeamGroup, self).__init__(**kwargs)
@@ -29,7 +29,7 @@ class MultipointBeamGroup(MultipointBeamGroupBase):
 
 
 class MultipointBeamGroupFactory(MultipointBeamGroupFactoryBase):
-    """ A factory to create disciplines of MultipointBeamGroup analysis """
+    """A factory to create disciplines of MultipointBeamGroup analysis"""
 
     pass
 

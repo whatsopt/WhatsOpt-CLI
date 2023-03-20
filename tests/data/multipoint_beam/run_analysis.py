@@ -7,14 +7,13 @@
 
 from openmdao.api import Problem
 from run_parameters_init import initialize
-from multipoint_beam_group import MultipointBeamGroup 
+from multipoint_beam_group import MultipointBeamGroup
 
 pb = Problem(MultipointBeamGroup())
-pb.setup()  
+pb.setup()
 
 initialize(pb)
 
-pb.run_model()   
+pb.run_model()
 pb.model.list_inputs(print_arrays=False)
 pb.model.list_outputs(print_arrays=False)
-

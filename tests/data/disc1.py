@@ -7,14 +7,13 @@ from disc1_base import Disc1Base
 
 
 class Disc1(Disc1Base):
-    """ An OpenMDAO component to encapsulate Disc1 discipline """
+    """An OpenMDAO component to encapsulate Disc1 discipline"""
 
     def compute(self, inputs, outputs):
-        """ Disc1 computation """
+        """Disc1 computation"""
         if self._impl:
             self._impl.compute(inputs, outputs)
         else:
-
             outputs["y1"] = 1.0
 
 

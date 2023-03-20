@@ -13,7 +13,6 @@ from whatsopt.push_utils import (
 
 
 class TestPushUtils(unittest.TestCase):
-
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
     def test_format_shape(self):

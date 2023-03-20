@@ -16,7 +16,6 @@ from whatsopt.utils import (
 
 
 class TestUtils(unittest.TestCase):
-
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
     MBEAM_PATH = os.path.join(DATA_PATH, "multipoint_beam")
 

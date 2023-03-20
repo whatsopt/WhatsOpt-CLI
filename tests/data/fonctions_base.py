@@ -11,7 +11,7 @@ from openmdao.api import ExplicitComponent
 
 
 class FonctionsBase(ExplicitComponent):
-    """ An OpenMDAO base component to encapsulate Fonctions discipline """
+    """An OpenMDAO base component to encapsulate Fonctions discipline"""
 
     def setup(self):
         self.add_input("x", val=2, desc="")
