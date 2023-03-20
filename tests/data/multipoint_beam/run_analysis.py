@@ -6,7 +6,7 @@
 # analysis_id: 4
 
 from openmdao.api import Problem
-from run_parameters_init import initialize
+from mda_init import initialize
 from multipoint_beam_group import MultipointBeamGroup
 
 pb = Problem(MultipointBeamGroup())
