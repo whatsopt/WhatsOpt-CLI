@@ -1,3 +1,6 @@
+* 2.2.1 (20/03/2023)
+  * `wop upload mda_init.py`: Fix the upload of the parameter values of the analysis.
+
 * 2.2.0 (17/08/2022)
   * requires: Python 3.7+, openmdao_extensions 1.1.0+
   * `wop push`: When creating pseudo-variables related to connections created with OpenMDAO connect()
