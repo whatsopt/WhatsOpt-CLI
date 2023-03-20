@@ -8,7 +8,6 @@ from whatsopt.convert_utils import (
 
 
 class TestUploadUtils(unittest.TestCase):
-
     DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
     def test_convert_sqlite_to_csv(self):

@@ -5,29 +5,30 @@
 import numpy as np
 from i_comp_base import ICompBase
 
+
 class IComp(ICompBase):
-    """ An OpenMDAO component to encapsulate IComp discipline """
-		
+    """An OpenMDAO component to encapsulate IComp discipline"""
+
     def compute(self, inputs, outputs):
-        """ IComp computation """
+        """IComp computation"""
         if self._impl:
             # Docking mechanism: use implementation if referenced in .whatsopt_dock.yml file
             self._impl.compute(inputs, outputs)
         else:
-                    
-            outputs['I'] = np.ones((50,))   
+            outputs["I"] = np.ones((50,))
+
 
 # Reminder: inputs of compute()
-#   
-#       inputs['h'] -> shape: (50,), type: Float      
-	
+#
+#       inputs['h'] -> shape: (50,), type: Float
+
 # To declare partial derivatives computation ...
-# 
+#
 #    def setup(self):
 #        super(IComp, self).setup()
-#        self.declare_partials('*', '*')  
-#			
+#        self.declare_partials('*', '*')
+#
 #    def compute_partials(self, inputs, partials):
 #        """ Jacobian for IComp """
-#   
-#       	partials['I', 'h'] = np.zeros((50, 50))        
+#
+#       	partials['I', 'h'] = np.zeros((50, 50))

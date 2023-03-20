@@ -21,7 +21,7 @@ from parallel.sub0.compliance_comp import ComplianceComp
 
 
 class Sub0Base(Group):
-    """ An OpenMDAO base component to encapsulate Sub0 MDA """
+    """An OpenMDAO base component to encapsulate Sub0 MDA"""
 
     def __init__(self, thrift_client=None, **kwargs):
         super(Sub0Base, self).__init__(**kwargs)
@@ -40,7 +40,6 @@ class Sub0Base(Group):
         self.linear_solver.options["iprint"] = 1
 
     def setup(self):
-
         self.add_subsystem(
             "StatesComp", self.create_states_comp(), promotes=["d_0", "d_1", "K_local"]
         )

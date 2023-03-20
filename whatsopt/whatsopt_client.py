@@ -707,10 +707,7 @@ class WhatsOpt:
         if not os.path.exists(filename):
             error(f"File not found ({filename})")
             sys.exit(-1)
-        if (
-            os.path.basename(filename) == "run_parameters_init.py"
-            or os.path.basename(filename) == "mda_init.py"
-        ):
+        if os.path.basename(filename) == "mda_init.py":
             self.upload_vars_init_cmd(
                 filename, {"--dry-run": dry_run, "--analysis-id": mda_id}
             )
@@ -783,14 +780,12 @@ class WhatsOpt:
             sys.exit()
 
         d = os.path.dirname(py_filename)
-        run_analysis_filename = os.path.join(d, "run_analysis.py")
-        if not os.path.exists(run_analysis_filename):
-            error(
-                f"Can not get analysis init: script {run_analysis_filename} not found."
-            )
+        run_mda_filename = os.path.join(d, "run_mda.py")
+        if not os.path.exists(run_mda_filename):
+            error(f"Can not get analysis init: script {run_mda_filename} not found.")
         hooks.use_hooks = True
         hooks._register_hook("final_setup", "Problem", post=upload_vars_init)
-        _load_and_exec(run_analysis_filename, [])
+        _load_and_exec(run_mda_filename, [])
 
     def upload_vars_init(self, problem, options):
         mda_id = get_analysis_id() if get_analysis_id() else options["--analysis-id"]

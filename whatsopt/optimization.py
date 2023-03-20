@@ -13,7 +13,6 @@ class OptimizationError(Exception):
 
 
 class Optimization:
-
     VALID_POINT = 0
     INVALID_POINT = 1
     RUNTIME_ERROR = 2
