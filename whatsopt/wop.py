@@ -446,5 +446,13 @@ def convert(
     WhatsOpt().convert(sqlite_filename)
 
 
+@wop.command()
+@click.argument("archive_filename")
+@click.pass_context
+def publish(ctx, archive_filename):
+    """Publish given archive on WhatsOpt Package Store."""
+    WhatsOpt(**ctx.obj).login().publish(archive_filename)
+
+
 if __name__ == "__main__":
     wop()

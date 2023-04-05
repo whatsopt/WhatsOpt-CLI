@@ -866,6 +866,20 @@ class WhatsOpt:
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
 
+    def publish(self, filename, analysis_id=None):
+        mda_id = analysis_id if analysis_id else get_analysis_id()
+        if not os.path.exists(filename):
+            error(f"File {filename} not found.")
+        url = self.endpoint(f"/api/v1/analyses/{mda_id}/package")
+        description = "This is a description"
+        files = {
+            "package[description]": (None, description, "application/json"),
+            "package[archive]": (filename, open(filename, "rb"), "application/gzip"),
+        }
+        print(url)
+        print(self.headers)
+        resp = self.session.post(url, headers=self.headers, files=files)
+
     def _test_connection(self):
         if self.api_key:
             self.headers = {
