@@ -24,6 +24,7 @@ from openmdao.api import IndepVarComp
 from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
+from whatsopt.publish_utils import build_package, get_pkg_metadata
 from whatsopt.utils import (
     FRAMEWORK_GEMSEO,
     FRAMEWORK_OPENMDAO,
@@ -866,19 +867,36 @@ class WhatsOpt:
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
 
-    def publish(self, filename, analysis_id=None):
+    def publish(self, analysis_id=None):
+        update_options = {
+            "--dry-run": False,
+            "--force": False,
+            "--server": False,
+            "--egmdo": False,
+            "--run-ops": False,
+            "--test-units": False,
+            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
+            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
+        }
+        self.update_mda(analysis_id, update_options)
+        filename = build_package()
+        print(filename)
         mda_id = analysis_id if analysis_id else get_analysis_id()
         if not os.path.exists(filename):
             error(f"File {filename} not found.")
         url = self.endpoint(f"/api/v1/analyses/{mda_id}/package")
-        description = "This is a description"
+        meta = get_pkg_metadata(filename)
         files = {
-            "package[description]": (None, description, "application/json"),
+            "package[description]": (None, meta.summary, "application/json"),
             "package[archive]": (filename, open(filename, "rb"), "application/gzip"),
         }
-        print(url)
-        print(self.headers)
         resp = self.session.post(url, headers=self.headers, files=files)
+        if resp.ok:
+            info(
+                f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
+            )
+        else:
+            resp.raise_for_status()
 
     def _test_connection(self):
         if self.api_key:

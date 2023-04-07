@@ -447,11 +447,10 @@ def convert(
 
 
 @wop.command()
-@click.argument("archive_filename")
 @click.pass_context
-def publish(ctx, archive_filename):
-    """Publish given archive on WhatsOpt Package Store."""
-    WhatsOpt(**ctx.obj).login().publish(archive_filename)
+def publish(ctx):
+    """Publish current analysis as Python package on WhatsOpt Package Store. Package mode is required."""
+    WhatsOpt(**ctx.obj).login().publish()
 
 
 if __name__ == "__main__":
