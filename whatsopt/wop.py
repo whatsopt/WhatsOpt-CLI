@@ -453,5 +453,12 @@ def publish(ctx):
     WhatsOpt(**ctx.obj).login().publish()
 
 
+@wop.command()
+@click.pass_context
+def build(ctx):
+    """Build current analysis package. Package mode is required."""
+    WhatsOpt(**ctx.obj).login().build()
+
+
 if __name__ == "__main__":
     wop()

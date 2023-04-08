@@ -635,9 +635,9 @@ class WhatsOpt:
                 "--base": True,
                 "--update": True,
                 "--gemseo": opts["--gemseo"]
-                or (not opts["--openmdao"] and is_based_on("gemseo")),
+                or (not opts["--openmdao"] and is_based_on(FRAMEWORK_GEMSEO)),
                 "--openmdao": opts["--openmdao"]
-                or (not opts["--gemseo"] and is_based_on("openmdao")),
+                or (not opts["--gemseo"] and is_based_on(FRAMEWORK_OPENMDAO)),
                 "--package": is_package_mode(),
             }
         )
@@ -868,19 +868,7 @@ class WhatsOpt:
         convert_sqlite_to_csv(filename, basename)
 
     def publish(self, analysis_id=None):
-        update_options = {
-            "--dry-run": False,
-            "--force": False,
-            "--server": False,
-            "--egmdo": False,
-            "--run-ops": False,
-            "--test-units": False,
-            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
-            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
-        }
-        self.update_mda(analysis_id, update_options)
-        filename = build_package()
-        print(filename)
+        filename = self.build()
         mda_id = analysis_id if analysis_id else get_analysis_id()
         if not os.path.exists(filename):
             error(f"File {filename} not found.")
@@ -897,6 +885,25 @@ class WhatsOpt:
             )
         else:
             resp.raise_for_status()
+
+    def build(self, analysis_id=None):
+        if not is_package_mode():
+            error("Package mode is required!")
+            exit(-1)
+        update_options = {
+            "--dry-run": False,
+            "--force": False,
+            "--server": False,
+            "--egmdo": False,
+            "--run-ops": False,
+            "--test-units": False,
+            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
+            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
+        }
+        mda_id = analysis_id if analysis_id else get_analysis_id()
+        self.update_mda(mda_id, update_options)
+        filename = build_package()
+        return filename
 
     def _test_connection(self):
         if self.api_key:
