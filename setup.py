@@ -30,6 +30,7 @@ metadata = dict(
     classifiers=[_f for _f in CLASSIFIERS.split("\n") if _f],
     packages=["whatsopt"],
     install_requires=[
+        "build",
         "click>=6.7",
         "openmdao>=3.4.0",
         "openmdao_extensions>=1.2.0",
