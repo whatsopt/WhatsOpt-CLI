@@ -446,5 +446,19 @@ def convert(
     WhatsOpt().convert(sqlite_filename)
 
 
+@wop.command()
+@click.pass_context
+def publish(ctx):
+    """Publish current analysis as Python package on WhatsOpt Package Store. Package mode is required."""
+    WhatsOpt(**ctx.obj).login().publish()
+
+
+@wop.command()
+@click.pass_context
+def build(ctx):
+    """Build current analysis package. Package mode is required."""
+    WhatsOpt(**ctx.obj).login().build()
+
+
 if __name__ == "__main__":
     wop()

@@ -24,6 +24,7 @@ from openmdao.api import IndepVarComp
 from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
+from whatsopt.publish_utils import build_package, get_pkg_metadata
 from whatsopt.utils import (
     FRAMEWORK_GEMSEO,
     FRAMEWORK_OPENMDAO,
@@ -634,9 +635,9 @@ class WhatsOpt:
                 "--base": True,
                 "--update": True,
                 "--gemseo": opts["--gemseo"]
-                or (not opts["--openmdao"] and is_based_on("gemseo")),
+                or (not opts["--openmdao"] and is_based_on(FRAMEWORK_GEMSEO)),
                 "--openmdao": opts["--openmdao"]
-                or (not opts["--gemseo"] and is_based_on("openmdao")),
+                or (not opts["--gemseo"] and is_based_on(FRAMEWORK_OPENMDAO)),
                 "--package": is_package_mode(),
             }
         )
@@ -865,6 +866,44 @@ class WhatsOpt:
             )
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
+
+    def publish(self, analysis_id=None):
+        filename = self.build()
+        mda_id = analysis_id if analysis_id else get_analysis_id()
+        if not os.path.exists(filename):
+            error(f"File {filename} not found.")
+        url = self.endpoint(f"/api/v1/analyses/{mda_id}/package")
+        meta = get_pkg_metadata(filename)
+        files = {
+            "package[description]": (None, meta.summary, "application/json"),
+            "package[archive]": (filename, open(filename, "rb"), "application/gzip"),
+        }
+        resp = self.session.post(url, headers=self.headers, files=files)
+        if resp.ok:
+            info(
+                f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
+            )
+        else:
+            resp.raise_for_status()
+
+    def build(self, analysis_id=None):
+        if not is_package_mode():
+            error("Package mode is required!")
+            exit(-1)
+        update_options = {
+            "--dry-run": False,
+            "--force": False,
+            "--server": False,
+            "--egmdo": False,
+            "--run-ops": False,
+            "--test-units": False,
+            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
+            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
+        }
+        mda_id = analysis_id if analysis_id else get_analysis_id()
+        self.update_mda(mda_id, update_options)
+        filename = build_package()
+        return filename
 
     def _test_connection(self):
         if self.api_key:
