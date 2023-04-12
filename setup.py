@@ -34,6 +34,7 @@ metadata = dict(
         "click>=6.7",
         "openmdao>=3.4.0",
         "openmdao_extensions>=1.2.0",
+        "packaging",
         "pkginfo",
         "requests",
         "tabulate>=0.8.2",
