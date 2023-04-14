@@ -918,6 +918,10 @@ class WhatsOpt:
             info(
                 f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
             )
+        elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            error(resp.json()["message"])
+            error("Duplicate detected! The package already exists on WopStore!")
+            exit(-1)
         else:
             resp.raise_for_status()
 
