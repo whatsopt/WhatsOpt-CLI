@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from shutil import move
 import os
 import sys
@@ -14,6 +15,7 @@ import tomli
 import tomli_w
 from tabulate import tabulate
 from urllib.parse import urlparse
+from packaging.version import Version
 
 # push
 import openmdao.utils.hooks as hooks
@@ -867,22 +869,59 @@ class WhatsOpt:
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
 
-    def publish(self, analysis_id=None):
-        filename = self.build()
+    def publish(self, force=False, analysis_id=None):
         mda_id = analysis_id if analysis_id else get_analysis_id()
-        if not os.path.exists(filename):
-            error(f"File {filename} not found.")
         url = self.endpoint(f"/api/v1/analyses/{mda_id}/package")
+        if not force:
+            resp = self.session.get(url, headers=self.headers)
+            if resp.ok:
+                existing_meta = resp.json()
+            elif resp.status_code == HTTPStatus.NOT_FOUND:
+                existing_meta = None
+            else:
+                resp.raise_for_status()
+
+            if existing_meta:
+                warn(
+                    f"Existing package {existing_meta['name']} {existing_meta['version']} will be lost."
+                )
+                answer = input("Do you want to continue? (yes/no): ")
+                if answer.lower() == "yes":
+                    pass
+                else:
+                    info("Publishing aborted")
+                    exit(-1)
+
+        info("Package building...")
+        filename = self.build()
+        if not os.path.exists(filename):
+            error(f"File {filename} not found")
+            exit(-1)
         meta = get_pkg_metadata(filename)
+        if (
+            not force
+            and existing_meta
+            and existing_meta["name"] == meta.name
+            and Version(existing_meta["version"]) >= Version(meta.version)
+        ):
+            error(f"You have to bump the version (> {existing_meta['version']})")
+            error("Publishing aborted")
+            exit(-1)
+
         files = {
             "package[description]": (None, meta.summary, "application/json"),
             "package[archive]": (filename, open(filename, "rb"), "application/gzip"),
         }
+        info("Package publishing...")
         resp = self.session.post(url, headers=self.headers, files=files)
         if resp.ok:
             info(
                 f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
             )
+        elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            error(resp.json()["message"])
+            error("Duplicate detected! The package already exists on WopStore!")
+            exit(-1)
         else:
             resp.raise_for_status()
 

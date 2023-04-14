@@ -447,10 +447,17 @@ def convert(
 
 
 @wop.command()
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    help="overwrite current published package anyway",
+)
 @click.pass_context
-def publish(ctx):
+def publish(ctx, force):
     """Publish current analysis as Python package on WhatsOpt Package Store. Package mode is required."""
-    WhatsOpt(**ctx.obj).login().publish()
+    WhatsOpt(**ctx.obj).login().publish(force)
 
 
 @wop.command()
