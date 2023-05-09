@@ -451,7 +451,7 @@ class WhatsOpt:
         resp.raise_for_status()
         log("{} {} pushed".format(key, attrs["name"]))
 
-    def pull_mda(self, mda_id, options={}, msg=None):
+    def pull_mda(self, mda_id, options={}, msg=None, info_keep_run_ops=True):
         if not msg:
             msg = "Analysis %s pulled" % mda_id
 
@@ -537,7 +537,8 @@ class WhatsOpt:
                         os.remove(file_to)
                 elif options.get("--update"):
                     if is_run_script_file(f) and not options.get("--run-ops"):
-                        info(f"Keep existing {file_to} (use -r to override)")
+                        if info_keep_run_ops:
+                            info(f"Keep existing {file_to} (use -r to override)")
                         file_to_move[file_to] = False
                         continue
                     if is_test_file(f) and not options.get("--test-units"):
@@ -604,7 +605,7 @@ class WhatsOpt:
         resp.raise_for_status()
         print(json.dumps(resp.json()))
 
-    def update_mda(self, analysis_id=None, options={}):
+    def update_mda(self, analysis_id=None, options={}, info_keep_run_ops=True):
         mda_id = analysis_id or get_analysis_id()
         if mda_id and not analysis_id:
             url = get_whatsopt_url()
@@ -644,7 +645,9 @@ class WhatsOpt:
                 "--package": is_package_mode(),
             }
         )
-        self.pull_mda(mda_id, opts, "Analysis #{} updated".format(mda_id))
+        self.pull_mda(
+            mda_id, opts, "Analysis #{} updated".format(mda_id), info_keep_run_ops
+        )
 
     def show_mda(self, analysis_id, pbfile, name, outfile, batch, depth):
         options = {
@@ -926,22 +929,11 @@ class WhatsOpt:
         else:
             resp.raise_for_status()
 
-    def build(self, analysis_id=None):
+    def build(self):
         if not is_package_mode():
             error("Package mode is required!")
             exit(-1)
-        update_options = {
-            "--dry-run": False,
-            "--force": False,
-            "--server": False,
-            "--egmdo": False,
-            "--run-ops": False,
-            "--test-units": False,
-            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
-            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
-        }
-        mda_id = analysis_id if analysis_id else get_analysis_id()
-        self.update_mda(mda_id, update_options)
+        self._update_mda_base()
         filename = build_package()
         return filename
 
@@ -959,6 +951,8 @@ class WhatsOpt:
         }
         resp = self.session.put(url, headers=self.headers, json=params)
         if resp.ok:
+            # self.fetch_pkg(target_id)
+            self._update_mda_base()
             info(f"Analysis #{target_id} successfully merged")
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
             error(f"Error while merging Analysis #{target_id}.")
@@ -974,6 +968,20 @@ class WhatsOpt:
         else:
             error(f"Error while merging Analysis #{target_id}")
             resp.raise_for_status()
+
+    def _update_mda_base(self):
+        update_options = {
+            "--dry-run": False,
+            "--force": False,
+            "--server": False,
+            "--egmdo": False,
+            "--run-ops": False,
+            "--test-units": False,
+            "--gemseo": is_based_on(FRAMEWORK_GEMSEO),
+            "--openmdao": is_based_on(FRAMEWORK_OPENMDAO),
+        }
+        mda_id = get_analysis_id()
+        self.update_mda(mda_id, update_options, info_keep_run_ops=False)
 
     def _test_connection(self):
         if self.api_key:
