@@ -467,5 +467,16 @@ def build(ctx):
     WhatsOpt(**ctx.obj).login().build()
 
 
+@wop.command()
+@click.argument("analysis_id")
+@click.pass_context
+def merge(ctx, analysis_id):
+    """Merge the given analysis to the current one.
+    All the disciplines of the to-be-merged analysis are imported. The command may fail
+    if imported disciplines are not compatible (eg an output variable is already produced
+    by a discipline of the current analysis)."""
+    WhatsOpt(**ctx.obj).login().merge(analysis_id)
+
+
 if __name__ == "__main__":
     wop()

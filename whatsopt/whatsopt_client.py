@@ -11,6 +11,7 @@ import zipfile
 import tempfile
 import numpy as np
 import time
+from datetime import datetime
 import tomli
 import tomli_w
 from tabulate import tabulate
@@ -943,6 +944,36 @@ class WhatsOpt:
         self.update_mda(mda_id, update_options)
         filename = build_package()
         return filename
+
+    def merge(self, target_id=None):
+        if not is_package_mode():
+            error("Package mode is required!")
+            exit(-1)
+        current_id = get_analysis_id()
+        url = self.endpoint(f"/api/v1/analyses/{current_id}")
+        params = {
+            "analysis": {
+                "import": {"analysis": target_id},
+            },
+            "requested_at": str(datetime.now()),
+        }
+        resp = self.session.put(url, headers=self.headers, json=params)
+        if resp.ok:
+            info(f"Analysis #{target_id} successfully merged")
+        elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+            error(f"Error while merging Analysis #{target_id}.")
+            error(
+                f"    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
+            )
+        elif resp.status_code == HTTPStatus.FORBIDDEN:
+            error(f"Error while merging Analysis #{target_id}.")
+            error(
+                f"    You are not authorized to update the current analysis: either you do not own it or"
+                f" current analysis is already packaged or operated"
+            )
+        else:
+            error(f"Error while merging Analysis #{target_id}")
+            resp.raise_for_status()
 
     def _test_connection(self):
         if self.api_key:
