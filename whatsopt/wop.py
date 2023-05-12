@@ -496,19 +496,12 @@ def fetch(ctx, target_id, dry_run, force):
     default=False,
     help="print analysis merge info without actually merging",
 )
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    default=False,
-    help="force merge and overwrite existing files",
-)
-def merge(ctx, analysis_id, dry_run, force):
+def merge(ctx, analysis_id, dry_run):
     """Merge the given analysis to the current one.
     All the disciplines of the to-be-merged analysis are imported. The command may fail
     if imported disciplines are not compatible (eg an output variable is already produced
     by a discipline of the current analysis)."""
-    options = {"--dry-run": dry_run, "--force": force}
+    options = {"--dry-run": dry_run}
     WhatsOpt(**ctx.obj).login().merge(analysis_id, options)
 
 
