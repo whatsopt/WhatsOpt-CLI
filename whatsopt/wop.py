@@ -245,7 +245,7 @@ def pull(
     "--dry-run",
     is_flag=True,
     default=False,
-    help="print analysis update infos without actually updating",
+    help="print analysis update info without actually updating",
 )
 @click.option(
     "-a",
@@ -468,14 +468,48 @@ def build(ctx):
 
 
 @wop.command()
+@click.option(
+    "-n",
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="print analysis fetch info without actually fetching",
+)
+@click.option(
+    "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
+)
+@click.argument("target_id")
+@click.pass_context
+def fetch(ctx, target_id, dry_run, force):
+    """Fetch package content of the given analysis specified by its identifier"""
+    options = {"--dry-run": dry_run, "--force": force}
+    WhatsOpt(**ctx.obj).login().fetch(target_id, options)
+
+
+@wop.command()
 @click.argument("analysis_id")
 @click.pass_context
-def merge(ctx, analysis_id):
+@click.option(
+    "-n",
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="print analysis merge info without actually merging",
+)
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    default=False,
+    help="force merge and overwrite existing files",
+)
+def merge(ctx, analysis_id, dry_run, force):
     """Merge the given analysis to the current one.
     All the disciplines of the to-be-merged analysis are imported. The command may fail
     if imported disciplines are not compatible (eg an output variable is already produced
     by a discipline of the current analysis)."""
-    WhatsOpt(**ctx.obj).login().merge(analysis_id)
+    options = {"--dry-run": dry_run, "--force": force}
+    WhatsOpt(**ctx.obj).login().merge(analysis_id, options)
 
 
 if __name__ == "__main__":

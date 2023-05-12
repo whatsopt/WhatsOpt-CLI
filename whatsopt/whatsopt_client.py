@@ -1,5 +1,4 @@
 from http import HTTPStatus
-from shutil import move
 import os
 import sys
 import json
@@ -43,6 +42,7 @@ from whatsopt.utils import (
     is_user_file,
     get_analysis_id,
     get_whatsopt_url,
+    move_files,
     save_state,
 )
 from whatsopt.upload_utils import (
@@ -509,9 +509,9 @@ class WhatsOpt:
             if options.get("--update"):
                 cmd = "Update"
             info(
-                "*******************************************************************\n"
-                f"* {cmd} is run in DRY RUN mode (actions are listed but not done) *\n"
-                "*******************************************************************"
+                "***************************************************\n"
+                f"* DRY RUN mode (actions are listed but not done) *\n"
+                "***************************************************"
             )
 
         # Special case: When framework switch we have to update
@@ -574,16 +574,7 @@ class WhatsOpt:
                     log(f"Pull {file_to}")
 
         if not options.get("--dry-run"):
-            for f in file_to_move.keys():
-                file_from = os.path.join(tempdir, f)
-                file_to = f
-                dir_to = os.path.dirname(f)
-                if dir_to == "":
-                    dir_to = "."
-                elif not os.path.exists(dir_to):
-                    os.makedirs(dir_to)
-                if file_to_move[file_to]:
-                    move(file_from, dir_to)
+            move_files(file_to_move, tempdir)
             state = {
                 "whatsopt_url": self._url,
                 "analysis_id": mda_id,
@@ -937,7 +928,57 @@ class WhatsOpt:
         filename = build_package()
         return filename
 
-    def merge(self, target_id=None):
+    def fetch(self, target_id=None, options={}):
+        if not is_package_mode():
+            error("Package mode is required!")
+            exit(-1)
+        mda_id = get_analysis_id()
+        param = f"?src_id={target_id}"
+        format_query = "mda_pkg_content"
+        url = self.endpoint(
+            f"/api/v1/analyses/{mda_id}/exports/new.{format_query}{param}"
+        )
+        resp = self.session.get(url, headers=self.headers, stream=True)
+        if resp.ok:
+            name = None
+            with tempfile.NamedTemporaryFile(
+                suffix=".zip", mode="wb", delete=False
+            ) as fd:
+                for chunk in resp.iter_content(chunk_size=128):
+                    fd.write(chunk)
+                name = fd.name
+            zipf = zipfile.ZipFile(name, "r")
+            tempdir = tempfile.mkdtemp(suffix="wop", dir=tempfile.tempdir)
+            zipf.extractall(tempdir)
+            filenames = zipf.namelist()
+            zipf.close()
+
+            file_to_move = {}
+            for f in filenames:
+                file_to = f
+                file_to_move[file_to] = True
+                if os.path.exists(file_to):
+                    if options.get("--force"):
+                        log(f"Fetch {file_to}")
+                        if options.get("--dry-run"):
+                            file_to_move[file_to] = False
+                        else:
+                            os.remove(file_to)
+                    else:
+                        warn(
+                            f"File {file_to} in the way: remove it or use --force to override"
+                        )
+                        file_to_move[file_to] = False
+                else:
+                    log(f"Fetch {file_to}")
+            if not options.get("--dry-run"):
+                move_files(file_to_move, tempdir)
+                log(f"Analysis #{mda_id} fetched")
+        else:
+            error(f"Error while fetching Analysis #{target_id}")
+            resp.raise_for_status()
+
+    def merge(self, target_id=None, options={}):
         if not is_package_mode():
             error("Package mode is required!")
             exit(-1)
@@ -949,11 +990,18 @@ class WhatsOpt:
             },
             "requested_at": str(datetime.now()),
         }
-        resp = self.session.put(url, headers=self.headers, json=params)
+        if options.get("--dry-run"):
+            self.get_status()
+            url = self.endpoint("/api/v1/analyses/{}".format(target_id))
+            resp = self.session.get(url, headers=self.headers)
+            log(f"Analysis #{target_id} #{resp.json()} is selected to be merged")
+        else:
+            resp = self.session.put(url, headers=self.headers, json=params)
         if resp.ok:
-            # self.fetch_pkg(target_id)
-            self._update_mda_base()
-            info(f"Analysis #{target_id} successfully merged")
+            self.fetch(target_id, options)
+            self._update_mda_base(options.get("--dry-run"), options.get("--force"))
+            if not options.get("--dry-run"):
+                info(f"Analysis #{target_id} successfully merged")
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
             error(f"Error while merging Analysis #{target_id}.")
             error(
@@ -969,10 +1017,10 @@ class WhatsOpt:
             error(f"Error while merging Analysis #{target_id}")
             resp.raise_for_status()
 
-    def _update_mda_base(self):
+    def _update_mda_base(self, dry_run=False, force=False):
         update_options = {
-            "--dry-run": False,
-            "--force": False,
+            "--dry-run": dry_run,
+            "--force": force,
             "--server": False,
             "--egmdo": False,
             "--run-ops": False,
