@@ -973,7 +973,7 @@ class WhatsOpt:
                     log(f"Fetch {file_to}")
             if not options.get("--dry-run"):
                 move_files(file_to_move, tempdir)
-                log(f"Analysis #{mda_id} fetched")
+                log(f"Analysis #{target_id} fetched")
         else:
             error(f"Error while fetching Analysis #{target_id}")
             resp.raise_for_status()
