@@ -2,6 +2,8 @@ import os, re
 import sys
 import tomli_w
 from whatsopt.logging import error
+from shutil import move
+
 
 WOP_CONF_FILENAME = ".wop"
 
@@ -193,3 +195,16 @@ def _detect_from_import(file, module):
 def is_package_mode():
     state = load_state()
     return state and state[PULL_MODE_KEY] == MODE_PACKAGE
+
+
+def move_files(file_to_move, tempdir):
+    for f in file_to_move.keys():
+        file_from = os.path.join(tempdir, f)
+        file_to = f
+        dir_to = os.path.dirname(f)
+        if dir_to == "":
+            dir_to = "."
+        elif not os.path.exists(dir_to):
+            os.makedirs(dir_to)
+        if file_to_move[file_to]:
+            move(file_from, dir_to)

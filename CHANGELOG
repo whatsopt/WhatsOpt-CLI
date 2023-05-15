@@ -1,3 +1,9 @@
+* 2.4.0 (15/05/2023)
+  * `wop fetch <target_id>`: this command gets disciplines source code from target analysis and extract 
+  it within the current analysis Python module. The current analysis is untouched on WhatsOpt.
+  * `wop merge <target id>`: this command import the target analysis discipline within the current one 
+  on WhatsOpt fetch target analysis code and finally update the code.
+
 * 2.3.0 (08/04/2023)
   * `wop build`: Add command to build Python package with the analysis code.
   * `wop publish`: Add command to build and publish the package on WhatsOpt.
