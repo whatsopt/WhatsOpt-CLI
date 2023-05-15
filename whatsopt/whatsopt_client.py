@@ -951,6 +951,10 @@ class WhatsOpt:
             tempdir = tempfile.mkdtemp(suffix="wop", dir=tempfile.tempdir)
             zipf.extractall(tempdir)
             filenames = zipf.namelist()
+            if not filenames:
+                warn(f"No package found for Analysis #{target_id}")
+                log("Nothing to do")
+                return
             zipf.close()
 
             file_to_move = {}
@@ -976,7 +980,7 @@ class WhatsOpt:
                 log(f"Analysis #{target_id} fetched")
         else:
             error(f"Error while fetching Analysis #{target_id}")
-            resp.raise_for_status()
+            error(resp.json().get("message"))
 
     def merge(self, target_id=None, options={}):
         if not is_package_mode():
