@@ -582,7 +582,7 @@ class WhatsOpt:
                 "pull_mode": MODE_PACKAGE if options.get("--package") else MODE_PLAIN,
             }
             save_state(state)
-            log(msg)
+            info(msg)
 
     def pull_mda_json(self, mda_id):
         url = self.endpoint(f"/api/v1/analyses/{mda_id}.wopjson")
@@ -928,12 +928,12 @@ class WhatsOpt:
         filename = build_package()
         return filename
 
-    def fetch(self, target_id=None, options={}):
+    def fetch(self, source_id=None, options={}):
         if not is_package_mode():
             error("Package mode is required!")
             exit(-1)
         mda_id = get_analysis_id()
-        param = f"?src_id={target_id}"
+        param = f"?src_id={source_id}"
         format_query = "mda_pkg_content"
         url = self.endpoint(
             f"/api/v1/analyses/{mda_id}/exports/new.{format_query}{param}"
@@ -952,7 +952,7 @@ class WhatsOpt:
             zipf.extractall(tempdir)
             filenames = zipf.namelist()
             if not filenames:
-                warn(f"No package found for Analysis #{target_id}")
+                warn(f"No package found for Analysis #{source_id}")
                 log("Nothing to do")
                 return
             zipf.close()
@@ -977,12 +977,12 @@ class WhatsOpt:
                     log(f"Fetch {file_to}")
             if not options.get("--dry-run"):
                 move_files(file_to_move, tempdir)
-                log(f"Analysis #{target_id} fetched")
+                info(f"Analysis #{source_id} disciplines fetched")
         else:
-            error(f"Error while fetching Analysis #{target_id}")
+            error(f"Error while fetching disciplines of Analysis #{source_id}")
             error(resp.json().get("message"))
 
-    def merge(self, target_id=None, options={}):
+    def merge(self, source_id, options={}):
         if not is_package_mode():
             error("Package mode is required!")
             exit(-1)
@@ -990,36 +990,39 @@ class WhatsOpt:
         url = self.endpoint(f"/api/v1/analyses/{current_id}")
         params = {
             "analysis": {
-                "import": {"analysis": target_id},
+                "import": {"analysis": source_id},
             },
             "requested_at": str(datetime.now()),
         }
         if options.get("--dry-run"):
             self.get_status()
-            url = self.endpoint("/api/v1/analyses/{}".format(target_id))
+            url = self.endpoint("/api/v1/analyses/{}".format(source_id))
             resp = self.session.get(url, headers=self.headers)
-            log(f"Analysis #{target_id} #{resp.json()} is selected to be merged")
+            log(f"Analysis #{source_id} #{resp.json()} is selected to be merged")
         else:
             resp = self.session.put(url, headers=self.headers, json=params)
         if resp.ok:
-            self.fetch(target_id, options)
-            self._update_mda_base(options.get("--dry-run"), options.get("--force"))
             if not options.get("--dry-run"):
-                info(f"Analysis #{target_id} successfully merged")
+                info(f"Analysis #{source_id} merged")
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            error(f"Error while merging Analysis #{target_id}.")
+            error(f"Error while merging Analysis #{source_id}.")
             error(
                 f"    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
             )
         elif resp.status_code == HTTPStatus.FORBIDDEN:
-            error(f"Error while merging Analysis #{target_id}.")
+            error(f"Error while merging Analysis #{source_id}.")
             error(
                 f"    You are not authorized to update the current analysis: either you do not own it or"
                 f" current analysis is already packaged or operated"
             )
         else:
-            error(f"Error while merging Analysis #{target_id}")
+            error(f"Error while merging Analysis #{source_id}")
             resp.raise_for_status()
+
+    def pull_source_mda(self, source_id, options={}):
+        self.merge(source_id, options)
+        self.fetch(source_id, options)
+        self._update_mda_base(options.get("--dry-run"))
 
     def _update_mda_base(self, dry_run=False, force=False):
         update_options = {

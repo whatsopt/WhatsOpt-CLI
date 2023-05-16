@@ -1,5 +1,6 @@
 import click
 from whatsopt import __version__
+from whatsopt.utils import get_analysis_id
 from .whatsopt_client import WhatsOpt, EXTRANET_SERVER_URL
 from logging import error
 
@@ -195,8 +196,8 @@ def push(ctx, dry_run, scalar, name, component, depth, json, filename):
 )
 @click.option(
     "--package/--plain",
-    default=False,
-    help="pull analysis as Python package (default plain)",
+    default=True,
+    help="pull analysis as Python package (default) or plain mode (--plain)",
 )
 @click.argument("analysis_id")
 @click.pass_context
@@ -236,7 +237,11 @@ def pull(
         if project_id:
             error("Bad option --project-id which works only with option --json enabled")
             exit(-1)
-        wop.pull_mda(analysis_id, options)
+        current_id = get_analysis_id()
+        if current_id and analysis_id != current_id:
+            wop.merge_fetch_mda(analysis_id, options)
+        else:
+            wop.pull_mda(analysis_id, options)
 
 
 @wop.command()
@@ -478,12 +483,12 @@ def build(ctx):
 @click.option(
     "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
 )
-@click.argument("target_id")
+@click.argument("source_id")
 @click.pass_context
-def fetch(ctx, target_id, dry_run, force):
+def fetch(ctx, source_id, dry_run, force):
     """Fetch package content of the given analysis specified by its identifier"""
     options = {"--dry-run": dry_run, "--force": force}
-    WhatsOpt(**ctx.obj).login().fetch(target_id, options)
+    WhatsOpt(**ctx.obj).login().fetch(source_id, options)
 
 
 @wop.command()
