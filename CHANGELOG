@@ -1,8 +1,18 @@
+* 2.5.0 (16/05/2023) 
+  * `wop merge <source_id>`: Now only import the source analysis disciplines in the current 
+  analysis on WhatsOpt (previously was also doing the fetching).
+  * `wop pull`: 
+    * Now default is package mode (before `--package` option was required). 
+    Old plain mode is still available with `--plain` option. 
+    * `wop pull <source_id>`: was previously `wop merge <source_id>`. 
+    Now `wop pull <source_id>` is equivalent of `wop merge <source_id>` + `wop fetch <source_id>`
+  * `wop fetch`: Fixed when there is no package an error is raised, now just no-op.  
+
 * 2.4.0 (15/05/2023)
-  * `wop fetch <target_id>`: this command gets disciplines source code from target analysis and extract 
+  * `wop fetch <source_id>`: this command gets disciplines source code from source analysis and extract 
   it within the current analysis Python module. The current analysis is untouched on WhatsOpt.
-  * `wop merge <target id>`: this command import the target analysis discipline within the current one 
-  on WhatsOpt fetch target analysis code and finally update the code.
+  * `wop merge <source_id>`: this command import the source analysis discipline within the current one 
+  on WhatsOpt fetch source analysis code and finally update the code.
 
 * 2.3.0 (08/04/2023)
   * `wop build`: Add command to build Python package with the analysis code.
