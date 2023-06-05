@@ -239,7 +239,7 @@ def pull(
             exit(-1)
         current_id = get_analysis_id()
         if current_id and analysis_id != current_id:
-            wop.merge_fetch_mda(analysis_id, options)
+            wop.pull_source_mda(analysis_id, options)
         else:
             wop.pull_mda(analysis_id, options)
 
