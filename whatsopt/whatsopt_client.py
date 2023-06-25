@@ -952,8 +952,9 @@ class WhatsOpt:
             zipf.extractall(tempdir)
             filenames = zipf.namelist()
             if not filenames:
-                warn(f"No package found for Analysis #{source_id}")
-                log("Nothing to do")
+                warn(
+                    f"Fetching but no package found for analysis #{source_id}, nothing to do"
+                )
                 return
             zipf.close()
 
@@ -979,7 +980,7 @@ class WhatsOpt:
                 move_files(file_to_move, tempdir)
                 info(f"Analysis #{source_id} disciplines fetched")
         else:
-            error(f"Error while fetching disciplines of Analysis #{source_id}")
+            error(f"Error while fetching disciplines of analysis #{source_id}")
             error(resp.json().get("message"))
 
     def merge(self, source_id, options={}):
@@ -987,6 +988,9 @@ class WhatsOpt:
             error("Package mode is required!")
             exit(-1)
         current_id = get_analysis_id()
+        if int(source_id) == current_id:
+            warn(f"Merging analysis #{current_id} in itself, nothing to do")
+            return
         url = self.endpoint(f"/api/v1/analyses/{current_id}")
         params = {
             "analysis": {
@@ -1005,18 +1009,18 @@ class WhatsOpt:
             if not options.get("--dry-run"):
                 info(f"Analysis #{source_id} merged")
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
-            error(f"Error while merging Analysis #{source_id}.")
+            error(f"Error while merging analysis #{source_id}.")
             error(
                 f"    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
             )
         elif resp.status_code == HTTPStatus.FORBIDDEN:
-            error(f"Error while merging Analysis #{source_id}.")
+            error(f"Error while merging analysis #{source_id}.")
             error(
                 f"    You are not authorized to update the current analysis: either you do not own it or"
                 f" current analysis is already packaged or operated"
             )
         else:
-            error(f"Error while merging Analysis #{source_id}")
+            error(f"Error while merging analysis #{source_id}")
             resp.raise_for_status()
 
     def pull_source_mda(self, source_id, options={}):
