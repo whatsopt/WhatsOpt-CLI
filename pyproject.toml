@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tools.setuptools-scm]
+
+[tool.setuptools]
+packages = ["whatsopt"]
+
+[project]
+name = "wop"
+dynamic = ["version"]
+authors = [
+    {name = "Rémi Lafage", email = "remi.lafage@onera.fr"},
+]
+description = "My package description"
+readme = "README.md"
+requires-python = ">=3.7"
+keywords = ["WhatsOpt", "command"]
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development",
+    "Topic :: Scientific/Engineering",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+]
+dependencies = [
+    "build",
+    "click>=6.7",
+    "openmdao>=3.4.0",
+    "openmdao_extensions>=1.2.0",
+    "packaging",
+    "pkginfo",
+    "requests",
+    "tabulate>=0.8.2",
+    "tomli",
+    "tomli-w",
+    "xdsmjs>=1.0.0",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "whatsopt.__version__"}
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+homepage = "https://github.com/whatsopt"
+repository = "https://github.com/whatsopt/WhatsOpt-CLI"
+documentation = "https://github.com/whatsopt/WhatsOpt-Doc#whatsopt-documentation"
+changelog = "CHANGELOG"
+
+[project.scripts]
+wop = "whatsopt.wop:wop"
+
