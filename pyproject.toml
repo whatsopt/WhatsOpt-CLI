@@ -54,7 +54,6 @@ test = ["pytest"]
 homepage = "https://github.com/whatsopt"
 repository = "https://github.com/whatsopt/WhatsOpt-CLI"
 documentation = "https://github.com/whatsopt/WhatsOpt-Doc#whatsopt-documentation"
-changelog = "CHANGELOG"
 
 [project.scripts]
 wop = "whatsopt.wop:wop"
