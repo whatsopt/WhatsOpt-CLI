@@ -1,23 +1,22 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm"]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
-
-[tools.setuptools-scm]
 
 [tool.setuptools]
 packages = ["whatsopt"]
 
+[tool.setuptools.dynamic]
+version = { attr = "whatsopt.__version__" }
+
 [project]
 name = "wop"
 dynamic = ["version"]
-authors = [
-    {name = "Rémi Lafage", email = "remi.lafage@onera.fr"},
-]
-description = "My package description"
+authors = [{ name = "Rémi Lafage", email = "remi.lafage@onera.fr" }]
+description = "WhatsOpt Command Line Interface"
 readme = "README.md"
 requires-python = ">=3.7"
 keywords = ["WhatsOpt", "command"]
-license = {text = "Apache License 2.0"}
+license = { text = "Apache License 2.0" }
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -44,9 +43,6 @@ dependencies = [
     "xdsmjs>=1.0.0",
 ]
 
-[tool.setuptools.dynamic]
-version = {attr = "whatsopt.__version__"}
-
 [project.optional-dependencies]
 test = ["pytest"]
 
@@ -57,4 +53,3 @@ documentation = "https://github.com/whatsopt/WhatsOpt-Doc#whatsopt-documentation
 
 [project.scripts]
 wop = "whatsopt.wop:wop"
-
