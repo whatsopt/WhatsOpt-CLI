@@ -170,23 +170,8 @@ class Optimization:
         x : 2d array-like of inputs  [x1, x2, ...]
         y : 2d array-like of outputs [obj1, obj2, ..., objn, cstr1, cstr2, ... cstrn]
         """
-
-        # check if already told
-        found = False
-        for i, v in enumerate(self._x):
-            if np.allclose(x, v):
-                print(
-                    "Value {} already told index {} with y = {}".format(
-                        x, i, self._y[i]
-                    )
-                )
-                found = True
-                break
-        if found:
-            self._status = self.SOLUTION_REACHED
-        else:
-            self._x = np.vstack((self._x, np.atleast_2d(x)))
-            self._y = np.vstack((self._y, np.atleast_2d(y)))
+        self._x = np.vstack((self._x, np.atleast_2d(x)))
+        self._y = np.vstack((self._y, np.atleast_2d(y)))
 
     def ask(self, with_best=False):
         """Trigger optimizer iteration to get next promising location of the optimum
