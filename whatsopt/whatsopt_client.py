@@ -122,16 +122,6 @@ class WhatsOpt:
         return self._url + path
 
     @staticmethod
-    def err_msg(resp):
-        error(
-            "{} ({}) : {}".format(
-                resp.status_code,
-                requests.status_codes._codes[resp.status_code][0],
-                resp.json()["message"],
-            )
-        )
-
-    @staticmethod
     def _read_remotes():
         remotes = {}
         if os.path.exists(REMOTES_FILENAME):

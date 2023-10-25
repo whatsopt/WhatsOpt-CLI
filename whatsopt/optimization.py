@@ -314,10 +314,9 @@ class Optimization:
                 },
             )
             if not resp.ok:
-                self._wop.err_msg(resp)
                 self._status = self.RUNTIME_ERROR
                 raise OptimizationError(
-                    f"Error {resp.reason} ({resp.status_code}): {resp.json()['message']}"
+                    f"Error {resp.reason} ({resp.status_code}): {resp.json().get('message', 'Unexpected Error')}"
                 )
         except RequestException as e:
             raise OptimizationError(f"Connection failed: {e}")
