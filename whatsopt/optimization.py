@@ -229,7 +229,7 @@ class Optimization:
                 "Time out: please check status and history and may be ask again."
             )
 
-        self.status = self.PENDING
+        self._status = self.PENDING
 
         return self._x_suggested, self._status, self._x_best, self._y_best
 
