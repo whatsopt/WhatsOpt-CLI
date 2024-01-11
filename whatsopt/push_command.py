@@ -153,7 +153,10 @@ class PushCommand:
                     scope = discattrs["name"]
                     if mda_prefix:
                         scope = mda_prefix + scope
-                    if ".".join(mda).startswith(scope):
+                    mda_name = ".".join(mda)
+                    if mda_name == scope or (
+                        mda_name.startswith(scope) and mda_name[len(scope)] == "."
+                    ):
                         vattr = {
                             "name": varattrs["name"],
                             "desc": self.vardescs.get(absname, ""),
