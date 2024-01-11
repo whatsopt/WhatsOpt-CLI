@@ -1,3 +1,16 @@
+* 2.5.5 (12/01/2023)
+  * Fix `wop push` command when a discipline name is substring of another
+
+* 2.5.4 (25/10/2023)
+  * Fix error message handling
+  * Remove already told check
+ 
+* 2.5.3 (27/06/2023)
+  * Fix `wop` publication from GitHub action 
+
+* 2.5.2 (27/06/2023)
+  * Update packaging and CI actions
+
 * 2.5.1 (05/06/2023)
   * `wop build`: Remove annoying `BetaConfiguration` warning  
   * `wop pull <source_id>`: Fix bug pull source not working
