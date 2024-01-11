@@ -114,7 +114,7 @@ def status(ctx):
     "-d",
     "--depth",
     default=DEFAULT_PUSH_DEPTH,
-    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 2)",
 )
 @click.option(
     "--json",
@@ -407,7 +407,7 @@ def upload(
     "-d",
     "--depth",
     default=DEFAULT_PUSH_DEPTH,
-    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 3)",
+    help="specify the max depth of the sub-analysis nesting (0 meaning no limit, default is 2)",
 )
 @click.pass_context
 def show(ctx, analysis_id, pbfile, name, outfile, batch, depth):
