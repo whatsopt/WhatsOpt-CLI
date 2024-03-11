@@ -344,8 +344,9 @@ class WhatsOpt:
                     )
             else:
                 info(
-                    "Found local analysis code (id=#{}) "
-                    "pulled from {}".format(mda_id, whatsopt_url)
+                    "Found local analysis code (id=#{}) " "pulled from {}".format(
+                        mda_id, whatsopt_url
+                    )
                 )
                 if connected:
                     # connected to another server with a pulled analysis
@@ -686,7 +687,6 @@ class WhatsOpt:
         from socket import gethostname
 
         mda_id = get_analysis_id() if not analysis_id else analysis_id
-
         # Test sqlite files generated with MPI
         _, extension = os.path.splitext(filename)
         parallel_sqlite = re.match(r"\.sqlite_\d+$", extension)
@@ -761,6 +761,8 @@ class WhatsOpt:
             resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
+        if mda_id:
+            log(f"attached to analysis #{mda_id}")
 
     def upload_vars_init_cmd(self, py_filename, options):
         def upload_vars_init(prob):
