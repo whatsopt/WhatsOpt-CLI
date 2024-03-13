@@ -1,4 +1,5 @@
-import os, re
+import os
+import re
 import sys
 import tomli_w
 from whatsopt.logging import error

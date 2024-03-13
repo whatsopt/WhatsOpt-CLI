@@ -344,8 +344,9 @@ class WhatsOpt:
                     )
             else:
                 info(
-                    "Found local analysis code (id=#{}) "
-                    "pulled from {}".format(mda_id, whatsopt_url)
+                    "Found local analysis code (id=#{}) " "pulled from {}".format(
+                        mda_id, whatsopt_url
+                    )
                 )
                 if connected:
                     # connected to another server with a pulled analysis
@@ -495,12 +496,12 @@ class WhatsOpt:
         zipf.close()
         file_to_move = {}
         if options.get("--dry-run"):
-            cmd = "Pull"
-            if options.get("--update"):
-                cmd = "Update"
+            # cmd = "Pull"
+            # if options.get("--update"):
+            #     cmd = "Update"
             info(
                 "***************************************************\n"
-                f"* DRY RUN mode (actions are listed but not done) *\n"
+                "* DRY RUN mode (actions are listed but not done) *\n"
                 "***************************************************"
             )
 
@@ -686,7 +687,6 @@ class WhatsOpt:
         from socket import gethostname
 
         mda_id = get_analysis_id() if not analysis_id else analysis_id
-
         # Test sqlite files generated with MPI
         _, extension = os.path.splitext(filename)
         parallel_sqlite = re.match(r"\.sqlite_\d+$", extension)
@@ -761,6 +761,8 @@ class WhatsOpt:
             resp = self.session.post(url, headers=self.headers, json=params)
         resp.raise_for_status()
         log("Results data from {} uploaded with driver {}".format(filename, driver))
+        if mda_id:
+            log(f"attached to analysis #{mda_id}")
 
     def upload_vars_init_cmd(self, py_filename, options):
         def upload_vars_init(prob):
@@ -811,14 +813,15 @@ class WhatsOpt:
     @staticmethod
     def serve(port):
         try:
-            import thrift
+            import thrift  # noqa: F401
         except ImportError:
             error(
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
-            sys.exit(-1)
+            exit(-1)
         try:
-            import os, sys
+            import os
+            import sys
 
             # insert current dir first as another run_server exists under whatsopt/services
             sys.path.insert(0, os.getcwd())
@@ -1001,13 +1004,13 @@ class WhatsOpt:
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
             error(f"Error while merging analysis #{source_id}.")
             error(
-                f"    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
+                "    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
             )
         elif resp.status_code == HTTPStatus.FORBIDDEN:
             error(f"Error while merging analysis #{source_id}.")
             error(
-                f"    You are not authorized to update the current analysis: either you do not own it or"
-                f" current analysis is already packaged or operated"
+                "    You are not authorized to update the current analysis: either you do not own it or"
+                " current analysis is already packaged or operated"
             )
         else:
             error(f"Error while merging analysis #{source_id}")

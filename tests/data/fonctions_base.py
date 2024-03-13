@@ -6,7 +6,6 @@
 # whatsopt_url: https://selene.onecert.fr/whatsopt
 # analysis_id: 213
 
-import numpy as np
 from openmdao.api import ExplicitComponent
 
 

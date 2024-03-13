@@ -11,4 +11,4 @@ class TestMOOptimization(unittest.TestCase):
             {"type": INT, "limits": [0, 3]},
         ]
 
-        optim = MOOptimization(xtypes, n_obj=3)
+        _ = MOOptimization(xtypes, n_obj=3)
