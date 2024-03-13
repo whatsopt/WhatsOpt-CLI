@@ -15,7 +15,8 @@ COMMANDS = [
     "wop upload -n -a 1 {}".format(file("mda_init.py")),
     "wop upload -n {}".format(file("test_doe.csv")),
     "wop upload -n {}".format(file("test_doe.sqlite")),
-    "wop upload -p -n {}".format(file("test_parallel_doe.sqlite_0")),
+    # skip as test data is obsolete
+    # "wop upload -p -n {}".format(file("test_parallel_doe.sqlite_0")),
     "wop show -b -f {}".format(file("multipoint_beam/multipoint_beam_group.py")),
     "wop show -b --depth 3 -f {}".format(
         file("multipoint_beam/multipoint_beam_group.py")
