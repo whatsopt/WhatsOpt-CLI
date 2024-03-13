@@ -496,9 +496,9 @@ class WhatsOpt:
         zipf.close()
         file_to_move = {}
         if options.get("--dry-run"):
-            cmd = "Pull"
-            if options.get("--update"):
-                cmd = "Update"
+            # cmd = "Pull"
+            # if options.get("--update"):
+            #     cmd = "Update"
             info(
                 "***************************************************\n"
                 "* DRY RUN mode (actions are listed but not done) *\n"
@@ -813,12 +813,12 @@ class WhatsOpt:
     @staticmethod
     def serve(port):
         try:
-            import thrift
+            import thrift  # noqa: F401
         except ImportError:
             error(
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
-            sys.exit(-1)
+            exit(-1)
         try:
             import os
             import sys

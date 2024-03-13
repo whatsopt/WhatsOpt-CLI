@@ -12,7 +12,7 @@ from whatsopt.upload_utils import (
 
 GEMSEO_INSTALLED = True
 try:
-    import gemseo
+    import gemseo  # noqa: F401
 except ImportError:
     GEMSEO_INSTALLED = False
 
