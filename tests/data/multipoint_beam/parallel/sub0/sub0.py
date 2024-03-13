@@ -4,7 +4,6 @@
 """
 from optparse import OptionParser
 from openmdao.api import Problem
-from openmdao.api import NonlinearBlockGS, ScipyKrylov
 
 # from openmdao_extensions.reckless_nonlinear_block_gs import RecklessNonlinearBlockGS
 from parallel.sub0.sub0_base import Sub0Base, Sub0FactoryBase

@@ -7,13 +7,10 @@
 # analysis_id: 5
 
 
-import numpy as np
-from numpy import nan
 
-from openmdao.api import Problem, Group, ParallelGroup, IndepVarComp
+from openmdao.api import Group
 from openmdao.api import NonlinearBlockGS
 from openmdao.api import ScipyKrylov
-from openmdao import __version__ as OPENMDAO_VERSION
 
 from parallel.sub0.sub0 import Sub0
 from parallel.sub0.states_comp import StatesComp
