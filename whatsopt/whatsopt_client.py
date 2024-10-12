@@ -300,7 +300,7 @@ class WhatsOpt:
             log(tabulate(data, headers))
             log("")
         else:
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
 
     def is_connected(self):
         return self._test_connection()
@@ -423,7 +423,7 @@ class WhatsOpt:
             resp = self.session.post(
                 url, headers=self.headers, json={"analysis": mda_attrs}
             )
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
             log("Analysis %s pushed" % mda_attrs["name"])
             return resp.json()
 
@@ -439,7 +439,7 @@ class WhatsOpt:
         params = {}
         params[key.lower()] = attrs
         resp = self.session.post(url, headers=self.headers, json=params)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         log("{} {} pushed".format(key, attrs["name"]))
 
     def pull_mda(self, mda_id, options={}, msg=None, info_keep_run_ops=True):
@@ -483,7 +483,7 @@ class WhatsOpt:
             ("/api/v1/analyses/{}/exports/new.{}{}".format(mda_id, format_query, param))
         )
         resp = self.session.get(url, headers=self.headers, stream=True)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         name = None
         with tempfile.NamedTemporaryFile(suffix=".zip", mode="wb", delete=False) as fd:
             for chunk in resp.iter_content(chunk_size=128):
@@ -511,7 +511,7 @@ class WhatsOpt:
         if framework_switch:
             url = self.endpoint(f"/api/v1/analyses/{mda_id}/openmdao_impl")
             resp = self.session.get(url, headers=self.headers, stream=True)
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
             mda_name = resp.json()["packaging"]["package_name"]
         else:
             mda_name = ""
@@ -578,13 +578,13 @@ class WhatsOpt:
     def pull_mda_json(self, mda_id):
         url = self.endpoint(f"/api/v1/analyses/{mda_id}.wopjson")
         resp = self.session.get(url, headers=self.headers, stream=True)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         print(json.dumps(resp.json()))
 
     def pull_project_json(self, project_id):
         url = self.endpoint(f"/api/v1/design_projects/{project_id}.wopjson")
         resp = self.session.get(url, headers=self.headers, stream=True)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         print(json.dumps(resp.json()))
 
     def update_mda(self, analysis_id=None, options={}, info_keep_run_ops=True):
@@ -660,7 +660,7 @@ class WhatsOpt:
                 sys.exit(-1)
             url = self.endpoint("/api/v1/analyses/{}.xdsm".format(mda_id))
             resp = self.session.get(url, headers=self.headers)
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
             xdsm = resp.json()
             source = f"{mda_id}@{self._url}"
 
@@ -759,7 +759,7 @@ class WhatsOpt:
             if outvar_count > 0 and outvar_count < len(cases):
                 params["outvar_count_hint"] = outvar_count
             resp = self.session.post(url, headers=self.headers, json=params)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         log("Results data from {} uploaded with driver {}".format(filename, driver))
         if mda_id:
             log(f"attached to analysis #{mda_id}")
@@ -799,13 +799,13 @@ class WhatsOpt:
         if not options["--dry-run"]:
             url = self.endpoint(f"/api/v1/analyses/{mda_id}/parameterization")
             resp = self.session.put(url, headers=self.headers, json=params)
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
             log("Variables init values uploaded")
 
     def check_versions(self):
         url = self.endpoint("/api/v1/versioning")
         resp = self.session.get(url, headers=self.headers)
-        resp.raise_for_status()
+        WhatsOpt.check_http_error(resp)
         version = resp.json()
         log("WhatsOpt {} requires wop {}".format(version["whatsopt"], version["wop"]))
         log(f"You are using wop {__version__}")
@@ -867,7 +867,7 @@ class WhatsOpt:
             elif resp.status_code == HTTPStatus.NOT_FOUND:
                 existing_meta = None
             else:
-                resp.raise_for_status()
+                WhatsOpt.check_http_error(resp)
 
             if existing_meta:
                 warn(
@@ -911,7 +911,7 @@ class WhatsOpt:
             error("Duplicate detected! The package already exists on WopStore!")
             exit(-1)
         else:
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
 
     def build(self):
         if not is_package_mode():
@@ -1014,7 +1014,7 @@ class WhatsOpt:
             )
         else:
             error(f"Error while merging analysis #{source_id}")
-            resp.raise_for_status()
+            WhatsOpt.check_http_error(resp)
 
     def pull_source_mda(self, source_id, options={}):
         self.merge(source_id, options)
@@ -1054,3 +1054,14 @@ class WhatsOpt:
                 return False
         else:
             return False
+
+    @staticmethod
+    def check_http_error(resp):
+        msg = resp.json().get("message")
+        if msg:
+            warn(msg)
+        try:
+            resp.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            error(f"HTTP Error : {http_err}")
+            exit(-1)
