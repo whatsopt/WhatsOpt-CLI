@@ -2,8 +2,6 @@
 """
   mda_init.py
 """
-import numpy as np
-from numpy import nan
 
 
 def initialize(mda):

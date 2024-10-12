@@ -224,7 +224,6 @@ def pull(
         "--run-ops": run_ops,
         "--test-units": test_units,
         "--gemseo": gemseo,
-        "--egmdo": egmdo,
         "--package": package,
     }
     wop = WhatsOpt(**ctx.obj).login()

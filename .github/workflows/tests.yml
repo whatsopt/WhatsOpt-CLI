@@ -27,13 +27,13 @@ jobs:
     - name: Install dependencies 
       run: |
         python -m pip install --upgrade pip
-        python -m pip install black pytest
+        python -m pip install ruff pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install .
 
-    - name: Format with black
+    - name: Format/Lint with ruff
       run: |
-        black --version --diff --check whatsopt
+        ruff check .
 
     - name: Test with pytest
       run: |

@@ -1,5 +1,4 @@
 import re
-from itertools import chain
 from whatsopt.push_utils import (
     build_variable_name,
     cut,

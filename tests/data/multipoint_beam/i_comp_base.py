@@ -8,9 +8,6 @@
 
 
 import numpy as np
-from numpy import nan
-from os import path
-from importlib import import_module
 from openmdao.api import ExplicitComponent
 
 

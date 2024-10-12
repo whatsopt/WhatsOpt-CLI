@@ -496,12 +496,12 @@ class WhatsOpt:
         zipf.close()
         file_to_move = {}
         if options.get("--dry-run"):
-            cmd = "Pull"
-            if options.get("--update"):
-                cmd = "Update"
+            # cmd = "Pull"
+            # if options.get("--update"):
+            #     cmd = "Update"
             info(
                 "***************************************************\n"
-                f"* DRY RUN mode (actions are listed but not done) *\n"
+                "* DRY RUN mode (actions are listed but not done) *\n"
                 "***************************************************"
             )
 
@@ -813,14 +813,15 @@ class WhatsOpt:
     @staticmethod
     def serve(port):
         try:
-            import thrift
+            import thrift  # noqa: F401
         except ImportError:
             error(
                 "Apache Thrift is not installed. You can install it with : 'pip install thrift'"
             )
-            sys.exit(-1)
+            exit(-1)
         try:
-            import os, sys
+            import os
+            import sys
 
             # insert current dir first as another run_server exists under whatsopt/services
             sys.path.insert(0, os.getcwd())
@@ -1003,13 +1004,13 @@ class WhatsOpt:
         elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
             error(f"Error while merging analysis #{source_id}.")
             error(
-                f"    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
+                "    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
             )
         elif resp.status_code == HTTPStatus.FORBIDDEN:
             error(f"Error while merging analysis #{source_id}.")
             error(
-                f"    You are not authorized to update the current analysis: either you do not own it or"
-                f" current analysis is already packaged or operated"
+                "    You are not authorized to update the current analysis: either you do not own it or"
+                " current analysis is already packaged or operated"
             )
         else:
             error(f"Error while merging analysis #{source_id}")
