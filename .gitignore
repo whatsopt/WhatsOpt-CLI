@@ -112,3 +112,6 @@ xdsm.html
 
 # OpenMDAO reports
 **/reports
+
+# Ruff
+**/.ruff_cache

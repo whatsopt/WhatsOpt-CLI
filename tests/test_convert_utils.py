@@ -1,6 +1,5 @@
 import os
 import unittest
-from openmdao.api import CaseReader
 
 from whatsopt.convert_utils import (
     convert_sqlite_to_csv,

@@ -1,5 +1,4 @@
 import unittest
-import os
 from whatsopt.whatsopt_client import WhatsOpt, EXTRANET_SERVER_URL
 
 

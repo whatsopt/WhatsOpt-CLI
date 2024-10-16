@@ -1,4 +1,3 @@
-import sys
 import time
 import numpy as np
 from requests.exceptions import RequestException
@@ -83,7 +82,7 @@ class Optimization:
             self._status = self.PENDING
             self._x_best = None
             self._y_best = None
-        except RequestException as e:
+        except RequestException:
             raise OptimizationError("Connection failed during initialization")
 
     def _init_config(self):

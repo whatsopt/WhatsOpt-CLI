@@ -4,7 +4,6 @@
 """
 from optparse import OptionParser
 from openmdao.api import Problem
-from openmdao.api import NonlinearBlockGS, ScipyKrylov
 
 # from openmdao_extensions.reckless_nonlinear_block_gs import RecklessNonlinearBlockGS
 from parallel.parallel_base import ParallelBase, ParallelFactoryBase
@@ -50,11 +49,6 @@ if __name__ == "__main__":
     problem.final_setup()
 
     if options.n2_view:
-        from packaging import version
+        from openmdao.visualization.n2_viewer.n2_viewer import n2
 
-        if version.parse(OPENMDAO_VERSION) < version.parse("2.10.0"):
-            from openmdao.api import view_model as n2
-        else:
-            from openmdao.visualization.n2_viewer.n2_viewer import n2
-
-            n2(problem)
+        n2(problem)
