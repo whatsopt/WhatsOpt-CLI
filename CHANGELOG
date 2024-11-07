@@ -1,6 +1,9 @@
 # Changelog
 
-* 2.5.6 (12/10/2025)
+* 2.5.7 (07/11/2024)
+  * Fix error message check when not a json response
+
+* 2.5.6 (12/10/2024)
   * Display applicative error message if any
 
 * 2.5.5 (12/01/2023)
