@@ -1057,7 +1057,11 @@ class WhatsOpt:
 
     @staticmethod
     def check_http_error(resp):
-        msg = resp.json().get("message")
+        msg = None
+        try:
+            msg = resp.json().get("message")
+        except requests.exceptions.JSONDecodeError:
+            pass  # Does not contain json => ignore
         if msg:
             warn(msg)
         try:
