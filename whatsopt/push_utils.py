@@ -3,6 +3,9 @@ import os
 import tempfile
 from contextlib import contextmanager
 
+from openmdao import __version__ as OPENMDAO_VERSION
+from packaging.version import Version
+
 
 def cut(mda_attrs, depth):
     if depth <= 0:
@@ -155,7 +158,14 @@ def find_indep_var_name(pb, absname):
         if src == absname:
             target = tgt
             break
-    return pb.model._var_abs2prom["input"].get(target)
+
+    name = None
+    if Version(OPENMDAO_VERSION) < Version("3.39"):
+        name = pb.model._var_abs2prom["input"].get(target)
+    else:
+        name = pb.model._resolver.abs2prom(target, "input")
+
+    return name
 
 
 def build_variable_name(varname1, varname2, limit=255):
