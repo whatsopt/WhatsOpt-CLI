@@ -12,6 +12,9 @@ from openmdao.api import IndepVarComp
 
 from openmdao.visualization.n2_viewer.n2_viewer import _get_viewer_data
 
+from openmdao import __version__ as OPENMDAO_VERSION
+from packaging.version import Version
+
 # Special name for internal WhatsOpt discipline. cf. WhatsOpt Discipline model
 DRIVER_NAME = "__DRIVER__"
 # OpenMDAO 3.2+ component name (handles indep vars automatically)
@@ -322,7 +325,13 @@ class PushCommand:
                     vtype = "Integer"
                 shape = str(meta["shape"])
                 shape = format_shape(self.scalar, shape)
-                name = system._var_abs2prom[io][abs_name]
+
+                name = None
+                if Version(OPENMDAO_VERSION) < Version("3.39"):
+                    name = system._var_abs2prom[io][abs_name]
+                else:
+                    name = system._resolver.abs2prom(abs_name, io)
+
                 # name = abs_name
                 if abs_name.startswith(AUTO_IVC):
                     name = find_indep_var_name(problem, abs_name)

@@ -23,6 +23,9 @@ from openmdao.utils.file_utils import _load_and_exec
 
 from openmdao.utils.webview import webview
 from openmdao.api import IndepVarComp
+
+from openmdao import __version__ as OPENMDAO_VERSION
+
 from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
@@ -344,7 +347,7 @@ class WhatsOpt:
                     )
             else:
                 info(
-                    "Found local analysis code (id=#{}) " "pulled from {}".format(
+                    "Found local analysis code (id=#{}) pulled from {}".format(
                         mda_id, whatsopt_url
                     )
                 )
@@ -789,7 +792,11 @@ class WhatsOpt:
             if isinstance(s, IndepVarComp):
                 for absname in s._var_abs2meta["output"]:
                     name = find_indep_var_name(problem, absname)
-                    value = s._outputs._views[absname][:]
+                    value = None
+                    if Version(OPENMDAO_VERSION) < Version("3.39"):
+                        value = s._outputs._views[absname][0]
+                    else:
+                        value = s._outputs.get_val(absname, flat=False)
                     if isinstance(value, np.ndarray):
                         value = str(value.tolist())
                     parameters.append({"varname": name, "value": value})
