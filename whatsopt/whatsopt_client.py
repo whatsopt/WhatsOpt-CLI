@@ -913,7 +913,10 @@ class WhatsOpt:
             info(
                 f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
             )
-        elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+        elif resp.status_code in [
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            HTTPStatus.UNPROCESSABLE_CONTENT,
+        ]:
             error(resp.json()["message"])
             error("Duplicate detected! The package already exists on WopStore!")
             exit(-1)
@@ -1008,7 +1011,10 @@ class WhatsOpt:
         if resp.ok:
             if not options.get("--dry-run"):
                 info(f"Analysis #{source_id} merged")
-        elif resp.status_code == HTTPStatus.UNPROCESSABLE_ENTITY:
+        elif resp.status_code in [
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            HTTPStatus.UNPROCESSABLE_CONTENT,
+        ]:
             error(f"Error while merging analysis #{source_id}.")
             error(
                 "    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
