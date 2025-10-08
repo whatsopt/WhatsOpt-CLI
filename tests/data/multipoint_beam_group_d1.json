@@ -10,10 +10,7 @@
           "desc": "",
           "type": "Float",
           "shape": "(5,)",
-          "units": null,
-          "parameter_attributes": {
-            "init": "[1.0, 1.0, 1.0, 1.0, 1.0]"
-          }
+          "units": null
         },
         {
           "name": "h",
