@@ -1,6 +1,7 @@
 import re
 import os
 import tempfile
+import numpy as np
 from contextlib import contextmanager
 
 from openmdao import __version__ as OPENMDAO_VERSION
@@ -71,7 +72,10 @@ def simple_value(var):
             var["value"] = var["value"].astype(int)
         else:
             var["value"] = var["value"].astype(float)
-        ret = var["value"].tolist()
+        if np.all(var["value"] == np.ones(var["value"].shape)):
+            ret = ""
+        else:
+            ret = var["value"].tolist()
     return str(ret)
 
 
