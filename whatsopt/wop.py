@@ -238,7 +238,10 @@ def pull(
             exit(-1)
         current_id = get_analysis_id()
         if current_id and analysis_id != current_id:
-            wop.pull_source_mda(analysis_id, options)
+            error(
+                f"Analysis id #{analysis_id} does not match current pulled analysis id #{current_id}"
+            )
+            exit(-1)
         else:
             wop.pull_mda(analysis_id, options)
 
@@ -448,65 +451,6 @@ def convert(
 ):
     """Convert given sqlite file from OpenMDAO to csv file format."""
     WhatsOpt().convert(sqlite_filename)
-
-
-@wop.command()
-@click.option(
-    "-f",
-    "--force",
-    is_flag=True,
-    default=False,
-    help="overwrite current published package anyway",
-)
-@click.pass_context
-def publish(ctx, force):
-    """Publish current analysis as Python package on WhatsOpt Package Store. Package mode is required."""
-    WhatsOpt(**ctx.obj).login().publish(force)
-
-
-@wop.command()
-@click.pass_context
-def build(ctx):
-    """Build current analysis package. Package mode is required."""
-    WhatsOpt(**ctx.obj).login().build()
-
-
-@wop.command()
-@click.option(
-    "-n",
-    "--dry-run",
-    is_flag=True,
-    default=False,
-    help="print analysis fetch info without actually fetching",
-)
-@click.option(
-    "-f", "--force", is_flag=True, default=False, help="overwrite existing files"
-)
-@click.argument("source_id")
-@click.pass_context
-def fetch(ctx, source_id, dry_run, force):
-    """Fetch package content of the given analysis specified by its identifier"""
-    options = {"--dry-run": dry_run, "--force": force}
-    WhatsOpt(**ctx.obj).login().fetch(source_id, options)
-
-
-@wop.command()
-@click.argument("analysis_id")
-@click.pass_context
-@click.option(
-    "-n",
-    "--dry-run",
-    is_flag=True,
-    default=False,
-    help="print analysis merge info without actually merging",
-)
-def merge(ctx, analysis_id, dry_run):
-    """Merge the given analysis to the current one.
-    All the disciplines of the to-be-merged analysis are imported. The command may fail
-    if imported disciplines are not compatible (eg an output variable is already produced
-    by a discipline of the current analysis)."""
-    options = {"--dry-run": dry_run}
-    WhatsOpt(**ctx.obj).login().merge(analysis_id, options)
 
 
 if __name__ == "__main__":

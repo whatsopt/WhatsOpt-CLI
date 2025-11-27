@@ -18,7 +18,7 @@ COMMANDS = [
     # skip as test data is obsolete
     # "wop upload -p -n {}".format(file("test_parallel_doe.sqlite_0")),
     "wop show -b -f {}".format(file("multipoint_beam/multipoint_beam_group.py")),
-    "wop show -b --depth 3 -f {}".format(
+    "wop show -b --depth 2 -f {}".format(
         file("multipoint_beam/multipoint_beam_group.py")
     ),
     "wop status",

@@ -1,4 +1,3 @@
-from http import HTTPStatus
 import os
 import sys
 import json
@@ -10,7 +9,6 @@ import zipfile
 import tempfile
 import numpy as np
 import time
-from datetime import datetime
 import tomli
 import tomli_w
 from tabulate import tabulate
@@ -29,7 +27,6 @@ from openmdao import __version__ as OPENMDAO_VERSION
 from whatsopt.convert_utils import convert_sqlite_to_csv
 
 from whatsopt.logging import log, info, warn, error, debug
-from whatsopt.publish_utils import build_package, get_pkg_metadata
 from whatsopt.utils import (
     FRAMEWORK_GEMSEO,
     FRAMEWORK_OPENMDAO,
@@ -863,176 +860,6 @@ class WhatsOpt:
             )
         basename = os.path.basename(pathname)
         convert_sqlite_to_csv(filename, basename)
-
-    def publish(self, force=False, analysis_id=None):
-        mda_id = analysis_id if analysis_id else get_analysis_id()
-        url = self.endpoint(f"/api/v1/analyses/{mda_id}/package")
-        if not force:
-            resp = self.session.get(url, headers=self.headers)
-            if resp.ok:
-                existing_meta = resp.json()
-            elif resp.status_code == HTTPStatus.NOT_FOUND:
-                existing_meta = None
-            else:
-                WhatsOpt.check_http_error(resp)
-
-            if existing_meta:
-                warn(
-                    f"Existing package {existing_meta['name']} {existing_meta['version']} will be lost."
-                )
-                answer = input("Do you want to continue? (yes/no): ")
-                if answer.lower() == "yes":
-                    pass
-                else:
-                    info("Publishing aborted")
-                    exit(-1)
-
-        info("Package building...")
-        filename = self.build()
-        if not os.path.exists(filename):
-            error(f"File {filename} not found")
-            exit(-1)
-        meta = get_pkg_metadata(filename)
-        if (
-            not force
-            and existing_meta
-            and existing_meta["name"] == meta.name
-            and Version(existing_meta["version"]) >= Version(meta.version)
-        ):
-            error(f"You have to bump the version (> {existing_meta['version']})")
-            error("Publishing aborted")
-            exit(-1)
-
-        files = {
-            "package[description]": (None, meta.summary, "application/json"),
-            "package[archive]": (filename, open(filename, "rb"), "application/gzip"),
-        }
-        info("Package publishing...")
-        resp = self.session.post(url, headers=self.headers, files=files)
-        if resp.ok:
-            info(
-                f"Package {meta.name} v{meta.version} is published on WopStore({self.endpoint('/packages')})"
-            )
-        elif resp.status_code in [
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-            HTTPStatus.UNPROCESSABLE_CONTENT,
-        ]:
-            error(resp.json()["message"])
-            error("Duplicate detected! The package already exists on WopStore!")
-            exit(-1)
-        else:
-            WhatsOpt.check_http_error(resp)
-
-    def build(self):
-        if not is_package_mode():
-            error("Package mode is required!")
-            exit(-1)
-        self._update_mda_base()
-        filename = build_package()
-        return filename
-
-    def fetch(self, source_id=None, options={}):
-        if not is_package_mode():
-            error("Package mode is required!")
-            exit(-1)
-        mda_id = get_analysis_id()
-        param = f"?src_id={source_id}"
-        format_query = "mda_pkg_content"
-        url = self.endpoint(
-            f"/api/v1/analyses/{mda_id}/exports/new.{format_query}{param}"
-        )
-        resp = self.session.get(url, headers=self.headers, stream=True)
-        if resp.ok:
-            name = None
-            with tempfile.NamedTemporaryFile(
-                suffix=".zip", mode="wb", delete=False
-            ) as fd:
-                for chunk in resp.iter_content(chunk_size=128):
-                    fd.write(chunk)
-                name = fd.name
-            zipf = zipfile.ZipFile(name, "r")
-            tempdir = tempfile.mkdtemp(suffix="wop", dir=tempfile.tempdir)
-            zipf.extractall(tempdir)
-            filenames = zipf.namelist()
-            if not filenames:
-                warn(
-                    f"Fetching but no package found for analysis #{source_id}, nothing to do"
-                )
-                return
-            zipf.close()
-
-            file_to_move = {}
-            for f in filenames:
-                file_to = f
-                file_to_move[file_to] = True
-                if os.path.exists(file_to):
-                    if options.get("--force"):
-                        log(f"Fetch {file_to}")
-                        if options.get("--dry-run"):
-                            file_to_move[file_to] = False
-                        else:
-                            os.remove(file_to)
-                    else:
-                        warn(
-                            f"File {file_to} in the way: remove it or use --force to override"
-                        )
-                        file_to_move[file_to] = False
-                else:
-                    log(f"Fetch {file_to}")
-            if not options.get("--dry-run"):
-                move_files(file_to_move, tempdir)
-                info(f"Analysis #{source_id} disciplines fetched")
-        else:
-            error(f"Error while fetching disciplines of analysis #{source_id}")
-            error(resp.json().get("message"))
-
-    def merge(self, source_id, options={}):
-        if not is_package_mode():
-            error("Package mode is required!")
-            exit(-1)
-        current_id = get_analysis_id()
-        if int(source_id) == current_id:
-            warn(f"Merging analysis #{current_id} in itself, nothing to do")
-            return
-        url = self.endpoint(f"/api/v1/analyses/{current_id}")
-        params = {
-            "analysis": {
-                "import": {"analysis": source_id},
-            },
-            "requested_at": str(datetime.now()),
-        }
-        if options.get("--dry-run"):
-            self.get_status()
-            url = self.endpoint("/api/v1/analyses/{}".format(source_id))
-            resp = self.session.get(url, headers=self.headers)
-            log(f"Analysis #{source_id} #{resp.json()} is selected to be merged")
-        else:
-            resp = self.session.put(url, headers=self.headers, json=params)
-        if resp.ok:
-            if not options.get("--dry-run"):
-                info(f"Analysis #{source_id} merged")
-        elif resp.status_code in [
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-            HTTPStatus.UNPROCESSABLE_CONTENT,
-        ]:
-            error(f"Error while merging analysis #{source_id}.")
-            error(
-                "    Check analyses, maybe they are not compatible (same variable produced by different disciplines)"
-            )
-        elif resp.status_code == HTTPStatus.FORBIDDEN:
-            error(f"Error while merging analysis #{source_id}.")
-            error(
-                "    You are not authorized to update the current analysis: either you do not own it or"
-                " current analysis is already packaged or operated"
-            )
-        else:
-            error(f"Error while merging analysis #{source_id}")
-            WhatsOpt.check_http_error(resp)
-
-    def pull_source_mda(self, source_id, options={}):
-        self.merge(source_id, options)
-        self.fetch(source_id, options)
-        self._update_mda_base(options.get("--dry-run"))
 
     def _update_mda_base(self, dry_run=False, force=False):
         update_options = {
