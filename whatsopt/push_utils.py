@@ -64,7 +64,9 @@ def to_camelcase(name):
 def simple_value(var):
     typ = var["type"]
     if var["shape"] == "1" or var["shape"] == "(1,)":
-        ret = float(var["value"].item())
+        if isinstance(var["value"], np.ndarray):
+            var["value"] = var["value"].item()
+        ret = float(var["value"])
         if typ == "Integer":
             ret = int(ret)
     else:
