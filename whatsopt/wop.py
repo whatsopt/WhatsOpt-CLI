@@ -237,7 +237,7 @@ def pull(
             error("Bad option --project-id which works only with option --json enabled")
             exit(-1)
         current_id = get_analysis_id()
-        if current_id and analysis_id != current_id:
+        if current_id and analysis_id != str(current_id):
             error(
                 f"Analysis id #{analysis_id} does not match current pulled analysis id #{current_id}"
             )
