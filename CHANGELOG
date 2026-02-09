@@ -1,5 +1,8 @@
 # Changelog
 
+* 2.6.1 (09/02/2026)
+  * `wop push`: Fix simple_value function to handle numpy 2.0 ndarray 
+
 * 2.6.0 (27/11/2025)
   * Remove package operations (`build`, `merge`, `fetch`))
   * Fix error message check when not a json response
