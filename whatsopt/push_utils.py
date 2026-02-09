@@ -64,7 +64,7 @@ def to_camelcase(name):
 def simple_value(var):
     typ = var["type"]
     if var["shape"] == "1" or var["shape"] == "(1,)":
-        ret = float(var["value"])
+        ret = float(var["value"].item())
         if typ == "Integer":
             ret = int(ret)
     else:
